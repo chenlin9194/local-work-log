@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect, useRef, useCallback } from "react";
 import Link from "next/link";
 import NoteCard from "@/components/NoteCard";
 import Icon from "@/components/Icon";
@@ -14,6 +14,7 @@ export default function NotesPage() {
   const [error, setError] = useState("");
   const [showFilters, setShowFilters] = useState(false);
 
+  // Filter state
   const [keyword, setKeyword] = useState("");
   const [project, setProject] = useState("");
   const [moduleVal, setModuleVal] = useState("");
@@ -24,20 +25,26 @@ export default function NotesPage() {
   const [startDate, setStartDate] = useState("");
   const [endDate, setEndDate] = useState("");
 
+  // Ref keeps the latest filter values so the stable fetchNotes always reads current state
+  const filtersRef = useRef({ keyword, project, moduleVal, type, priority, status, source, startDate, endDate });
+  filtersRef.current = { keyword, project, moduleVal, type, priority, status, source, startDate, endDate };
+
+  // Stable fetch function — identity never changes, reads filters via ref
   const fetchNotes = useCallback(async () => {
     setLoading(true);
     setError("");
     try {
+      const f = filtersRef.current;
       const params = new URLSearchParams();
-      if (keyword) params.set("keyword", keyword);
-      if (project) params.set("project", project);
-      if (moduleVal) params.set("module", moduleVal);
-      if (type) params.set("type", type);
-      if (priority) params.set("priority", priority);
-      if (status) params.set("status", status);
-      if (source) params.set("source", source);
-      if (startDate) params.set("startDate", startDate);
-      if (endDate) params.set("endDate", endDate);
+      if (f.keyword) params.set("keyword", f.keyword);
+      if (f.project) params.set("project", f.project);
+      if (f.moduleVal) params.set("module", f.moduleVal);
+      if (f.type) params.set("type", f.type);
+      if (f.priority) params.set("priority", f.priority);
+      if (f.status) params.set("status", f.status);
+      if (f.source) params.set("source", f.source);
+      if (f.startDate) params.set("startDate", f.startDate);
+      if (f.endDate) params.set("endDate", f.endDate);
       params.set("pageSize", "100");
 
       const res = await fetch(`/api/notes?${params.toString()}`);
@@ -50,15 +57,26 @@ export default function NotesPage() {
     } finally {
       setLoading(false);
     }
-  }, [keyword, project, moduleVal, type, priority, status, source, startDate, endDate]);
+  }, []);
 
+  // Load all notes once on mount
   useEffect(() => { fetchNotes(); }, [fetchNotes]);
 
   const hasFilters = project || moduleVal || type || priority || status || source || startDate || endDate;
 
+  // Helper: update a select filter and immediately search
+  // Uses requestAnimationFrame to ensure React has committed the setState before fetching
+  const updateAndSearch = (setter: (v: string) => void, value: string) => {
+    setter(value);
+    // After React commits the state update in the current batch, fetch with new value
+    requestAnimationFrame(() => fetchNotes());
+  };
+
   const handleReset = () => {
     setKeyword(""); setProject(""); setModuleVal(""); setType("");
     setPriority(""); setStatus(""); setSource(""); setStartDate(""); setEndDate("");
+    // After all filters cleared and re-rendered, fetch the full list
+    requestAnimationFrame(() => fetchNotes());
   };
 
   // Export
@@ -124,36 +142,38 @@ export default function NotesPage() {
           </button>
         </div>
 
-        {/* Advanced Filters */}
+        {/* Advanced Filters — select boxes trigger immediate search; text inputs need Enter/button */}
         {showFilters && (
           <div style={{ marginTop: 12, paddingTop: 12, borderTop: "1px solid var(--border-primary)" }}>
             <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(160px, 1fr))", gap: 8 }}>
-              <input type="text" placeholder="项目/版本" value={project} onChange={(e) => setProject(e.target.value)} className="input" />
-              <select value={moduleVal} onChange={(e) => setModuleVal(e.target.value)} className="input">
+              <input type="text" placeholder="项目/版本" value={project} onChange={(e) => setProject(e.target.value)}
+                onKeyDown={(e) => e.key === "Enter" && fetchNotes()} className="input" />
+              <select value={moduleVal} onChange={(e) => updateAndSearch(setModuleVal, e.target.value)} className="input">
                 <option value="">全部模块</option>
                 {MODULES.map((m) => <option key={m} value={m}>{m}</option>)}
               </select>
-              <select value={type} onChange={(e) => setType(e.target.value)} className="input">
+              <select value={type} onChange={(e) => updateAndSearch(setType, e.target.value)} className="input">
                 <option value="">全部类型</option>
                 {NOTE_TYPES.map((t) => <option key={t.value} value={t.value}>{t.label}</option>)}
               </select>
-              <select value={priority} onChange={(e) => setPriority(e.target.value)} className="input">
+              <select value={priority} onChange={(e) => updateAndSearch(setPriority, e.target.value)} className="input">
                 <option value="">全部优先级</option>
                 {PRIORITIES.map((p) => <option key={p.value} value={p.value}>{p.label}</option>)}
               </select>
-              <select value={status} onChange={(e) => setStatus(e.target.value)} className="input">
+              <select value={status} onChange={(e) => updateAndSearch(setStatus, e.target.value)} className="input">
                 <option value="">全部状态</option>
                 {STATUSES.map((s) => <option key={s.value} value={s.value}>{s.label}</option>)}
               </select>
-              <select value={source} onChange={(e) => setSource(e.target.value)} className="input">
+              <select value={source} onChange={(e) => updateAndSearch(setSource, e.target.value)} className="input">
                 <option value="">全部来源</option>
                 {SOURCES.map((s) => <option key={s.value} value={s.value}>{s.label}</option>)}
               </select>
-              <input type="date" value={startDate} onChange={(e) => setStartDate(e.target.value)} className="input" />
-              <input type="date" value={endDate} onChange={(e) => setEndDate(e.target.value)} className="input" />
+              <input type="date" value={startDate} onChange={(e) => updateAndSearch(setStartDate, e.target.value)} className="input" />
+              <input type="date" value={endDate} onChange={(e) => updateAndSearch(setEndDate, e.target.value)} className="input" />
             </div>
-            <div style={{ marginTop: 8, display: "flex", gap: 8 }}>
+            <div style={{ marginTop: 8, display: "flex", gap: 8, alignItems: "center" }}>
               <button onClick={handleReset} className="btn btn-ghost btn-sm">重置筛选</button>
+              <button onClick={fetchNotes} className="btn btn-primary btn-sm">应用筛选</button>
               <span style={{ fontSize: 12, color: "var(--text-tertiary)", lineHeight: "28px" }}>共 {total} 条</span>
             </div>
           </div>

@@ -43,6 +43,11 @@ export async function DELETE(
 ) {
   try {
     const { id } = await params;
+
+    // Check existence first to return proper 404 instead of Prisma throwing
+    const existing = await prisma.aiAgent.findUnique({ where: { id } });
+    if (!existing) return NextResponse.json({ error: "不存在" }, { status: 404 });
+
     await prisma.aiAgent.delete({ where: { id } });
     return NextResponse.json({ success: true });
   } catch (error) {

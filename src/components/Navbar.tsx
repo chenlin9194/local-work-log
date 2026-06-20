@@ -12,9 +12,21 @@ const navItems = [
   { href: "/notes/new", label: "新增记录", icon: "plus" },
   { href: "/today", label: "今日汇总", icon: "calendar" },
   { href: "/stats", label: "统计", icon: "chart" },
-  { href: "/ai", label: "AI 助手", icon: "sparkles" },
+  { href: "/ai", label: "AI 助手", icon: "sparkles", exact: true },
   { href: "/ai/settings", label: "AI 配置", icon: "settings" },
 ];
+
+/**
+ * Determine if a nav item is "active" for the current pathname.
+ * - "/" is only active on exact match
+ * - items marked `exact: true` require exact match (e.g. "/ai" should not match "/ai/settings")
+ * - other items use startsWith so sub-pages highlight the parent (e.g. "/notes/123" highlights "/notes")
+ */
+function isNavActive(pathname: string, item: typeof navItems[number]) {
+  if (item.href === "/") return pathname === "/";
+  if ((item as { exact?: boolean }).exact) return pathname === item.href;
+  return pathname === item.href || pathname.startsWith(item.href + "/");
+}
 
 export default function Navbar() {
   const pathname = usePathname();
@@ -48,8 +60,7 @@ export default function Navbar() {
           {/* Desktop Nav */}
           <div style={{ display: "flex", alignItems: "center", gap: 2 }} className="hidden md:flex">
             {navItems.map((item) => {
-              const isActive = pathname === item.href ||
-                (item.href !== "/" && pathname.startsWith(item.href));
+              const isActive = isNavActive(pathname, item);
               return (
                 <Link
                   key={item.href}
@@ -104,8 +115,7 @@ export default function Navbar() {
           className="md:hidden"
           >
             {navItems.map((item) => {
-              const isActive = pathname === item.href ||
-                (item.href !== "/" && pathname.startsWith(item.href));
+              const isActive = isNavActive(pathname, item);
               return (
                 <Link
                   key={item.href}
