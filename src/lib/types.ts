@@ -15,14 +15,14 @@ export interface Note {
   updatedAt?: string | Date;
 }
 
-export interface AiProvider {
+export interface AiAgent {
   id: string;
-  name: string;
-  label: string;
-  baseUrl: string;
-  apiKey: string;
-  model: string;
+  name: string;       // 内部标识
+  label: string;      // 显示名称
+  description: string; // 备注（如：运行在 WSL 里）
+  command: string;    // CLI 命令模板，{prompt_file} 被替换
   isDefault: boolean;
+  enabled: boolean;
   createdAt?: string | Date;
   updatedAt?: string | Date;
 }

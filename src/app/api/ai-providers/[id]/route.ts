@@ -10,30 +10,26 @@ export async function PUT(
     const { id } = await params;
     const body = await request.json();
 
-    const existing = await prisma.aiProvider.findUnique({ where: { id } });
+    const existing = await prisma.aiAgent.findUnique({ where: { id } });
     if (!existing) return NextResponse.json({ error: "不存在" }, { status: 404 });
 
-    // If set as default, unset others
     if (body.isDefault) {
-      await prisma.aiProvider.updateMany({ where: { id: { not: id } }, data: { isDefault: false } });
+      await prisma.aiAgent.updateMany({ where: { id: { not: id } }, data: { isDefault: false } });
     }
 
-    const provider = await prisma.aiProvider.update({
+    const agent = await prisma.aiAgent.update({
       where: { id },
       data: {
         name: body.name?.trim() ?? existing.name,
         label: body.label?.trim() ?? existing.label,
-        baseUrl: body.baseUrl?.trim() ?? existing.baseUrl,
-        apiKey: body.apiKey?.trim() ?? existing.apiKey,
-        model: body.model?.trim() ?? existing.model,
+        description: body.description?.trim() ?? existing.description,
+        command: body.command?.trim() ?? existing.command,
         isDefault: body.isDefault ?? existing.isDefault,
+        enabled: body.enabled ?? existing.enabled,
       },
     });
 
-    return NextResponse.json({
-      ...provider,
-      apiKey: provider.apiKey.slice(0, 8) + "****" + provider.apiKey.slice(-4),
-    });
+    return NextResponse.json(agent);
   } catch (error) {
     console.error("PUT /api/ai-providers/[id] error:", error);
     return NextResponse.json({ error: "更新失败" }, { status: 500 });
@@ -47,10 +43,7 @@ export async function DELETE(
 ) {
   try {
     const { id } = await params;
-    const existing = await prisma.aiProvider.findUnique({ where: { id } });
-    if (!existing) return NextResponse.json({ error: "不存在" }, { status: 404 });
-
-    await prisma.aiProvider.delete({ where: { id } });
+    await prisma.aiAgent.delete({ where: { id } });
     return NextResponse.json({ success: true });
   } catch (error) {
     console.error("DELETE /api/ai-providers/[id] error:", error);

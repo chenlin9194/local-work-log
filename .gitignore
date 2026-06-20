@@ -28,6 +28,12 @@ yarn-error.log*
 *.tsbuildinfo
 next-env.d.ts
 
-# prisma
+# prisma - 本地数据库（含 AI Agent 配置），不入 git
 prisma/dev.db
 prisma/dev.db-journal
+*.db
+*.db-journal
+
+# local dev
+dev.db
+dev.db-journal
