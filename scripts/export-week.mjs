@@ -5,6 +5,17 @@ import { join } from 'path';
 
 const BASE_URL = process.env.WORK_HUB_URL || 'http://localhost:3000';
 
+/**
+ * Get local date string in YYYY-MM-DD format
+ */
+function getLocalDateString(date) {
+  const d = date || new Date();
+  const year = d.getFullYear();
+  const month = String(d.getMonth() + 1).padStart(2, '0');
+  const day = String(d.getDate()).padStart(2, '0');
+  return `${year}-${month}-${day}`;
+}
+
 function getWeekRange() {
   const now = new Date();
   const dayOfWeek = now.getDay();
@@ -14,8 +25,8 @@ function getWeekRange() {
   sunday.setDate(monday.getDate() + 6);
 
   return {
-    start: monday.toISOString().split('T')[0],
-    end: sunday.toISOString().split('T')[0],
+    start: getLocalDateString(monday),
+    end: getLocalDateString(sunday),
   };
 }
 
@@ -44,6 +55,8 @@ async function exportWeek() {
 
     writeFileSync(filepath, markdown, 'utf-8');
 
+    // Output filepath for shell scripts to read
+    console.log(`EXPORT_FILE=${filepath}`);
     console.log(`✅ 导出成功: ${filepath}`);
     console.log(`📊 文件大小: ${(markdown.length / 1024).toFixed(2)} KB`);
 

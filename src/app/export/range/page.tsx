@@ -49,6 +49,15 @@ export default async function ExportRangePage({ searchParams }: PageProps) {
   // Generate Markdown
   let md = `# 工作汇总 - ${start} 至 ${end}\n\n`;
 
+  // AI Prompt (at the top)
+  md += `## AI 周报提示词\n\n`;
+  md += `请根据以下本周工作数据，生成一份结构清晰的周报。要求：\n`;
+  md += `1. 本周工作总结\n`;
+  md += `2. 关键成果和里程碑\n`;
+  md += `3. 风险和问题\n`;
+  md += `4. 下周工作计划\n`;
+  md += `5. 需要协调的事项\n\n`;
+
   // Summary
   md += `## 概览\n\n`;
   md += `- 日志数量: ${logs.length} 条\n`;
@@ -105,16 +114,6 @@ export default async function ExportRangePage({ searchParams }: PageProps) {
     });
     md += "\n";
   }
-
-  // AI Prompt
-  md += `---\n\n`;
-  md += `## AI 提示词\n\n`;
-  md += `请根据以上工作内容，生成一份周报。要求：\n`;
-  md += `1. 本周工作总结\n`;
-  md += `2. 关键成果和里程碑\n`;
-  md += `3. 风险和问题\n`;
-  md += `4. 下周工作计划\n`;
-  md += `5. 需要协调的事项\n`;
 
   return (
     <div style={{ maxWidth: 900, margin: "0 auto" }}>

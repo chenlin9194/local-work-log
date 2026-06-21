@@ -16,14 +16,18 @@ REPORT_DIR="$PROJECT_DIR/.local-ai/reports"
 mkdir -p "$EXPORT_DIR" "$REPORT_DIR"
 
 TODAY=$(date +%Y-%m-%d)
-EXPORT_FILE="$EXPORT_DIR/week-$TODAY.md"
 REPORT_FILE="$REPORT_DIR/weekly-$TODAY.md"
 
 echo "📥 Exporting this week's data..."
-node "$SCRIPT_DIR/export-week.mjs"
+# Capture output and extract EXPORT_FILE path
+EXPORT_OUTPUT=$(node "$SCRIPT_DIR/export-week.mjs" 2>&1)
+echo "$EXPORT_OUTPUT"
 
-if [ ! -f "$EXPORT_FILE" ]; then
-  echo "❌ Export file not found: $EXPORT_FILE"
+# Extract filepath from output
+EXPORT_FILE=$(echo "$EXPORT_OUTPUT" | grep "^EXPORT_FILE=" | cut -d'=' -f2)
+
+if [ -z "$EXPORT_FILE" ] || [ ! -f "$EXPORT_FILE" ]; then
+  echo "❌ Export file not found"
   exit 1
 fi
 

@@ -5,6 +5,17 @@ import { join } from 'path';
 
 const BASE_URL = process.env.WORK_HUB_URL || 'http://localhost:3000';
 
+/**
+ * Get local date string in YYYY-MM-DD format
+ */
+function getLocalDateString(date) {
+  const d = date || new Date();
+  const year = d.getFullYear();
+  const month = String(d.getMonth() + 1).padStart(2, '0');
+  const day = String(d.getDate()).padStart(2, '0');
+  return `${year}-${month}-${day}`;
+}
+
 async function exportToday() {
   try {
     console.log('📥 正在从 Work Hub 导出今日数据...');
@@ -23,8 +34,8 @@ async function exportToday() {
       mkdirSync(exportsDir, { recursive: true });
     }
 
-    // Generate filename with today's date
-    const today = new Date().toISOString().split('T')[0];
+    // Generate filename with today's date (local timezone)
+    const today = getLocalDateString();
     const filename = `today-${today}.md`;
     const filepath = join(exportsDir, filename);
 
