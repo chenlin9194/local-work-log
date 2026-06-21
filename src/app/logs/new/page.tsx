@@ -68,7 +68,10 @@ function NewLogForm() {
 
   return (
     <div style={{ maxWidth: 800, margin: "0 auto" }}>
-      <h1 style={{ fontSize: 22, fontWeight: 700, color: "var(--text-primary)", marginBottom: 20 }}>新增工作日志</h1>
+      <h1 style={{ fontSize: 22, fontWeight: 700, color: "var(--text-primary)", marginBottom: 8 }}>记录今日进展</h1>
+      <p style={{ fontSize: 13, color: "var(--text-secondary)", marginBottom: 20, lineHeight: 1.6 }}>
+        日志用于记录某一天发生的事实。它可以不关联事项，也可以关联一个需要持续跟踪的事项。
+      </p>
 
       <form onSubmit={handleSubmit}>
         <div className="card" style={{ padding: 24 }}>

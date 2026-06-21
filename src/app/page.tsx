@@ -71,8 +71,18 @@ export default async function Dashboard() {
           <p style={{ fontSize: 13, color: "var(--text-tertiary)" }}>{formatTodayStr()}</p>
         </div>
         <div style={{ display: "flex", gap: 8 }}>
-          <Link href="/items/new" className="btn btn-primary">+ 新增事项</Link>
-          <Link href="/logs/new" className="btn btn-secondary">+ 新增日志</Link>
+          <Link href="/logs/new" className="btn btn-primary">+ 记录今日进展</Link>
+          <Link href="/items/new" className="btn btn-secondary">+ 新建跟踪事项</Link>
+        </div>
+      </div>
+
+      {/* How to use */}
+      <div className="card" style={{ padding: 20, background: "var(--bg-secondary)" }}>
+        <h3 style={{ fontSize: 15, fontWeight: 600, color: "var(--text-primary)", marginBottom: 12 }}>💡 如何使用 Work Hub？</h3>
+        <div style={{ display: "flex", flexDirection: "column", gap: 8, fontSize: 13, color: "var(--text-secondary)", lineHeight: 1.6 }}>
+          <p><strong>日志</strong>：记录今天发生的事实，例如会议结论、飞书摘录、问题进展。</p>
+          <p><strong>事项</strong>：跟踪需要闭环的工作，例如风险、问题、待办、跨团队依赖。</p>
+          <p><strong>推荐流程</strong>：先记录日志；如果需要持续跟进，再关联或创建事项。</p>
         </div>
       </div>
 
@@ -140,9 +150,15 @@ export default async function Dashboard() {
           </Link>
         </div>
         {recentLogs.length === 0 ? (
-          <div className="card empty-state">
-            <div className="empty-icon">📝</div>
-            暂无日志，点击「新增日志」开始
+          <div className="card" style={{ padding: 32, textAlign: "center" }}>
+            <div style={{ fontSize: 32, marginBottom: 12 }}>📝</div>
+            <p style={{ color: "var(--text-secondary)", fontSize: 14, marginBottom: 16 }}>
+              今天还没有工作日志。你可以记录一条会议结论、飞书消息、问题进展或临时想法。
+            </p>
+            <div style={{ display: "flex", gap: 8, justifyContent: "center" }}>
+              <Link href="/logs/new" className="btn btn-primary">记录今日进展</Link>
+              <Link href="/items/new" className="btn btn-secondary">新建跟踪事项</Link>
+            </div>
           </div>
         ) : (
           <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(300px, 1fr))", gap: 12 }}>

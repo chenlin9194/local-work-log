@@ -53,7 +53,10 @@ export default function NewItemPage() {
 
   return (
     <div style={{ maxWidth: 800, margin: "0 auto" }}>
-      <h1 style={{ fontSize: 22, fontWeight: 700, color: "var(--text-primary)", marginBottom: 20 }}>新增工作事项</h1>
+      <h1 style={{ fontSize: 22, fontWeight: 700, color: "var(--text-primary)", marginBottom: 8 }}>新建跟踪事项</h1>
+      <p style={{ fontSize: 13, color: "var(--text-secondary)", marginBottom: 20, lineHeight: 1.6 }}>
+        事项用于跟踪需要闭环的工作，例如风险、问题、待办、阻塞或跨团队依赖。
+      </p>
 
       <form onSubmit={handleSubmit}>
         <div className="card" style={{ padding: 24 }}>

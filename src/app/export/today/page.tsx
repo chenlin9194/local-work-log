@@ -185,12 +185,18 @@ export default async function ExportTodayPage() {
 
   return (
     <div style={{ maxWidth: 900, margin: "0 auto" }}>
-      <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 20, flexWrap: "wrap", gap: 12 }}>
+      <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 12, flexWrap: "wrap", gap: 12 }}>
         <div>
           <h1 style={{ fontSize: 22, fontWeight: 700, color: "var(--text-primary)" }}>今日工作导出</h1>
           <p style={{ fontSize: 13, color: "var(--text-tertiary)", marginTop: 2 }}>{formatTodayStr()}</p>
         </div>
         <CopyButton text={md} />
+      </div>
+
+      <div className="card" style={{ padding: 16, marginBottom: 16, background: "var(--bg-secondary)" }}>
+        <p style={{ fontSize: 13, color: "var(--text-secondary)", lineHeight: 1.6 }}>
+          此页面用于导出今日事实记录，供外部 Claude Code / Codex 读取并生成日报。Work Hub 本身不调用 AI。
+        </p>
       </div>
 
       <div className="card" style={{ padding: 24 }}>

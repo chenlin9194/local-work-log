@@ -16,13 +16,12 @@ interface NavItem {
 
 const navItems: NavItem[] = [
   { href: "/", label: "Dashboard", icon: "home", exact: true },
-  { href: "/items", label: "工作事项", icon: "list" },
-  { href: "/items/new", label: "新增事项", icon: "plus", exact: true },
-  { href: "/logs", label: "工作日志", icon: "file-text" },
-  { href: "/logs/new", label: "新增日志", icon: "plus", exact: true },
   { href: "/today", label: "今日视图", icon: "calendar", exact: true },
-  { href: "/stats", label: "统计", icon: "chart", exact: true },
+  { href: "/logs/new", label: "记录日志", icon: "edit", exact: true },
+  { href: "/items", label: "工作事项", icon: "list" },
+  { href: "/logs", label: "工作日志", icon: "file-text" },
   { href: "/export/today", label: "导出", icon: "download", exact: true },
+  { href: "/stats", label: "统计", icon: "chart", exact: true },
 ];
 
 /**
