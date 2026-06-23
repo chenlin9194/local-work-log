@@ -9,12 +9,20 @@ echo.
 echo Press Ctrl+C to stop
 echo ========================================
 
-set "WIN_DIR=%~dp0"
+cd /d "%~dp0"
 
-for /f "usebackq delims=" %%i in (`wsl wslpath "%WIN_DIR%"`) do set "WSL_DIR=%%i"
+call npm.cmd run db:push
+if errorlevel 1 goto :error
 
-echo WSL path: %WSL_DIR%
+call npm.cmd run dev
+if errorlevel 1 goto :error
 
-wsl -d Ubuntu-22.04 bash -lc "cd '%WSL_DIR%' && ./start.sh"
+goto :end
+
+:error
+echo.
+echo Startup failed. Please check the error above.
+
+:end
 
 pause
