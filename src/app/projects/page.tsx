@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import Link from "next/link";
 import Icon from "@/components/Icon";
 import {
@@ -48,11 +48,7 @@ export default function ProjectsPage() {
   const [health, setHealth] = useState("");
   const [stage, setStage] = useState("");
 
-  useEffect(() => {
-    fetchProjects();
-  }, [status, health, stage]);
-
-  const fetchProjects = async () => {
+  const fetchProjects = useCallback(async () => {
     setLoading(true);
     try {
       const params = new URLSearchParams();
@@ -71,7 +67,13 @@ export default function ProjectsPage() {
     } finally {
       setLoading(false);
     }
-  };
+  }, [keyword, status, health, stage]);
+
+  // Select filters fire immediately; keyword uses 300ms debounce
+  useEffect(() => {
+    const timer = setTimeout(() => { fetchProjects(); }, keyword ? 300 : 0);
+    return () => clearTimeout(timer);
+  }, [fetchProjects]);
 
   const handleSearch = () => {
     fetchProjects();
