@@ -13,75 +13,7 @@ import {
   HEALTH_LABELS,
 } from "@/lib/constants";
 import { getLocalDateString } from "@/lib/utils";
-
-interface ProjectItem {
-  id: string;
-  title: string;
-  description?: string | null;
-  project?: string | null;
-  module?: string | null;
-  type: string;
-  priority: string;
-  status: string;
-  owner?: string | null;
-  dueDate?: string | null;
-  nextAction?: string | null;
-  trackingReason?: string | null;
-  sourceSystem?: string | null;
-  sourceId?: string | null;
-  sourceUrl?: string | null;
-  health: string;
-  currentSummary?: string | null;
-  nextCheckpoint?: string | null;
-  reportLevel: string;
-  tags?: string | null;
-  createdAt: Date;
-  updatedAt: Date;
-  closedAt?: Date | null;
-}
-
-interface ProjectLog {
-  id: string;
-  workDate: string;
-  title: string;
-  content: string;
-  type: string;
-  source: string;
-  project?: string | null;
-  module?: string | null;
-  tags?: string | null;
-  itemId?: string | null;
-  reportable: boolean;
-  sourceUrl?: string | null;
-  createdAt: Date;
-  updatedAt: Date;
-}
-
-interface Project {
-  id: string;
-  name: string;
-  code?: string | null;
-  description?: string | null;
-  type: string;
-  status: string;
-  stage?: string | null;
-  health: string;
-  owner?: string | null;
-  pm?: string | null;
-  startDate?: string | null;
-  targetDate?: string | null;
-  releaseDate?: string | null;
-  currentSummary?: string | null;
-  nextMilestone?: string | null;
-  nextAction?: string | null;
-  sourceSystem?: string | null;
-  sourceId?: string | null;
-  sourceUrl?: string | null;
-  tags?: string | null;
-  items?: ProjectItem[];
-  logs?: ProjectLog[];
-  _count?: { items: number; logs: number };
-}
+import type { Project, WorkItem, WorkLog } from "@/lib/types";
 
 const HEALTH_TONE: Record<string, string> = {
   green: "success",

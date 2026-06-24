@@ -12,25 +12,7 @@ import {
   PROJECT_TYPE_LABELS,
   HEALTH_LABELS,
 } from "@/lib/constants";
-
-interface Project {
-  id: string;
-  name: string;
-  code?: string | null;
-  description?: string | null;
-  type: string;
-  status: string;
-  stage?: string | null;
-  health: string;
-  owner?: string | null;
-  pm?: string | null;
-  targetDate?: string | null;
-  releaseDate?: string | null;
-  currentSummary?: string | null;
-  nextMilestone?: string | null;
-  nextAction?: string | null;
-  _count?: { items: number; logs: number };
-}
+import type { Project } from "@/lib/types";
 
 const HEALTH_TONE: Record<string, string> = {
   green: "success",
