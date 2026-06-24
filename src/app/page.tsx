@@ -4,6 +4,7 @@ import WorkItemCard from "@/components/WorkItemCard";
 import WorkLogCard from "@/components/WorkLogCard";
 import { prisma } from "@/lib/prisma";
 import { formatTodayStr, getLocalDateString, getTodayRange } from "@/lib/utils";
+import { PROJECT_STATUS_LABELS } from "@/lib/constants";
 
 export const dynamic = "force-dynamic";
 
@@ -145,6 +146,7 @@ export default async function Dashboard({ searchParams }: PageProps) {
     overdueItems,
     recentLogs,
     recentItems,
+    activeProjects,
   ] = await Promise.all([
     prisma.workItem.count({ where: { status: "open" } }),
     prisma.workItem.count({ where: { status: "following" } }),
@@ -165,6 +167,18 @@ export default async function Dashboard({ searchParams }: PageProps) {
     }),
     prisma.workLog.findMany({ orderBy: { createdAt: "desc" }, take: 10 }),
     prisma.workItem.findMany({ orderBy: { updatedAt: "desc" }, take: 10 }),
+    prisma.project.findMany({
+      where: { status: { in: ["active", "planning"] } },
+      include: {
+        _count: { select: { items: true } },
+        items: {
+          where: { OR: [{ health: "red" }, { status: "blocked" }] },
+          select: { id: true },
+        },
+      },
+      orderBy: { updatedAt: "desc" },
+      take: 5,
+    }),
   ]);
 
   const focusView = focus ? await loadFocusView(focus, today, todayStart, todayEnd) : null;
@@ -374,6 +388,49 @@ export default async function Dashboard({ searchParams }: PageProps) {
           )}
         </div>
       </section>
+
+      {activeProjects.length > 0 && (
+        <section>
+          <div className="dashboard-section-title">
+            <div>
+              <span className="section-eyebrow">Project Portfolio</span>
+              <h2>项目态势</h2>
+            </div>
+            <Link href="/projects" className="section-link">
+              查看全部 <Icon name="chevron-right" size={14} />
+            </Link>
+          </div>
+          <div className="content-card-grid">
+            {activeProjects.map((proj) => (
+              <Link
+                key={proj.id}
+                href={`/projects/${proj.id}`}
+                className="card"
+                style={{ padding: 16, textDecoration: "none", color: "inherit" }}
+              >
+                <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 8 }}>
+                  <h3 style={{ fontSize: 15, fontWeight: 600, color: "var(--text-primary)" }}>
+                    {proj.name}
+                    {proj.code && <span style={{ fontSize: 12, color: "var(--text-tertiary)", marginLeft: 6 }}>{proj.code}</span>}
+                  </h3>
+                  <span style={{ fontSize: 11, padding: "2px 6px", borderRadius: 4, background: "var(--bg-secondary)", color: "var(--text-secondary)" }}>
+                    {PROJECT_STATUS_LABELS[proj.status] || proj.status}
+                  </span>
+                </div>
+                <div style={{ display: "flex", gap: 12, fontSize: 12, color: "var(--text-tertiary)" }}>
+                  <span><Icon name="clipboard-list" size={12} /> {proj._count.items} 事项</span>
+                  {proj.items.length > 0 && (
+                    <span style={{ color: "var(--danger, #f97316)" }}>
+                      <Icon name="alert-triangle" size={12} /> {proj.items.length} 风险
+                    </span>
+                  )}
+                  {proj.nextMilestone && <span><Icon name="flag" size={12} /> {proj.nextMilestone}</span>}
+                </div>
+              </Link>
+            ))}
+          </div>
+        </section>
+      )}
 
       <section>
         <div className="dashboard-section-title">

@@ -84,6 +84,7 @@ export async function POST(request: NextRequest) {
       title,
       description,
       project,
+      projectId,
       module: mod,
       type,
       priority,
@@ -106,11 +107,25 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: "标题不能为空" }, { status: 400 });
     }
 
+    // Resolve project name from projectId if provided
+    let projectName = toNullableString(project);
+    if (projectId) {
+      const proj = await prisma.project.findUnique({
+        where: { id: projectId },
+        select: { name: true },
+      });
+      if (!proj) {
+        return NextResponse.json({ error: "项目不存在" }, { status: 400 });
+      }
+      projectName = proj.name;
+    }
+
     const item = await prisma.workItem.create({
       data: {
         title,
         description: toNullableString(description),
-        project: toNullableString(project),
+        project: projectName,
+        projectId: projectId || null,
         module: toNullableString(mod),
         type: type || "action",
         priority: priority || "P2",

@@ -1,3 +1,41 @@
+export const PROJECT_TYPES = [
+  { value: "project", label: "项目" },
+  { value: "version", label: "版本" },
+  { value: "special", label: "专项" },
+  { value: "maintenance", label: "维护" },
+  { value: "other", label: "其他" },
+] as const;
+
+export const PROJECT_STATUSES = [
+  { value: "active", label: "进行中" },
+  { value: "planning", label: "规划中" },
+  { value: "paused", label: "已暂停" },
+  { value: "closed", label: "已关闭" },
+  { value: "archived", label: "已归档" },
+] as const;
+
+export const PROJECT_STAGES = [
+  { value: "planning", label: "规划" },
+  { value: "requirement", label: "需求" },
+  { value: "development", label: "开发" },
+  { value: "testing", label: "测试" },
+  { value: "release", label: "发布" },
+  { value: "maintenance", label: "维护" },
+  { value: "review", label: "复盘" },
+] as const;
+
+export const PROJECT_TYPE_LABELS: Record<string, string> = Object.fromEntries(
+  PROJECT_TYPES.map((t) => [t.value, t.label])
+);
+
+export const PROJECT_STATUS_LABELS: Record<string, string> = Object.fromEntries(
+  PROJECT_STATUSES.map((s) => [s.value, s.label])
+);
+
+export const PROJECT_STAGE_LABELS: Record<string, string> = Object.fromEntries(
+  PROJECT_STAGES.map((s) => [s.value, s.label])
+);
+
 export const WORK_ITEM_TYPES = [
   { value: "requirement", label: "需求" },
   { value: "milestone", label: "里程碑" },

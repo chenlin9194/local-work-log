@@ -1,8 +1,38 @@
+export interface Project {
+  id: string;
+  name: string;
+  code?: string | null;
+  description?: string | null;
+  type: string;
+  status: string;
+  stage?: string | null;
+  health: string;
+  owner?: string | null;
+  pm?: string | null;
+  startDate?: string | Date | null;
+  targetDate?: string | Date | null;
+  releaseDate?: string | Date | null;
+  currentSummary?: string | null;
+  nextMilestone?: string | null;
+  nextAction?: string | null;
+  sourceSystem?: string | null;
+  sourceId?: string | null;
+  sourceUrl?: string | null;
+  tags?: string | null;
+  createdAt: Date;
+  updatedAt: Date;
+  _count?: { items: number; logs: number };
+  items?: WorkItem[];
+  logs?: WorkLog[];
+}
+
 export interface WorkItem {
   id: string;
   title: string;
   description?: string | null;
   project?: string | null;
+  projectId?: string | null;
+  projectRef?: Project | null;
   module?: string | null;
   type: 'requirement' | 'milestone' | 'commitment' | 'action' | 'change' | 'risk' | 'issue' | 'decision' | 'blocker' | 'other';
   priority: 'P0' | 'P1' | 'P2' | 'P3';
@@ -33,6 +63,8 @@ export interface WorkLog {
   type: 'note' | 'meeting' | 'update' | 'risk' | 'decision' | 'todo' | 'feishu' | 'issue' | 'blocker' | 'other';
   source: 'manual' | 'meeting' | 'feishu' | 'phone' | 'mail' | 'other';
   project?: string | null;
+  projectId?: string | null;
+  projectRef?: Project | null;
   module?: string | null;
   tags?: string | null;
   reportable: boolean;

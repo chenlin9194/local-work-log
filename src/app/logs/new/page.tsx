@@ -13,13 +13,21 @@ interface ExistingItem {
   title: string;
 }
 
+interface ProjectOption {
+  id: string;
+  name: string;
+  code?: string | null;
+}
+
 function NewLogForm() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const initialItemId = searchParams.get("itemId") || "";
+  const initialProjectId = searchParams.get("projectId") || "";
 
   const [loading, setLoading] = useState(false);
   const [items, setItems] = useState<ExistingItem[]>([]);
+  const [projects, setProjects] = useState<ProjectOption[]>([]);
   const [form, setForm] = useState({
     workDate: getLocalDateString(),
     title: "",
@@ -27,6 +35,7 @@ function NewLogForm() {
     type: "note",
     source: "manual",
     project: "",
+    projectId: initialProjectId,
     module: "",
     tags: "",
     reportable: false,
@@ -43,7 +52,17 @@ function NewLogForm() {
 
   useEffect(() => {
     fetchItems();
+    fetchProjects();
   }, []);
+
+  useEffect(() => {
+    if (initialProjectId && projects.length > 0) {
+      const proj = projects.find((p) => p.id === initialProjectId);
+      if (proj) {
+        setForm((prev) => ({ ...prev, project: proj.name }));
+      }
+    }
+  }, [initialProjectId, projects]);
 
   useEffect(() => {
     if (initialItemId) {
@@ -62,6 +81,25 @@ function NewLogForm() {
       setItems(data.items || []);
     } catch (error) {
       console.error("Error fetching items:", error);
+    }
+  };
+
+  const fetchProjects = async () => {
+    try {
+      const res = await fetch("/api/projects?pageSize=100");
+      const data = await res.json();
+      setProjects(data.projects || []);
+    } catch (error) {
+      console.error("Error fetching projects:", error);
+    }
+  };
+
+  const handleProjectChange = (projectId: string) => {
+    const proj = projects.find((p) => p.id === projectId);
+    if (proj) {
+      setForm({ ...form, projectId, project: proj.name });
+    } else {
+      setForm({ ...form, projectId: "" });
     }
   };
 
@@ -132,6 +170,7 @@ function NewLogForm() {
           type: form.type,
           source: form.source,
           project: form.project,
+          projectId: form.projectId || undefined,
           module: form.module,
           tags: form.tags,
           reportable: form.reportable,
@@ -426,14 +465,34 @@ function NewLogForm() {
                 <label style={{ display: "block", fontSize: 13, fontWeight: 500, color: "var(--text-primary)", marginBottom: 6 }}>
                   项目
                 </label>
+                <select
+                  value={form.projectId}
+                  onChange={(e) => handleProjectChange(e.target.value)}
+                  style={{ width: "100%", padding: "10px 12px", borderRadius: 6, border: "1px solid var(--border-primary)", background: "var(--bg-secondary)", color: "var(--text-primary)", fontSize: 14 }}
+                >
+                  <option value="">选择已有项目（可选）</option>
+                  {projects.map((p) => (
+                    <option key={p.id} value={p.id}>
+                      {p.name}{p.code ? ` (${p.code})` : ""}
+                    </option>
+                  ))}
+                </select>
+              </div>
+              <div>
+                <label style={{ display: "block", fontSize: 13, fontWeight: 500, color: "var(--text-primary)", marginBottom: 6 }}>
+                  项目名称
+                </label>
                 <input
                   type="text"
                   value={form.project}
                   onChange={(e) => setForm({ ...form, project: e.target.value })}
-                  placeholder="所属项目"
+                  placeholder="手填项目名称"
                   style={{ width: "100%", padding: "10px 12px", borderRadius: 6, border: "1px solid var(--border-primary)", background: "var(--bg-secondary)", color: "var(--text-primary)", fontSize: 14 }}
                 />
               </div>
+            </div>
+
+            <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 16 }}>
               <div>
                 <label style={{ display: "block", fontSize: 13, fontWeight: 500, color: "var(--text-primary)", marginBottom: 6 }}>
                   标签

@@ -1,7 +1,7 @@
 "use client";
 
-import { useState } from "react";
-import { useRouter } from "next/navigation";
+import { Suspense, useEffect, useState } from "react";
+import { useRouter, useSearchParams } from "next/navigation";
 import {
   WORK_ITEM_TYPES,
   PRIORITIES,
@@ -12,13 +12,24 @@ import {
   SOURCE_SYSTEM_OPTIONS,
 } from "@/lib/constants";
 
-export default function NewItemPage() {
+interface ProjectOption {
+  id: string;
+  name: string;
+  code?: string | null;
+}
+
+function NewItemForm() {
   const router = useRouter();
+  const searchParams = useSearchParams();
+  const initialProjectId = searchParams.get("projectId") || "";
+
   const [loading, setLoading] = useState(false);
+  const [projects, setProjects] = useState<ProjectOption[]>([]);
   const [form, setForm] = useState({
     title: "",
     description: "",
     project: "",
+    projectId: initialProjectId,
     module: "",
     type: "action",
     priority: "P2",
@@ -36,6 +47,38 @@ export default function NewItemPage() {
     nextCheckpoint: "",
     reportLevel: "none",
   });
+
+  useEffect(() => {
+    fetchProjects();
+  }, []);
+
+  useEffect(() => {
+    if (initialProjectId && projects.length > 0) {
+      const proj = projects.find((p) => p.id === initialProjectId);
+      if (proj) {
+        setForm((prev) => ({ ...prev, project: proj.name }));
+      }
+    }
+  }, [initialProjectId, projects]);
+
+  const fetchProjects = async () => {
+    try {
+      const res = await fetch("/api/projects?pageSize=100");
+      const data = await res.json();
+      setProjects(data.projects || []);
+    } catch (error) {
+      console.error("Error fetching projects:", error);
+    }
+  };
+
+  const handleProjectChange = (projectId: string) => {
+    const proj = projects.find((p) => p.id === projectId);
+    if (proj) {
+      setForm({ ...form, projectId, project: proj.name });
+    } else {
+      setForm({ ...form, projectId: "" });
+    }
+  };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -113,29 +156,48 @@ export default function NewItemPage() {
                 <label style={{ display: "block", fontSize: 13, fontWeight: 500, color: "var(--text-primary)", marginBottom: 6 }}>
                   项目
                 </label>
+                <select
+                  value={form.projectId}
+                  onChange={(e) => handleProjectChange(e.target.value)}
+                  style={{ width: "100%", padding: "10px 12px", borderRadius: 6, border: "1px solid var(--border-primary)", background: "var(--bg-secondary)", color: "var(--text-primary)", fontSize: 14 }}
+                >
+                  <option value="">选择已有项目（可选）</option>
+                  {projects.map((p) => (
+                    <option key={p.id} value={p.id}>
+                      {p.name}{p.code ? ` (${p.code})` : ""}
+                    </option>
+                  ))}
+                </select>
+              </div>
+              <div>
+                <label style={{ display: "block", fontSize: 13, fontWeight: 500, color: "var(--text-primary)", marginBottom: 6 }}>
+                  项目名称
+                </label>
                 <input
                   type="text"
                   value={form.project}
                   onChange={(e) => setForm({ ...form, project: e.target.value })}
-                  placeholder="所属项目"
+                  placeholder="手填项目名称"
                   style={{ width: "100%", padding: "10px 12px", borderRadius: 6, border: "1px solid var(--border-primary)", background: "var(--bg-secondary)", color: "var(--text-primary)", fontSize: 14 }}
                 />
               </div>
-              <div>
-                <label style={{ display: "block", fontSize: 13, fontWeight: 500, color: "var(--text-primary)", marginBottom: 6 }}>
-                  模块
-                </label>
-                <select
-                  value={form.module}
-                  onChange={(e) => setForm({ ...form, module: e.target.value })}
-                  style={{ width: "100%", padding: "10px 12px", borderRadius: 6, border: "1px solid var(--border-primary)", background: "var(--bg-secondary)", color: "var(--text-primary)", fontSize: 14 }}
-                >
-                  <option value="">选择模块</option>
-                  {MODULES.map((m) => (
-                    <option key={m} value={m}>{m}</option>
-                  ))}
-                </select>
-              </div>
+            </div>
+
+            {/* Module */}
+            <div>
+              <label style={{ display: "block", fontSize: 13, fontWeight: 500, color: "var(--text-primary)", marginBottom: 6 }}>
+                模块
+              </label>
+              <select
+                value={form.module}
+                onChange={(e) => setForm({ ...form, module: e.target.value })}
+                style={{ width: "100%", padding: "10px 12px", borderRadius: 6, border: "1px solid var(--border-primary)", background: "var(--bg-secondary)", color: "var(--text-primary)", fontSize: 14 }}
+              >
+                <option value="">选择模块</option>
+                {MODULES.map((m) => (
+                  <option key={m} value={m}>{m}</option>
+                ))}
+              </select>
             </div>
 
             {/* Type, Priority, Status */}
@@ -368,5 +430,13 @@ export default function NewItemPage() {
         </div>
       </form>
     </div>
+  );
+}
+
+export default function NewItemPage() {
+  return (
+    <Suspense fallback={<div style={{ textAlign: "center", padding: 40, color: "var(--text-tertiary)" }}>加载中...</div>}>
+      <NewItemForm />
+    </Suspense>
   );
 }

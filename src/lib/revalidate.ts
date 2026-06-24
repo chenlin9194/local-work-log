@@ -1,11 +1,12 @@
 import { revalidatePath } from "next/cache";
 
-export function revalidateWorkHubPaths(options?: { itemId?: string; logId?: string }) {
+export function revalidateWorkHubPaths(options?: { itemId?: string; logId?: string; projectId?: string }) {
   revalidatePath("/");
   revalidatePath("/today");
   revalidatePath("/items");
   revalidatePath("/logs");
   revalidatePath("/stats");
+  revalidatePath("/projects");
   revalidatePath("/export/today");
   revalidatePath("/export/range");
 
@@ -15,5 +16,9 @@ export function revalidateWorkHubPaths(options?: { itemId?: string; logId?: stri
 
   if (options?.logId) {
     revalidatePath(`/logs/${options.logId}`);
+  }
+
+  if (options?.projectId) {
+    revalidatePath(`/projects/${options.projectId}`);
   }
 }

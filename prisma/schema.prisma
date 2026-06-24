@@ -34,6 +34,9 @@ model WorkItem {
 
   tags        String?
 
+  projectId   String?
+  projectRef  Project? @relation(fields: [projectId], references: [id], onDelete: SetNull)
+
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
   closedAt    DateTime?
@@ -58,11 +61,49 @@ model WorkLog {
   reportable Boolean @default(false)
   sourceUrl  String?
 
+  projectId  String?
+  projectRef Project? @relation(fields: [projectId], references: [id], onDelete: SetNull)
+
   itemId    String?
   item      WorkItem? @relation(fields: [itemId], references: [id], onDelete: SetNull)
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
+}
+
+model Project {
+  id              String   @id @default(cuid())
+  name            String
+  code            String?
+  description     String?
+
+  type            String   @default("project")
+  status          String   @default("active")
+  stage           String?
+
+  health          String   @default("unknown")
+  owner           String?
+  pm              String?
+
+  startDate       DateTime?
+  targetDate      DateTime?
+  releaseDate     DateTime?
+
+  currentSummary  String?
+  nextMilestone   String?
+  nextAction      String?
+
+  sourceSystem    String?
+  sourceId        String?
+  sourceUrl       String?
+
+  tags            String?
+
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+
+  items           WorkItem[]
+  logs            WorkLog[]
 }
 
 model ToolLink {
