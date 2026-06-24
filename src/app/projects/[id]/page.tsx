@@ -12,6 +12,7 @@ import {
   PROJECT_TYPE_LABELS,
   HEALTH_LABELS,
 } from "@/lib/constants";
+import { getLocalDateString } from "@/lib/utils";
 
 interface ProjectItem {
   id: string;
@@ -138,7 +139,7 @@ export default function ProjectDetailPage() {
   const p0p1Count = items.filter((i) => (i.priority === "P0" || i.priority === "P1") && i.status !== "closed").length;
   const blockedCount = items.filter((i) => i.status === "blocked").length;
   const redYellowCount = items.filter((i) => i.health === "red" || i.health === "yellow").length;
-  const today = new Date().toISOString().split("T")[0];
+  const today = getLocalDateString();
   const overdueCount = items.filter((i) => i.dueDate && i.dueDate < today && i.status !== "closed").length;
 
   return (
