@@ -3,15 +3,13 @@ import Link from "next/link";
 import Icon from "@/components/Icon";
 import WorkItemCard from "@/components/WorkItemCard";
 import WorkLogCard from "@/components/WorkLogCard";
-import { formatTodayStr, getTodayStr } from "@/lib/utils";
+import { formatTodayStr, getLocalDateString, getTodayRange } from "@/lib/utils";
 
 export const dynamic = "force-dynamic";
 
 export default async function TodayPage() {
-  const today = getTodayStr();
-  const todayStart = new Date(today);
-  const todayEnd = new Date(todayStart);
-  todayEnd.setDate(todayEnd.getDate() + 1);
+  const today = getLocalDateString();
+  const { start: todayStart, end: todayEnd } = getTodayRange();
 
   const [
     todayLogs,

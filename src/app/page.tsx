@@ -3,7 +3,7 @@ import Icon from "@/components/Icon";
 import WorkItemCard from "@/components/WorkItemCard";
 import WorkLogCard from "@/components/WorkLogCard";
 import { prisma } from "@/lib/prisma";
-import { formatTodayStr, getTodayRange, getTodayStr } from "@/lib/utils";
+import { formatTodayStr, getLocalDateString, getTodayRange } from "@/lib/utils";
 
 export const dynamic = "force-dynamic";
 
@@ -130,7 +130,7 @@ async function loadFocusView(focus: FocusKey, today: string, todayStart: Date, t
 export default async function Dashboard({ searchParams }: PageProps) {
   const { focus: rawFocus } = await searchParams;
   const focus = normalizeFocusKey(rawFocus);
-  const today = getTodayStr();
+  const today = getLocalDateString();
   const { start: todayStart, end: todayEnd } = getTodayRange();
 
   const [

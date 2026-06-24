@@ -42,7 +42,7 @@ export async function PUT(
     const currentLog = await prisma.workLog.findUnique({ where: { id } });
 
     if (!currentLog) {
-      return NextResponse.json({ error: "宸ヤ綔鏃ュ織涓嶅瓨鍦?" }, { status: 404 });
+      return NextResponse.json({ error: "工作日志不存在" }, { status: 404 });
     }
 
     // Build update data - only include fields that are provided
@@ -87,9 +87,14 @@ export async function DELETE(
   try {
     const { id } = await params;
     const currentLog = await prisma.workLog.findUnique({ where: { id } });
+
+    if (!currentLog) {
+      return NextResponse.json({ error: "工作日志不存在" }, { status: 404 });
+    }
+
     await prisma.workLog.delete({ where: { id } });
 
-    revalidateWorkHubPaths({ logId: id, itemId: currentLog?.itemId ?? undefined });
+    revalidateWorkHubPaths({ logId: id, itemId: currentLog.itemId ?? undefined });
 
     return NextResponse.json({ success: true });
   } catch (error) {

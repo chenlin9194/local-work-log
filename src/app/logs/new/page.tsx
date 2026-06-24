@@ -2,7 +2,7 @@
 
 import { Suspense, useEffect, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
-import { MODULES, PRIORITIES, SOURCES, STATUSES, WORK_LOG_TYPES } from "@/lib/constants";
+import { MODULES, PRIORITIES, SOURCES, STATUSES, WORK_ITEM_TYPES, WORK_LOG_TYPES } from "@/lib/constants";
 import { getLocalDateString } from "@/lib/utils";
 import Icon from "@/components/Icon";
 
@@ -33,6 +33,7 @@ function NewLogForm() {
     sourceUrl: "",
     relationMode: initialItemId ? ("existing" as RelationMode) : ("none" as RelationMode),
     itemId: initialItemId,
+    newType: "action",
     newPriority: "P2",
     newStatus: "open",
     newOwner: "",
@@ -98,7 +99,7 @@ function NewLogForm() {
             title: form.title.trim(),
             project: form.project,
             module: form.module,
-            type: form.type,
+            type: form.newType,
             tags: form.tags,
             priority: form.newPriority,
             status: form.newStatus,
@@ -244,8 +245,23 @@ function NewLogForm() {
                   <div>
                     <h2 style={{ fontSize: 15, fontWeight: 600, color: "var(--text-primary)", marginBottom: 4 }}>新事项信息</h2>
                     <p style={{ fontSize: 13, color: "var(--text-secondary)", lineHeight: 1.6 }}>
-                      新事项将直接继承本条日志的标题、项目、模块、类型和标签，用于跟踪需要闭环的风险、问题、待办或跨团队依赖。
+                      新事项将继承本条日志的标题、项目、模块和标签，用于跟踪需要闭环的风险、问题、待办或跨团队依赖。
                     </p>
+                  </div>
+
+                  <div>
+                    <label style={{ display: "block", fontSize: 13, fontWeight: 500, color: "var(--text-primary)", marginBottom: 6 }}>
+                      事项类型
+                    </label>
+                    <select
+                      value={form.newType}
+                      onChange={(e) => setForm({ ...form, newType: e.target.value })}
+                      style={{ width: "100%", padding: "10px 12px", borderRadius: 6, border: "1px solid var(--border-primary)", background: "var(--bg-secondary)", color: "var(--text-primary)", fontSize: 14 }}
+                    >
+                      {WORK_ITEM_TYPES.map((t) => (
+                        <option key={t.value} value={t.value}>{t.label}</option>
+                      ))}
+                    </select>
                   </div>
 
                   <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 16 }}>

@@ -25,12 +25,13 @@ export async function GET(request: NextRequest) {
     const pageSize = parseInt(searchParams.get("pageSize") || "20");
 
     const where: Record<string, unknown> = {};
+    // AND clauses accumulated across multiple optional filters
+    const andClauses: Record<string, unknown>[] = [];
 
     if (project) where.project = project;
     if (moduleParam) where.module = moduleParam;
     if (type) where.type = type;
     if (priority) where.priority = priority;
-    if (status) where.status = status;
     if (owner) where.owner = owner;
     if (health) where.health = health;
     if (reportLevel) where.reportLevel = reportLevel;
@@ -45,9 +46,18 @@ export async function GET(request: NextRequest) {
       ];
     }
     if (overdue === "true") {
+      // Overdue: dueDate is in the past and item is not closed.
+      // We use AND clauses so this can coexist with the explicit `status` filter below.
       const today = getLocalDateString();
       where.dueDate = { lt: today };
-      where.AND = [{ status: { not: "closed" } }];
+      andClauses.push({ status: { not: "closed" } });
+    }
+    // Apply explicit status filter after overdue check so both conditions are respected
+    if (status) {
+      andClauses.push({ status });
+    }
+    if (andClauses.length > 0) {
+      where.AND = andClauses;
     }
 
     const [items, total] = await Promise.all([

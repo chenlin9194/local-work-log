@@ -10,12 +10,7 @@ export function getLocalDateString(date?: Date): string {
   return `${year}-${month}-${day}`;
 }
 
-/**
- * @deprecated Use getLocalDateString() instead
- */
-export function getTodayStr() {
-  return getLocalDateString();
-}
+// getTodayStr() has been removed — use getLocalDateString() instead.
 
 export function getTodayRange() {
   const now = new Date();
