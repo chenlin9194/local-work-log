@@ -12,6 +12,14 @@ export function getLocalDateString(date?: Date): string {
 
 // getTodayStr() has been removed — use getLocalDateString() instead.
 
+/**
+ * Converts empty string / undefined / null to null; otherwise returns String(value).
+ * Shared helper used across API routes.
+ */
+export function toNullableString(value: unknown): string | null {
+  return value === "" || value === undefined || value === null ? null : String(value);
+}
+
 export function getTodayRange() {
   const now = new Date();
   const start = new Date(now.getFullYear(), now.getMonth(), now.getDate());

@@ -1,10 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { revalidateWorkHubPaths } from "@/lib/revalidate";
-
-function toNullableString(value: unknown): string | null {
-  return value === "" || value === undefined || value === null ? null : String(value);
-}
+import { toNullableString } from "@/lib/utils";
 
 function toBoolean(value: unknown) {
   return value === true || value === "true" || value === 1 || value === "1";

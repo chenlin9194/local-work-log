@@ -1,10 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { revalidatePath } from "next/cache";
-
-function toNullableString(value: unknown): string | null {
-  return value === "" || value === undefined || value === null ? null : String(value);
-}
+import { toNullableString } from "@/lib/utils";
 
 export async function GET(
   request: NextRequest,
