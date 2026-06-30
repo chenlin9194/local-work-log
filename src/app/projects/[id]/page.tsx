@@ -98,10 +98,10 @@ export default function ProjectDetailPage() {
             <Icon name="edit" size={15} />
             新建关联日志
           </Link>
-          <a href={`/api/projects/${project.id}/snapshot`} target="_blank" rel="noopener noreferrer" className="btn btn-ghost">
+          <Link href={`/projects/${project.id}/snapshot`} className="btn btn-ghost">
             <Icon name="external-link" size={15} />
             项目快照
-          </a>
+          </Link>
         </div>
       </section>
 

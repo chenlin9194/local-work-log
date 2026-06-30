@@ -72,6 +72,168 @@ export interface ProjectMember {
   updatedAt: string;
 }
 
+export type ProjectSnapshotHealthKey = "red" | "yellow" | "green" | "unknown";
+
+export interface ProjectSnapshotProject {
+  id: string;
+  name: string;
+  code?: string | null;
+  type: string;
+  status: string;
+  stage?: string | null;
+  health: string;
+  owner?: string | null;
+  pm?: string | null;
+  startDate?: string | null;
+  targetDate?: string | null;
+  releaseDate?: string | null;
+  currentSummary?: string | null;
+  nextMilestone?: string | null;
+  nextAction?: string | null;
+  sourceUrl?: string | null;
+  tags?: string | null;
+}
+
+export interface ProjectSnapshotSummary {
+  name: string;
+  code?: string | null;
+  type: string;
+  status: string;
+  stage?: string | null;
+  health: string;
+  owner?: string | null;
+  pm?: string | null;
+  startDate?: string | null;
+  targetDate?: string | null;
+  releaseDate?: string | null;
+  currentSummary?: string | null;
+  nextMilestone?: string | null;
+  nextAction?: string | null;
+}
+
+export interface ProjectSnapshotItem {
+  id?: string;
+  title: string;
+  description?: string | null;
+  type?: string;
+  priority?: string;
+  status: string;
+  health: string;
+  owner?: string | null;
+  dueDate?: string | null;
+  nextAction?: string | null;
+  trackingReason?: string | null;
+  sourceSystem?: string | null;
+  sourceId?: string | null;
+  sourceUrl?: string | null;
+  currentSummary?: string | null;
+  nextCheckpoint?: string | null;
+  reportLevel?: string;
+  tags?: string | null;
+  closedAt?: string | null;
+}
+
+export interface ProjectSnapshotLogItem {
+  id: string;
+  title: string;
+}
+
+export interface ProjectSnapshotLog {
+  id?: string;
+  workDate: string;
+  title: string;
+  content: string;
+  type: string;
+  source: string;
+  project?: string | null;
+  module?: string | null;
+  tags?: string | null;
+  item?: ProjectSnapshotLogItem | null;
+  sourceUrl?: string | null;
+  createdAt?: string;
+  updatedAt?: string;
+}
+
+export interface ProjectSnapshotMilestone {
+  id?: string;
+  title: string;
+  description?: string | null;
+  planType: string;
+  status: string;
+  targetDate?: string | null;
+  actualDate?: string | null;
+  owner?: string | null;
+  sourceUrl?: string | null;
+  sortOrder?: number;
+}
+
+export interface ProjectSnapshotLink {
+  id?: string;
+  title: string;
+  url: string;
+  category: string;
+  description?: string | null;
+  isPrimary?: boolean;
+  sortOrder?: number;
+}
+
+export interface ProjectSnapshotMember {
+  id?: string;
+  name: string;
+  role?: string | null;
+  team?: string | null;
+  responsibility?: string | null;
+  contact?: string | null;
+  isCore?: boolean;
+  sortOrder?: number;
+}
+
+export interface ProjectSnapshotSignals {
+  itemCount: number;
+  logCount: number;
+  recentLogCount: number;
+  p0p1Count: number;
+  blockedCount: number;
+  redYellowCount: number;
+  overdueCount: number;
+  topRiskCount: number;
+}
+
+export interface ProjectSnapshotMemberSummary {
+  memberCount: number;
+  coreMemberCount: number;
+}
+
+export interface ProjectSnapshotTimeline {
+  milestones?: ProjectSnapshotMilestone[];
+  delayedMilestones: ProjectSnapshotMilestone[];
+  nextOpenMilestone: ProjectSnapshotMilestone | null;
+}
+
+export interface ProjectSnapshotKeyLinks {
+  primaryLink: ProjectSnapshotLink | null;
+  items: ProjectSnapshotLink[];
+}
+
+export interface ProjectSnapshotData {
+  projectId: string;
+  projectName?: string;
+  project?: ProjectSnapshotProject | null;
+  summary?: ProjectSnapshotSummary | null;
+  signals?: ProjectSnapshotSignals | null;
+  memberSummary?: ProjectSnapshotMemberSummary | null;
+  timeline?: ProjectSnapshotTimeline | null;
+  keyLinks?: ProjectSnapshotKeyLinks | null;
+  members?: ProjectSnapshotMember[];
+  milestones?: ProjectSnapshotMilestone[];
+  links?: ProjectSnapshotLink[];
+  items?: ProjectSnapshotItem[];
+  byHealth?: Record<ProjectSnapshotHealthKey, ProjectSnapshotItem[]>;
+  topRisks?: ProjectSnapshotItem[];
+  recentLogs?: ProjectSnapshotLog[];
+  nextCheckpointItem?: ProjectSnapshotItem | null;
+}
+
 export interface WorkItem {
   id: string;
   title: string;
