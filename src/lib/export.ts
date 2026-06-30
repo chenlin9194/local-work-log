@@ -453,6 +453,45 @@ function renderLogLine(log: ProjectSnapshotLog) {
   return `- ${title}（${parts.join(" / ")}）\n${content}`;
 }
 
+function isOpenSnapshotItem(item: ProjectSnapshotItem) {
+  return item.status !== "closed";
+}
+
+function isOverdueSnapshotItem(item: ProjectSnapshotItem, today: string) {
+  return Boolean(item.dueDate && item.dueDate < today && isOpenSnapshotItem(item));
+}
+
+function getSnapshotItemKey(item: ProjectSnapshotItem) {
+  return item.id || item.title;
+}
+
+function countUniqueSnapshotItems(items: ProjectSnapshotItem[]) {
+  return new Set(items.map(getSnapshotItemKey)).size;
+}
+
+function buildProjectSignalSummary(snapshot: ProjectSnapshotData) {
+  const items = snapshot.items ?? [];
+  const healthBuckets = snapshot.byHealth ?? {
+    red: [],
+    yellow: [],
+    green: [],
+    unknown: [],
+  };
+  const today = new Date().toISOString().split("T")[0];
+  const blockedItems = items.filter((item) => item.status === "blocked");
+  const p0OpenItems = items.filter((item) => isOpenSnapshotItem(item) && item.priority === "P0");
+  const p1OpenItems = items.filter((item) => isOpenSnapshotItem(item) && item.priority === "P1");
+  const overdueItems = items.filter((item) => isOverdueSnapshotItem(item, today));
+  const topRiskItems = snapshot.topRisks ?? [];
+
+  return {
+    mustHandle: countUniqueSnapshotItems([...blockedItems, ...p0OpenItems, ...(healthBuckets.red ?? [])]),
+    riskAttention: countUniqueSnapshotItems([...p1OpenItems, ...topRiskItems, ...(healthBuckets.yellow ?? [])]),
+    timeRisk: countUniqueSnapshotItems(overdueItems) + (snapshot.timeline?.delayedMilestones?.length ?? 0),
+    normal: countUniqueSnapshotItems(healthBuckets.green ?? []),
+  };
+}
+
 export function generateProjectSnapshotMarkdown(snapshot: ProjectSnapshotData): string {
   const summary: ProjectSnapshotSummary | ProjectSnapshotData["project"] | null =
     snapshot.summary ?? snapshot.project ?? null;
@@ -508,6 +547,7 @@ export function generateProjectSnapshotMarkdown(snapshot: ProjectSnapshotData): 
     (summary?.targetDate || project?.targetDate) ? `目标 ${formatSnapshotDate(summary?.targetDate || project?.targetDate)}` : "",
     (summary?.releaseDate || project?.releaseDate) ? `发布 ${formatSnapshotDate(summary?.releaseDate || project?.releaseDate)}` : "",
   ].filter(Boolean) as string[];
+  const signalSummary = buildProjectSignalSummary(snapshot);
 
   let md = `# 项目快照 - ${escapeMarkdownInline(projectName)}\n\n`;
 
@@ -550,9 +590,11 @@ export function generateProjectSnapshotMarkdown(snapshot: ProjectSnapshotData): 
   md += `### 下一动作\n\n${renderMarkdownBlock(summary?.nextAction)}\n\n`;
 
   md += `## 二、当前状态信号\n\n`;
-  md += `- 关联事项: ${signals.itemCount}\n`;
-  md += `- 日志数: ${signals.logCount} | 最近日志: ${signals.recentLogCount}\n`;
-  md += `- P0/P1: ${signals.p0p1Count} | 阻塞: ${signals.blockedCount} | 逾期: ${signals.overdueCount} | Top risks: ${signals.topRiskCount}\n`;
+  md += `- 必须处理: ${signalSummary.mustHandle}\n`;
+  md += `- 风险关注: ${signalSummary.riskAttention}\n`;
+  md += `- 时间风险: ${signalSummary.timeRisk}\n`;
+  md += `- 正常状态: ${signalSummary.normal}\n`;
+  md += `- 明细口径: 关联事项 ${signals.itemCount} | 日志数 ${signals.logCount} | 最近日志 ${signals.recentLogCount} | P0/P1 ${signals.p0p1Count} | 阻塞 ${signals.blockedCount} | 逾期 ${signals.overdueCount} | Top risks ${signals.topRiskCount}\n`;
   md += `- 健康分布: ${healthLines.join(" / ")}\n\n`;
 
   md += `## 三、关键风险 / 阻塞 / 逾期 / 需要协调事项\n\n`;

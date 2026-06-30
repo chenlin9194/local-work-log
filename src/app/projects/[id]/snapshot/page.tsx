@@ -165,6 +165,53 @@ function formatListValue(value?: string | null) {
   return value ? value.trim() : "";
 }
 
+type SignalSummary = {
+  mustHandle: number;
+  riskAttention: number;
+  timeRisk: number;
+  normal: number;
+};
+
+function isOpenItem(item: ProjectSnapshotItem) {
+  return item.status !== "closed";
+}
+
+function isOverdueItem(item: ProjectSnapshotItem, today: string) {
+  return Boolean(item.dueDate && item.dueDate < today && isOpenItem(item));
+}
+
+function getItemKey(item: ProjectSnapshotItem) {
+  return item.id || item.title;
+}
+
+function countUniqueItems(items: ProjectSnapshotItem[]) {
+  return new Set(items.map(getItemKey)).size;
+}
+
+function buildSignalSummary(
+  snapshot: ProjectSnapshotData,
+  healthBuckets: Record<ProjectSnapshotHealthKey, ProjectSnapshotItem[]>,
+  delayedMilestoneCount: number
+): SignalSummary {
+  const items = snapshot.items ?? [];
+  const today = new Date().toISOString().split("T")[0];
+  const blockedItems = items.filter((item) => item.status === "blocked");
+  const p0OpenItems = items.filter((item) => isOpenItem(item) && item.priority === "P0");
+  const p1OpenItems = items.filter((item) => isOpenItem(item) && item.priority === "P1");
+  const overdueItems = items.filter((item) => isOverdueItem(item, today));
+  const redItems = healthBuckets.red ?? [];
+  const yellowItems = healthBuckets.yellow ?? [];
+  const greenItems = healthBuckets.green ?? [];
+  const topRiskItems = snapshot.topRisks ?? [];
+
+  return {
+    mustHandle: countUniqueItems([...blockedItems, ...p0OpenItems, ...redItems]),
+    riskAttention: countUniqueItems([...p1OpenItems, ...topRiskItems, ...yellowItems]),
+    timeRisk: countUniqueItems(overdueItems) + delayedMilestoneCount,
+    normal: countUniqueItems(greenItems),
+  };
+}
+
 export default function ProjectSnapshotPage() {
   const params = useParams();
   const projectId = typeof params.id === "string" ? params.id : Array.isArray(params.id) ? params.id[0] : "";
@@ -239,6 +286,7 @@ export default function ProjectSnapshotPage() {
   const highlightedMembers = coreMembers.length > 0 ? coreMembers : members.slice(0, 6);
   const delayedMilestones = timeline?.delayedMilestones ?? [];
   const nextOpenMilestone = timeline?.nextOpenMilestone ?? null;
+  const signalSummary = snapshot ? buildSignalSummary(snapshot, healthBuckets, delayedMilestones.length) : null;
   const projectStatus = PROJECT_STATUS_LABELS[summary?.status || ""] || summary?.status || "-";
   const projectStage = PROJECT_STAGE_LABELS[summary?.stage || ""] || summary?.stage || "-";
   const projectType = PROJECT_TYPE_LABELS[summary?.type || ""] || summary?.type || "-";
@@ -410,6 +458,16 @@ export default function ProjectSnapshotPage() {
 
       <section style={{ marginBottom: 24 }}>
         <SectionTitle eyebrow="SIGNALS" title="关键信号" />
+        {signalSummary && (
+          <div className="card" style={{ padding: 14, marginBottom: 12 }}>
+            <div style={{ display: "flex", flexWrap: "wrap", gap: 8 }}>
+              <Chip tone="danger">必须处理 {signalSummary.mustHandle}</Chip>
+              <Chip tone="warning">风险关注 {signalSummary.riskAttention}</Chip>
+              <Chip tone="blue">时间风险 {signalSummary.timeRisk}</Chip>
+              <Chip tone="success">正常状态 {signalSummary.normal}</Chip>
+            </div>
+          </div>
+        )}
         <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(140px, 1fr))", gap: 12 }}>
           <MetricCard value={signals?.itemCount ?? snapshot?.items?.length ?? 0} label="关联事项" />
           <MetricCard value={signals?.logCount ?? recentLogs.length} label="关联日志" />
