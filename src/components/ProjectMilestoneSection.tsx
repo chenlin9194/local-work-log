@@ -2,7 +2,12 @@
 
 import { useCallback, useEffect, useState } from "react";
 import Icon from "@/components/Icon";
-import { PROJECT_MILESTONE_STATUSES, PROJECT_MILESTONE_STATUS_LABELS } from "@/lib/constants";
+import {
+  PROJECT_MILESTONE_STATUSES,
+  PROJECT_MILESTONE_STATUS_LABELS,
+  PROJECT_PLAN_TYPES,
+  PROJECT_PLAN_TYPE_LABELS,
+} from "@/lib/constants";
 import { formatDate } from "@/lib/utils";
 import type { ProjectMilestone } from "@/lib/types";
 
@@ -10,6 +15,7 @@ type MilestoneFormState = {
   title: string;
   description: string;
   status: string;
+  planType: string;
   targetDate: string;
   actualDate: string;
   owner: string;
@@ -21,6 +27,7 @@ const EMPTY_MILESTONE_FORM: MilestoneFormState = {
   title: "",
   description: "",
   status: "planned",
+  planType: "milestone",
   targetDate: "",
   actualDate: "",
   owner: "",
@@ -67,6 +74,7 @@ export default function ProjectMilestoneSection({ projectId }: ProjectMilestoneS
       title: form.title.trim(),
       description: form.description,
       status: form.status.trim() || "planned",
+      planType: form.planType.trim() || "milestone",
       targetDate: form.targetDate || null,
       actualDate: form.actualDate || null,
       owner: form.owner,
@@ -133,6 +141,7 @@ export default function ProjectMilestoneSection({ projectId }: ProjectMilestoneS
       title: milestone.title,
       description: milestone.description || "",
       status: milestone.status,
+      planType: milestone.planType || "milestone",
       targetDate: toDateInputValue(milestone.targetDate),
       actualDate: toDateInputValue(milestone.actualDate),
       owner: milestone.owner || "",
@@ -302,6 +311,22 @@ export default function ProjectMilestoneSection({ projectId }: ProjectMilestoneS
                   ))}
                 </select>
               </div>
+              <div>
+                <label style={{ display: "block", fontSize: 13, fontWeight: 500, color: "var(--text-primary)", marginBottom: 6 }}>
+                  计划类型
+                </label>
+                <select
+                  value={milestoneCreateForm.planType}
+                  onChange={(e) => setMilestoneCreateForm((prev) => ({ ...prev, planType: e.target.value }))}
+                  style={{ width: "100%", padding: "10px 12px", borderRadius: 6, border: "1px solid var(--border-primary)", background: "var(--bg-secondary)", color: "var(--text-primary)", fontSize: 14 }}
+                >
+                  {PROJECT_PLAN_TYPES.map((planType) => (
+                    <option key={planType.value} value={planType.value}>
+                      {planType.label}
+                    </option>
+                  ))}
+                </select>
+              </div>
             </div>
 
             <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(180px, 1fr))", gap: 12 }}>
@@ -447,6 +472,22 @@ export default function ProjectMilestoneSection({ projectId }: ProjectMilestoneS
                           ))}
                         </select>
                       </div>
+                      <div>
+                        <label style={{ display: "block", fontSize: 13, fontWeight: 500, color: "var(--text-primary)", marginBottom: 6 }}>
+                          计划类型
+                        </label>
+                        <select
+                          value={milestoneEditForm.planType}
+                          onChange={(e) => setMilestoneEditForm((prev) => ({ ...prev, planType: e.target.value }))}
+                          style={{ width: "100%", padding: "10px 12px", borderRadius: 6, border: "1px solid var(--border-primary)", background: "var(--bg-secondary)", color: "var(--text-primary)", fontSize: 14 }}
+                        >
+                          {PROJECT_PLAN_TYPES.map((planType) => (
+                            <option key={planType.value} value={planType.value}>
+                              {planType.label}
+                            </option>
+                          ))}
+                        </select>
+                      </div>
                     </div>
 
                     <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(180px, 1fr))", gap: 12 }}>
@@ -552,6 +593,9 @@ export default function ProjectMilestoneSection({ projectId }: ProjectMilestoneS
                       <strong style={{ fontSize: 15, color: "var(--text-primary)" }}>{milestone.title}</strong>
                       <span style={{ fontSize: 12, padding: "2px 8px", borderRadius: 999, background: "var(--bg-secondary)", color: "var(--text-secondary)" }}>
                         {PROJECT_MILESTONE_STATUS_LABELS[milestone.status] || milestone.status}
+                      </span>
+                      <span style={{ fontSize: 12, padding: "2px 8px", borderRadius: 999, background: "var(--bg-secondary)", color: "var(--text-secondary)" }}>
+                        {PROJECT_PLAN_TYPE_LABELS[milestone.planType] || milestone.planType || PROJECT_PLAN_TYPE_LABELS.milestone}
                       </span>
                     </div>
 

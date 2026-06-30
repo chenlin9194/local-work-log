@@ -16,6 +16,7 @@ type SnapshotMilestone = Prisma.ProjectMilestoneGetPayload<{
     id: true;
     title: true;
     description: true;
+    planType: true;
     status: true;
     targetDate: true;
     actualDate: true;
@@ -158,6 +159,7 @@ export async function GET(
               id: true,
               title: true,
               description: true,
+              planType: true,
               status: true,
               targetDate: true,
               actualDate: true,

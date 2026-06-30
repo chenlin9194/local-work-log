@@ -46,6 +46,7 @@ export interface ProjectMilestone {
   projectId: string;
   title: string;
   description?: string | null;
+  planType: string;
   status: string;
   targetDate?: string | Date | null;
   actualDate?: string | Date | null;

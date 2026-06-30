@@ -61,6 +61,20 @@ export const PROJECT_MILESTONE_STATUS_LABELS: Record<string, string> = Object.fr
   PROJECT_MILESTONE_STATUSES.map((status) => [status.value, status.label])
 );
 
+export const PROJECT_PLAN_TYPES = [
+  { value: "milestone", label: "里程碑" },
+  { value: "release", label: "发布计划" },
+  { value: "test", label: "测试计划" },
+  { value: "development", label: "开发计划" },
+  { value: "requirement", label: "需求计划" },
+  { value: "management", label: "管理节点" },
+  { value: "other", label: "其他" },
+] as const;
+
+export const PROJECT_PLAN_TYPE_LABELS: Record<string, string> = Object.fromEntries(
+  PROJECT_PLAN_TYPES.map((type) => [type.value, type.label])
+);
+
 export const WORK_ITEM_TYPES = [
   { value: "requirement", label: "需求" },
   { value: "milestone", label: "里程碑" },

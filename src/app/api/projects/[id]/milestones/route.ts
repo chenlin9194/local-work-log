@@ -1,7 +1,10 @@
 import { NextRequest, NextResponse } from "next/server";
 import { revalidatePath } from "next/cache";
+import { PROJECT_PLAN_TYPES } from "@/lib/constants";
 import { prisma } from "@/lib/prisma";
 import { toNullableString } from "@/lib/utils";
+
+const PROJECT_PLAN_TYPE_VALUES: Set<string> = new Set(PROJECT_PLAN_TYPES.map((type) => type.value));
 
 function normalizeRequiredString(value: unknown) {
   return typeof value === "string" ? value.trim() : "";
@@ -13,6 +16,13 @@ function normalizeOptionalString(value: unknown) {
 
 function normalizeStatus(value: unknown) {
   return typeof value === "string" && value.trim() ? value.trim() : "planned";
+}
+
+function normalizePlanType(value: unknown) {
+  if (typeof value !== "string") return "milestone";
+
+  const planType = value.trim();
+  return PROJECT_PLAN_TYPE_VALUES.has(planType) ? planType : "milestone";
 }
 
 function parseOptionalDateInput(value: unknown, fieldName: string) {
@@ -108,6 +118,7 @@ export async function POST(
         projectId,
         title,
         description: normalizeOptionalString(body.description),
+        planType: normalizePlanType(body.planType),
         status: normalizeStatus(body.status),
         targetDate: targetDate.value,
         actualDate: actualDate.value,
