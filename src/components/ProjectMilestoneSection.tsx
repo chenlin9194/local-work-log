@@ -58,6 +58,7 @@ export default function ProjectMilestoneSection({ projectId }: ProjectMilestoneS
   const [milestoneEditError, setMilestoneEditError] = useState("");
   const [milestoneEditForm, setMilestoneEditForm] = useState<MilestoneFormState>(EMPTY_MILESTONE_FORM);
   const [deletingMilestoneId, setDeletingMilestoneId] = useState<string | null>(null);
+  const [selectedPlanType, setSelectedPlanType] = useState("all");
 
   const validateMilestoneForm = useCallback((form: MilestoneFormState) => {
     if (!form.title.trim()) {
@@ -257,6 +258,11 @@ export default function ProjectMilestoneSection({ projectId }: ProjectMilestoneS
     }
   };
 
+  const filteredMilestones =
+    selectedPlanType === "all"
+      ? milestones
+      : milestones.filter((milestone) => (milestone.planType || "milestone") === selectedPlanType);
+
   return (
     <section style={{ marginBottom: 24 }}>
       <div className="dashboard-section-title">
@@ -277,6 +283,26 @@ export default function ProjectMilestoneSection({ projectId }: ProjectMilestoneS
             新增项目里程碑
           </button>
         )}
+      </div>
+
+      <div style={{ display: "flex", flexWrap: "wrap", gap: 8, marginBottom: 12 }}>
+        <button
+          type="button"
+          onClick={() => setSelectedPlanType("all")}
+          className={`btn ${selectedPlanType === "all" ? "btn-primary" : "btn-secondary"}`}
+        >
+          全部
+        </button>
+        {PROJECT_PLAN_TYPES.map((planType) => (
+          <button
+            key={planType.value}
+            type="button"
+            onClick={() => setSelectedPlanType(planType.value)}
+            className={`btn ${selectedPlanType === planType.value ? "btn-primary" : "btn-secondary"}`}
+          >
+            {PROJECT_PLAN_TYPE_LABELS[planType.value] || planType.label}
+          </button>
+        ))}
       </div>
 
       {showMilestoneCreateForm && (
@@ -434,9 +460,13 @@ export default function ProjectMilestoneSection({ projectId }: ProjectMilestoneS
         <div className="card empty-state">
           <p>暂无项目里程碑</p>
         </div>
+      ) : filteredMilestones.length === 0 ? (
+        <div className="card empty-state">
+          <p>当前筛选条件下暂无项目里程碑</p>
+        </div>
       ) : (
         <div style={{ display: "grid", gap: 12 }}>
-          {milestones.map((milestone) => {
+          {filteredMilestones.map((milestone) => {
             const isEditingMilestone = editingMilestoneId === milestone.id;
             const isDeletingMilestone = deletingMilestoneId === milestone.id;
 
@@ -595,7 +625,7 @@ export default function ProjectMilestoneSection({ projectId }: ProjectMilestoneS
                         {PROJECT_MILESTONE_STATUS_LABELS[milestone.status] || milestone.status}
                       </span>
                       <span style={{ fontSize: 12, padding: "2px 8px", borderRadius: 999, background: "var(--bg-secondary)", color: "var(--text-secondary)" }}>
-                        {PROJECT_PLAN_TYPE_LABELS[milestone.planType] || milestone.planType || PROJECT_PLAN_TYPE_LABELS.milestone}
+                        {PROJECT_PLAN_TYPE_LABELS[milestone.planType || "milestone"] || PROJECT_PLAN_TYPE_LABELS.milestone}
                       </span>
                     </div>
 
