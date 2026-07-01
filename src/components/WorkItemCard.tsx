@@ -37,9 +37,10 @@ interface WorkItemCardProps {
     updatedAt: Date;
     closedAt?: Date | null;
   };
+  evidenceLabel?: string;
 }
 
-export default function WorkItemCard({ item }: WorkItemCardProps) {
+export default function WorkItemCard({ item, evidenceLabel }: WorkItemCardProps) {
   const health = item.health || "unknown";
   const reportLevel = item.reportLevel || "none";
   const overdue = isOverdue(item.dueDate, item.status);
@@ -53,6 +54,20 @@ export default function WorkItemCard({ item }: WorkItemCardProps) {
     >
       <div className="work-card-heading">
         <div className="work-card-badges">
+          {evidenceLabel && (
+            <span
+              style={{
+                fontSize: 11,
+                padding: "2px 7px",
+                borderRadius: 999,
+                background: "var(--accent-orange-light)",
+                color: "var(--accent-orange)",
+                border: "1px solid color-mix(in srgb, var(--accent-orange) 24%, transparent)",
+              }}
+            >
+              {evidenceLabel}
+            </span>
+          )}
           <span className={`badge badge-${item.priority.toLowerCase()}`}>
             {PRIORITY_LABELS[item.priority] || item.priority}
           </span>

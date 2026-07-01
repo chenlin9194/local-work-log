@@ -21,6 +21,7 @@ interface WorkLogCardProps {
     updatedAt: Date;
   };
   showLink?: boolean;
+  evidenceLabel?: string;
 }
 
 const typeIcons: Record<string, string> = {
@@ -36,7 +37,7 @@ const typeIcons: Record<string, string> = {
   other: "flag",
 };
 
-export default function WorkLogCard({ log, showLink = true }: WorkLogCardProps) {
+export default function WorkLogCard({ log, showLink = true, evidenceLabel }: WorkLogCardProps) {
   const reportable = Boolean(log.reportable);
   const typeClass = `log-type-${log.type}`;
   const content = (
@@ -45,6 +46,20 @@ export default function WorkLogCard({ log, showLink = true }: WorkLogCardProps) 
         <span className="log-type-icon"><Icon name={typeIcons[log.type] || "file-text"} size={16} /></span>
         <div className="log-card-heading">
           <div className="log-card-badges">
+            {evidenceLabel && (
+              <span
+                style={{
+                  fontSize: 11,
+                  padding: "2px 7px",
+                  borderRadius: 999,
+                  background: "var(--accent-blue-light)",
+                  color: "var(--accent-blue)",
+                  border: "1px solid color-mix(in srgb, var(--accent-blue) 24%, transparent)",
+                }}
+              >
+                {evidenceLabel}
+              </span>
+            )}
             <span className={`badge badge-${log.type}`}>{WORK_LOG_TYPE_LABELS[log.type] || log.type}</span>
             <span className="log-date">{log.workDate}</span>
             <span className="log-source">{SOURCE_LABELS[log.source] || log.source}</span>
