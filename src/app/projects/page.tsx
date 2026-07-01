@@ -21,6 +21,13 @@ const HEALTH_TONE: Record<string, string> = {
   unknown: "neutral",
 };
 
+const RISK_SIGNAL_STYLES: Record<string, { color: string; background: string }> = {
+  critical: { color: "var(--critical, #ef4444)", background: "rgba(239, 68, 68, 0.08)" },
+  danger: { color: "var(--danger, #f97316)", background: "rgba(249, 115, 22, 0.08)" },
+  warning: { color: "var(--warning, #eab308)", background: "rgba(234, 179, 8, 0.08)" },
+  neutral: { color: "var(--text-tertiary)", background: "var(--bg-secondary)" },
+};
+
 export default function ProjectsPage() {
   const [projects, setProjects] = useState<Project[]>([]);
   const [total, setTotal] = useState(0);
@@ -162,70 +169,129 @@ export default function ProjectsPage() {
           </div>
         ) : (
           <div className="content-card-grid">
-            {projects.map((project) => (
-              <Link
-                key={project.id}
-                href={`/projects/${project.id}`}
-                className="card project-card"
-                style={{ padding: 20, textDecoration: "none", color: "inherit" }}
-              >
-                <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", marginBottom: 12 }}>
-                  <div>
-                    <h3 style={{ fontSize: 16, fontWeight: 600, color: "var(--text-primary)", marginBottom: 4 }}>
-                      {project.name}
-                      {project.code && (
-                        <span style={{ fontSize: 12, color: "var(--text-tertiary)", marginLeft: 8 }}>
-                          {project.code}
+            {projects.map((project) => {
+              const signals = project.portfolioSignals;
+              const riskSignals = [
+                { key: "p0p1", label: "P0/P1", value: signals?.p0p1Count ?? 0, tone: "critical" },
+                { key: "blocked", label: "阻塞", value: signals?.blockedCount ?? 0, tone: "danger" },
+                { key: "redYellow", label: "红黄", value: signals?.redYellowCount ?? 0, tone: "warning" },
+                { key: "overdue", label: "逾期", value: signals?.overdueCount ?? 0, tone: "danger" },
+              ].filter((signal) => signal.value > 0);
+              const reportableLogCount = signals?.recentReportableLogCount ?? 0;
+              const nextNodeTitle = signals?.nextOpenMilestone?.title || project.nextMilestone;
+              const memberCount = signals?.memberCount ?? 0;
+              const coreMemberCount = signals?.coreMemberCount ?? 0;
+              const hasMemberSignal = memberCount > 0 || coreMemberCount > 0;
+              const hasPrimaryLink = Boolean(signals?.primaryLink);
+              const hasVisibleSignal =
+                riskSignals.length > 0 ||
+                reportableLogCount > 0 ||
+                Boolean(nextNodeTitle) ||
+                hasMemberSignal ||
+                hasPrimaryLink;
+
+              return (
+                <Link
+                  key={project.id}
+                  href={`/projects/${project.id}`}
+                  className="card project-card"
+                  style={{ padding: 20, textDecoration: "none", color: "inherit" }}
+                >
+                  <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", marginBottom: 12 }}>
+                    <div>
+                      <h3 style={{ fontSize: 16, fontWeight: 600, color: "var(--text-primary)", marginBottom: 4 }}>
+                        {project.name}
+                        {project.code && (
+                          <span style={{ fontSize: 12, color: "var(--text-tertiary)", marginLeft: 8 }}>
+                            {project.code}
+                          </span>
+                        )}
+                      </h3>
+                    </div>
+                    <span
+                      className={`badge badge-${HEALTH_TONE[project.health] || "neutral"}`}
+                      style={{ fontSize: 11, padding: "2px 8px", borderRadius: 4 }}
+                    >
+                      {HEALTH_LABELS[project.health] || project.health}
+                    </span>
+                  </div>
+
+                  <div style={{ display: "flex", flexWrap: "wrap", gap: 8, marginBottom: 12 }}>
+                    <span style={{ fontSize: 12, padding: "2px 8px", borderRadius: 4, background: "var(--bg-secondary)", color: "var(--text-secondary)" }}>
+                      {PROJECT_STATUS_LABELS[project.status] || project.status}
+                    </span>
+                    {project.stage && (
+                      <span style={{ fontSize: 12, padding: "2px 8px", borderRadius: 4, background: "var(--bg-secondary)", color: "var(--text-secondary)" }}>
+                        {PROJECT_STAGE_LABELS[project.stage] || project.stage}
+                      </span>
+                    )}
+                    <span style={{ fontSize: 12, padding: "2px 8px", borderRadius: 4, background: "var(--bg-secondary)", color: "var(--text-secondary)" }}>
+                      {PROJECT_TYPE_LABELS[project.type] || project.type}
+                    </span>
+                  </div>
+
+                  {project.currentSummary && (
+                    <p style={{ fontSize: 13, color: "var(--text-secondary)", marginBottom: 8, lineHeight: 1.5, overflow: "hidden", textOverflow: "ellipsis", display: "-webkit-box", WebkitLineClamp: 2, WebkitBoxOrient: "vertical" }}>
+                      {project.currentSummary}
+                    </p>
+                  )}
+
+                  {hasVisibleSignal && (
+                    <div style={{ display: "flex", flexWrap: "wrap", gap: 8, marginBottom: 10 }}>
+                      {riskSignals.map((signal) => {
+                        const style = RISK_SIGNAL_STYLES[signal.tone] || RISK_SIGNAL_STYLES.neutral;
+                        return (
+                          <span
+                            key={signal.key}
+                            style={{ fontSize: 12, padding: "2px 8px", borderRadius: 999, color: style.color, background: style.background, fontWeight: 600 }}
+                          >
+                            {signal.label} {signal.value}
+                          </span>
+                        );
+                      })}
+                      {reportableLogCount > 0 && (
+                        <span style={{ fontSize: 12, padding: "2px 8px", borderRadius: 999, background: "var(--bg-secondary)", color: "var(--text-secondary)" }}>
+                          可汇报日志 {reportableLogCount}
                         </span>
                       )}
-                    </h3>
-                  </div>
-                  <span
-                    className={`badge badge-${HEALTH_TONE[project.health] || "neutral"}`}
-                    style={{ fontSize: 11, padding: "2px 8px", borderRadius: 4 }}
-                  >
-                    {HEALTH_LABELS[project.health] || project.health}
-                  </span>
-                </div>
-
-                <div style={{ display: "flex", flexWrap: "wrap", gap: 8, marginBottom: 12 }}>
-                  <span style={{ fontSize: 12, padding: "2px 8px", borderRadius: 4, background: "var(--bg-secondary)", color: "var(--text-secondary)" }}>
-                    {PROJECT_STATUS_LABELS[project.status] || project.status}
-                  </span>
-                  {project.stage && (
-                    <span style={{ fontSize: 12, padding: "2px 8px", borderRadius: 4, background: "var(--bg-secondary)", color: "var(--text-secondary)" }}>
-                      {PROJECT_STAGE_LABELS[project.stage] || project.stage}
-                    </span>
+                      {hasPrimaryLink && (
+                        <span style={{ fontSize: 12, padding: "2px 8px", borderRadius: 999, background: "var(--bg-secondary)", color: "var(--text-secondary)" }}>
+                          <Icon name="external-link" size={11} /> 主链接
+                        </span>
+                      )}
+                      {hasMemberSignal && (
+                        <span style={{ fontSize: 12, padding: "2px 8px", borderRadius: 999, background: "var(--bg-secondary)", color: "var(--text-secondary)" }}>
+                          核心 {coreMemberCount} / 成员 {memberCount}
+                        </span>
+                      )}
+                    </div>
                   )}
-                  <span style={{ fontSize: 12, padding: "2px 8px", borderRadius: 4, background: "var(--bg-secondary)", color: "var(--text-secondary)" }}>
-                    {PROJECT_TYPE_LABELS[project.type] || project.type}
-                  </span>
-                </div>
 
-                {project.currentSummary && (
-                  <p style={{ fontSize: 13, color: "var(--text-secondary)", marginBottom: 8, lineHeight: 1.5, overflow: "hidden", textOverflow: "ellipsis", display: "-webkit-box", WebkitLineClamp: 2, WebkitBoxOrient: "vertical" }}>
-                    {project.currentSummary}
-                  </p>
-                )}
+                  {!hasVisibleSignal && (
+                    <div style={{ marginBottom: 10, fontSize: 12, color: "var(--text-tertiary)" }}>
+                      暂无明显风险信号
+                    </div>
+                  )}
 
-                <div style={{ display: "flex", flexWrap: "wrap", gap: 12, fontSize: 12, color: "var(--text-tertiary)" }}>
-                  {project.owner && <span>负责人: {project.owner}</span>}
-                  {project.pm && <span>PM: {project.pm}</span>}
-                  {project.targetDate && <span>目标: {new Date(project.targetDate).toLocaleDateString()}</span>}
-                </div>
-
-                {project.nextMilestone && (
-                  <div style={{ marginTop: 8, fontSize: 12, color: "var(--text-secondary)" }}>
-                    <Icon name="flag" size={12} /> {project.nextMilestone}
+                  <div style={{ display: "flex", flexWrap: "wrap", gap: 12, fontSize: 12, color: "var(--text-tertiary)" }}>
+                    {project.owner && <span>负责人: {project.owner}</span>}
+                    {project.pm && <span>PM: {project.pm}</span>}
+                    {project.targetDate && <span>目标: {new Date(project.targetDate).toLocaleDateString()}</span>}
                   </div>
-                )}
 
-                <div style={{ display: "flex", gap: 16, marginTop: 12, paddingTop: 12, borderTop: "1px solid var(--border-primary)", fontSize: 12, color: "var(--text-tertiary)" }}>
-                  <span><Icon name="clipboard-list" size={12} /> {project._count?.items || 0} 事项</span>
-                  <span><Icon name="file-text" size={12} /> {project._count?.logs || 0} 日志</span>
-                </div>
-              </Link>
-            ))}
+                  {nextNodeTitle && (
+                    <div style={{ marginTop: 8, fontSize: 12, color: "var(--text-secondary)", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>
+                      <Icon name="flag" size={12} /> 下个节点：{nextNodeTitle}
+                    </div>
+                  )}
+
+                  <div style={{ display: "flex", gap: 16, marginTop: 12, paddingTop: 12, borderTop: "1px solid var(--border-primary)", fontSize: 12, color: "var(--text-tertiary)" }}>
+                    <span><Icon name="clipboard-list" size={12} /> {project._count?.items || 0} 事项</span>
+                    <span><Icon name="file-text" size={12} /> {project._count?.logs || 0} 日志</span>
+                  </div>
+                </Link>
+              );
+            })}
           </div>
         )}
       </section>

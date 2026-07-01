@@ -1,7 +1,13 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { revalidatePath } from "next/cache";
-import { toNullableString } from "@/lib/utils";
+import { getLocalDateString, toNullableString } from "@/lib/utils";
+
+const COMPLETED_MILESTONE_STATUSES = ["done", "completed", "closed", "cancelled"];
+
+function countByProjectId(rows: { projectId: string | null; _count: { _all: number } }[]) {
+  return new Map(rows.flatMap((row) => (row.projectId ? [[row.projectId, row._count._all] as const] : [])));
+}
 
 export async function GET(request: NextRequest) {
   try {
@@ -49,8 +55,187 @@ export async function GET(request: NextRequest) {
       prisma.project.count({ where }),
     ]);
 
+    const projectIds = projects.map((project) => project.id);
+    const today = getLocalDateString();
+    const sevenDaysAgoDate = new Date();
+    sevenDaysAgoDate.setDate(sevenDaysAgoDate.getDate() - 6);
+    const sevenDaysAgo = getLocalDateString(sevenDaysAgoDate);
+
+    let projectsWithSignals = projects;
+
+    if (projectIds.length > 0) {
+      const [
+        p0p1Rows,
+        blockedRows,
+        redYellowRows,
+        overdueRows,
+        recentReportableLogs,
+        memberRows,
+        coreMemberRows,
+        nextOpenMilestones,
+        primaryLinks,
+      ] = await Promise.all([
+        prisma.workItem.groupBy({
+          by: ["projectId"],
+          where: {
+            projectId: { in: projectIds },
+            status: { not: "closed" },
+            priority: { in: ["P0", "P1"] },
+          },
+          _count: { _all: true },
+        }),
+        prisma.workItem.groupBy({
+          by: ["projectId"],
+          where: {
+            projectId: { in: projectIds },
+            status: "blocked",
+          },
+          _count: { _all: true },
+        }),
+        prisma.workItem.groupBy({
+          by: ["projectId"],
+          where: {
+            projectId: { in: projectIds },
+            status: { not: "closed" },
+            health: { in: ["red", "yellow"] },
+          },
+          _count: { _all: true },
+        }),
+        prisma.workItem.groupBy({
+          by: ["projectId"],
+          where: {
+            projectId: { in: projectIds },
+            status: { not: "closed" },
+            dueDate: { lt: today },
+          },
+          _count: { _all: true },
+        }),
+        prisma.workLog.findMany({
+          where: {
+            reportable: true,
+            workDate: { gte: sevenDaysAgo },
+            OR: [{ projectId: { in: projectIds } }, { item: { projectId: { in: projectIds } } }],
+          },
+          select: {
+            projectId: true,
+            item: { select: { projectId: true } },
+          },
+        }),
+        prisma.projectMember.groupBy({
+          by: ["projectId"],
+          where: {
+            projectId: { in: projectIds },
+          },
+          _count: { _all: true },
+        }),
+        prisma.projectMember.groupBy({
+          by: ["projectId"],
+          where: {
+            projectId: { in: projectIds },
+            isCore: true,
+          },
+          _count: { _all: true },
+        }),
+        prisma.projectMilestone.findMany({
+          where: {
+            projectId: { in: projectIds },
+            status: { notIn: COMPLETED_MILESTONE_STATUSES },
+            targetDate: { not: null },
+          },
+          select: {
+            id: true,
+            projectId: true,
+            title: true,
+            status: true,
+            planType: true,
+            targetDate: true,
+          },
+          orderBy: [{ targetDate: "asc" }, { sortOrder: "asc" }, { createdAt: "asc" }],
+        }),
+        prisma.projectLink.findMany({
+          where: {
+            projectId: { in: projectIds },
+            isPrimary: true,
+          },
+          select: {
+            id: true,
+            projectId: true,
+            title: true,
+            url: true,
+            category: true,
+            isPrimary: true,
+          },
+          orderBy: [{ sortOrder: "asc" }, { createdAt: "asc" }],
+        }),
+      ]);
+
+      const p0p1Counts = countByProjectId(p0p1Rows);
+      const blockedCounts = countByProjectId(blockedRows);
+      const redYellowCounts = countByProjectId(redYellowRows);
+      const overdueCounts = countByProjectId(overdueRows);
+      const recentReportableLogCounts = new Map<string, number>();
+      for (const log of recentReportableLogs) {
+        const projectId = log.projectId || log.item?.projectId;
+        if (projectId) {
+          recentReportableLogCounts.set(projectId, (recentReportableLogCounts.get(projectId) ?? 0) + 1);
+        }
+      }
+      const memberCounts = countByProjectId(memberRows);
+      const coreMemberCounts = countByProjectId(coreMemberRows);
+
+      const nextOpenMilestoneByProjectId = new Map<string, (typeof nextOpenMilestones)[number]>();
+      for (const milestone of nextOpenMilestones) {
+        if (!nextOpenMilestoneByProjectId.has(milestone.projectId)) {
+          nextOpenMilestoneByProjectId.set(milestone.projectId, milestone);
+        }
+      }
+
+      const primaryLinkByProjectId = new Map<string, (typeof primaryLinks)[number]>();
+      for (const link of primaryLinks) {
+        if (!primaryLinkByProjectId.has(link.projectId)) {
+          primaryLinkByProjectId.set(link.projectId, link);
+        }
+      }
+
+      projectsWithSignals = projects.map((project) => {
+        const nextOpenMilestone = nextOpenMilestoneByProjectId.get(project.id);
+        const primaryLink = primaryLinkByProjectId.get(project.id);
+
+        return {
+          ...project,
+          portfolioSignals: {
+            p0p1Count: p0p1Counts.get(project.id) ?? 0,
+            blockedCount: blockedCounts.get(project.id) ?? 0,
+            redYellowCount: redYellowCounts.get(project.id) ?? 0,
+            overdueCount: overdueCounts.get(project.id) ?? 0,
+            recentReportableLogCount: recentReportableLogCounts.get(project.id) ?? 0,
+            memberCount: memberCounts.get(project.id) ?? 0,
+            coreMemberCount: coreMemberCounts.get(project.id) ?? 0,
+            nextOpenMilestone: nextOpenMilestone
+              ? {
+                  id: nextOpenMilestone.id,
+                  title: nextOpenMilestone.title,
+                  status: nextOpenMilestone.status,
+                  planType: nextOpenMilestone.planType,
+                  targetDate: nextOpenMilestone.targetDate,
+                }
+              : null,
+            primaryLink: primaryLink
+              ? {
+                  id: primaryLink.id,
+                  title: primaryLink.title,
+                  url: primaryLink.url,
+                  category: primaryLink.category,
+                  isPrimary: primaryLink.isPrimary,
+                }
+              : null,
+          },
+        };
+      });
+    }
+
     return NextResponse.json({
-      projects,
+      projects: projectsWithSignals,
       total,
       page,
       pageSize,

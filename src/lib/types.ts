@@ -27,6 +27,35 @@ export interface Project {
   links?: ProjectLink[];
   milestones?: ProjectMilestone[];
   members?: ProjectMember[];
+  portfolioSignals?: ProjectPortfolioSignals | null;
+}
+
+export interface ProjectPortfolioMilestone {
+  id: string;
+  title: string;
+  status: string;
+  planType?: string | null;
+  targetDate?: string | Date | null;
+}
+
+export interface ProjectPortfolioLink {
+  id: string;
+  title: string;
+  url: string;
+  category: string;
+  isPrimary: boolean;
+}
+
+export interface ProjectPortfolioSignals {
+  p0p1Count?: number;
+  blockedCount?: number;
+  redYellowCount?: number;
+  overdueCount?: number;
+  recentReportableLogCount?: number;
+  memberCount?: number;
+  coreMemberCount?: number;
+  nextOpenMilestone?: ProjectPortfolioMilestone | null;
+  primaryLink?: ProjectPortfolioLink | null;
 }
 
 export interface ProjectLink {
