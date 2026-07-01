@@ -2,9 +2,24 @@
 
 import { useState, useEffect, useCallback } from "react";
 import Link from "next/link";
+import { usePathname, useRouter } from "next/navigation";
 import WorkLogCard from "@/components/WorkLogCard";
 import Icon from "@/components/Icon";
 import { WORK_LOG_TYPES, SOURCES } from "@/lib/constants";
+
+type LogFilters = {
+  startDate: string;
+  endDate: string;
+  projectId: string;
+  project: string;
+  itemId: string;
+  module: string;
+  type: string;
+  source: string;
+  hasItem: string;
+  reportable: string;
+  keyword: string;
+};
 
 interface WorkLog {
   id: string;
@@ -22,44 +37,72 @@ interface WorkLog {
   updatedAt: Date;
 }
 
+const DEFAULT_FILTERS: LogFilters = {
+  startDate: "",
+  endDate: "",
+  projectId: "",
+  project: "",
+  itemId: "",
+  module: "",
+  type: "",
+  source: "",
+  hasItem: "",
+  reportable: "",
+  keyword: "",
+};
+
+function readLogFilters(searchParams: URLSearchParams): LogFilters {
+  return {
+    startDate: searchParams.get("startDate") || "",
+    endDate: searchParams.get("endDate") || "",
+    projectId: searchParams.get("projectId") || "",
+    project: searchParams.get("project") || "",
+    itemId: searchParams.get("itemId") || "",
+    module: searchParams.get("module") || "",
+    type: searchParams.get("type") || "",
+    source: searchParams.get("source") || "",
+    hasItem: searchParams.get("hasItem") || "",
+    reportable: searchParams.get("reportable") || "",
+    keyword: searchParams.get("keyword") || "",
+  };
+}
+
+function buildLogParams(filters: LogFilters, page: number, includePagination: boolean) {
+  const params = new URLSearchParams();
+
+  if (filters.startDate) params.set("startDate", filters.startDate);
+  if (filters.endDate) params.set("endDate", filters.endDate);
+  if (filters.projectId) params.set("projectId", filters.projectId);
+  else if (filters.project) params.set("project", filters.project);
+  if (filters.itemId) params.set("itemId", filters.itemId);
+  if (filters.module) params.set("module", filters.module);
+  if (filters.type) params.set("type", filters.type);
+  if (filters.source) params.set("source", filters.source);
+  if (filters.hasItem) params.set("hasItem", filters.hasItem);
+  if (filters.reportable) params.set("reportable", filters.reportable);
+  if (filters.keyword) params.set("keyword", filters.keyword);
+  if (includePagination) {
+    params.set("page", page.toString());
+    params.set("pageSize", "20");
+  }
+
+  return params;
+}
+
 export default function LogsPage() {
+  const pathname = usePathname();
+  const router = useRouter();
   const [logs, setLogs] = useState<WorkLog[]>([]);
   const [total, setTotal] = useState(0);
   const [page, setPage] = useState(1);
   const [loading, setLoading] = useState(true);
   const [urlFiltersInitialized, setUrlFiltersInitialized] = useState(false);
-  const [filters, setFilters] = useState({
-    startDate: "",
-    endDate: "",
-    projectId: "",
-    project: "",
-    itemId: "",
-    module: "",
-    type: "",
-    source: "",
-    hasItem: "",
-    reportable: "",
-    keyword: "",
-  });
+  const [filters, setFilters] = useState<LogFilters>(DEFAULT_FILTERS);
 
   const fetchLogs = useCallback(async () => {
     setLoading(true);
     try {
-      const params = new URLSearchParams();
-      if (filters.startDate) params.set("startDate", filters.startDate);
-      if (filters.endDate) params.set("endDate", filters.endDate);
-      if (filters.projectId) params.set("projectId", filters.projectId);
-      else if (filters.project) params.set("project", filters.project);
-      if (filters.itemId) params.set("itemId", filters.itemId);
-      if (filters.module) params.set("module", filters.module);
-      if (filters.type) params.set("type", filters.type);
-      if (filters.source) params.set("source", filters.source);
-      if (filters.hasItem) params.set("hasItem", filters.hasItem);
-      if (filters.reportable) params.set("reportable", filters.reportable);
-      if (filters.keyword) params.set("keyword", filters.keyword);
-      params.set("page", page.toString());
-      params.set("pageSize", "20");
-
+      const params = buildLogParams(filters, page, true);
       const res = await fetch(`/api/logs?${params}`);
       const data = await res.json();
       setLogs(data.logs);
@@ -72,24 +115,37 @@ export default function LogsPage() {
   }, [page, filters]);
 
   useEffect(() => {
-    const params = new URLSearchParams(window.location.search);
-    setFilters((prev) => ({
-      ...prev,
-      projectId: params.get("projectId") || "",
-      startDate: params.get("startDate") || "",
-      endDate: params.get("endDate") || "",
-      itemId: params.get("itemId") || "",
-      type: params.get("type") || "",
-      reportable: params.get("reportable") || "",
-    }));
+    setFilters(readLogFilters(new URLSearchParams(window.location.search)));
     setUrlFiltersInitialized(true);
   }, []);
 
   useEffect(() => {
-    if (urlFiltersInitialized) {
+    if (!urlFiltersInitialized) return;
+
+    const delay = filters.keyword ? 250 : 0;
+    const timer = window.setTimeout(() => {
       fetchLogs();
-    }
-  }, [fetchLogs, urlFiltersInitialized]);
+    }, delay);
+
+    return () => window.clearTimeout(timer);
+  }, [fetchLogs, filters.keyword, urlFiltersInitialized]);
+
+  useEffect(() => {
+    if (!urlFiltersInitialized) return;
+
+    const syncUrl = () => {
+      const nextQuery = buildLogParams(filters, page, false).toString();
+      const currentQuery = window.location.search.startsWith("?") ? window.location.search.slice(1) : "";
+      if (currentQuery === nextQuery) return;
+
+      const nextHref = nextQuery ? `${pathname}?${nextQuery}` : pathname;
+      router.replace(nextHref, { scroll: false });
+    };
+
+    const delay = filters.keyword ? 250 : 0;
+    const timer = window.setTimeout(syncUrl, delay);
+    return () => window.clearTimeout(timer);
+  }, [filters, page, pathname, router, urlFiltersInitialized]);
 
   const handleFilterChange = (key: string, value: string) => {
     setFilters((prev) => ({ ...prev, [key]: value }));
@@ -97,19 +153,7 @@ export default function LogsPage() {
   };
 
   const clearFilters = () => {
-    setFilters({
-      startDate: "",
-      endDate: "",
-      projectId: "",
-      project: "",
-      itemId: "",
-      module: "",
-      type: "",
-      source: "",
-      hasItem: "",
-      reportable: "",
-      keyword: "",
-    });
+    setFilters(DEFAULT_FILTERS);
     setPage(1);
   };
 

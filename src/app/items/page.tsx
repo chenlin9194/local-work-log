@@ -2,6 +2,7 @@
 
 import { useState, useEffect, useCallback } from "react";
 import Link from "next/link";
+import { usePathname, useRouter } from "next/navigation";
 import WorkItemCard from "@/components/WorkItemCard";
 import Icon from "@/components/Icon";
 import {
@@ -13,6 +14,21 @@ import {
   REPORT_LEVEL_OPTIONS,
   SOURCE_SYSTEM_OPTIONS,
 } from "@/lib/constants";
+
+type ItemFilters = {
+  projectId: string;
+  project: string;
+  module: string;
+  type: string;
+  priority: string;
+  status: string;
+  owner: string;
+  health: string;
+  reportLevel: string;
+  sourceSystem: string;
+  keyword: string;
+  overdue: boolean;
+};
 
 interface WorkItem {
   id: string;
@@ -39,46 +55,75 @@ interface WorkItem {
   closedAt?: Date | null;
 }
 
+const DEFAULT_FILTERS: ItemFilters = {
+  projectId: "",
+  project: "",
+  module: "",
+  type: "",
+  priority: "",
+  status: "",
+  owner: "",
+  health: "",
+  reportLevel: "",
+  sourceSystem: "",
+  keyword: "",
+  overdue: false,
+};
+
+function readItemFilters(searchParams: URLSearchParams): ItemFilters {
+  return {
+    projectId: searchParams.get("projectId") || "",
+    project: searchParams.get("project") || "",
+    module: searchParams.get("module") || "",
+    type: searchParams.get("type") || "",
+    priority: searchParams.get("priority") || "",
+    status: searchParams.get("status") || "",
+    owner: searchParams.get("owner") || "",
+    health: searchParams.get("health") || "",
+    reportLevel: searchParams.get("reportLevel") || "",
+    sourceSystem: searchParams.get("sourceSystem") || "",
+    keyword: searchParams.get("keyword") || "",
+    overdue: searchParams.get("overdue") === "true",
+  };
+}
+
+function buildItemParams(filters: ItemFilters, page: number, includePagination: boolean) {
+  const params = new URLSearchParams();
+
+  if (filters.projectId) params.set("projectId", filters.projectId);
+  else if (filters.project) params.set("project", filters.project);
+  if (filters.module) params.set("module", filters.module);
+  if (filters.type) params.set("type", filters.type);
+  if (filters.priority) params.set("priority", filters.priority);
+  if (filters.status) params.set("status", filters.status);
+  if (filters.owner) params.set("owner", filters.owner);
+  if (filters.health) params.set("health", filters.health);
+  if (filters.reportLevel) params.set("reportLevel", filters.reportLevel);
+  if (filters.sourceSystem) params.set("sourceSystem", filters.sourceSystem);
+  if (filters.keyword) params.set("keyword", filters.keyword);
+  if (filters.overdue) params.set("overdue", "true");
+  if (includePagination) {
+    params.set("page", page.toString());
+    params.set("pageSize", "20");
+  }
+
+  return params;
+}
+
 export default function ItemsPage() {
+  const pathname = usePathname();
+  const router = useRouter();
   const [items, setItems] = useState<WorkItem[]>([]);
   const [total, setTotal] = useState(0);
   const [page, setPage] = useState(1);
   const [loading, setLoading] = useState(true);
   const [urlFiltersInitialized, setUrlFiltersInitialized] = useState(false);
-  const [filters, setFilters] = useState({
-    projectId: "",
-    project: "",
-    module: "",
-    type: "",
-    priority: "",
-    status: "",
-    owner: "",
-    health: "",
-    reportLevel: "",
-    sourceSystem: "",
-    keyword: "",
-    overdue: false,
-  });
+  const [filters, setFilters] = useState<ItemFilters>(DEFAULT_FILTERS);
 
   const fetchItems = useCallback(async () => {
     setLoading(true);
     try {
-      const params = new URLSearchParams();
-      if (filters.projectId) params.set("projectId", filters.projectId);
-      else if (filters.project) params.set("project", filters.project);
-      if (filters.module) params.set("module", filters.module);
-      if (filters.type) params.set("type", filters.type);
-      if (filters.priority) params.set("priority", filters.priority);
-      if (filters.status) params.set("status", filters.status);
-      if (filters.owner) params.set("owner", filters.owner);
-      if (filters.health) params.set("health", filters.health);
-      if (filters.reportLevel) params.set("reportLevel", filters.reportLevel);
-      if (filters.sourceSystem) params.set("sourceSystem", filters.sourceSystem);
-      if (filters.keyword) params.set("keyword", filters.keyword);
-      if (filters.overdue) params.set("overdue", "true");
-      params.set("page", page.toString());
-      params.set("pageSize", "20");
-
+      const params = buildItemParams(filters, page, true);
       const res = await fetch(`/api/items?${params}`);
       const data = await res.json();
       setItems(data.items);
@@ -91,23 +136,37 @@ export default function ItemsPage() {
   }, [page, filters]);
 
   useEffect(() => {
-    const params = new URLSearchParams(window.location.search);
-    setFilters((prev) => ({
-      ...prev,
-      projectId: params.get("projectId") || "",
-      status: params.get("status") || "",
-      priority: params.get("priority") || "",
-      health: params.get("health") || "",
-      overdue: params.get("overdue") === "true",
-    }));
+    setFilters(readItemFilters(new URLSearchParams(window.location.search)));
     setUrlFiltersInitialized(true);
   }, []);
 
   useEffect(() => {
-    if (urlFiltersInitialized) {
+    if (!urlFiltersInitialized) return;
+
+    const delay = filters.keyword ? 250 : 0;
+    const timer = window.setTimeout(() => {
       fetchItems();
-    }
-  }, [fetchItems, urlFiltersInitialized]);
+    }, delay);
+
+    return () => window.clearTimeout(timer);
+  }, [fetchItems, filters.keyword, urlFiltersInitialized]);
+
+  useEffect(() => {
+    if (!urlFiltersInitialized) return;
+
+    const syncUrl = () => {
+      const nextQuery = buildItemParams(filters, page, false).toString();
+      const currentQuery = window.location.search.startsWith("?") ? window.location.search.slice(1) : "";
+      if (currentQuery === nextQuery) return;
+
+      const nextHref = nextQuery ? `${pathname}?${nextQuery}` : pathname;
+      router.replace(nextHref, { scroll: false });
+    };
+
+    const delay = filters.keyword ? 250 : 0;
+    const timer = window.setTimeout(syncUrl, delay);
+    return () => window.clearTimeout(timer);
+  }, [filters, page, pathname, router, urlFiltersInitialized]);
 
   const handleFilterChange = (key: string, value: string | boolean) => {
     setFilters((prev) => ({ ...prev, [key]: value }));
@@ -115,20 +174,7 @@ export default function ItemsPage() {
   };
 
   const clearFilters = () => {
-    setFilters({
-      projectId: "",
-      project: "",
-      module: "",
-      type: "",
-      priority: "",
-      status: "",
-      owner: "",
-      health: "",
-      reportLevel: "",
-      sourceSystem: "",
-      keyword: "",
-      overdue: false,
-    });
+    setFilters(DEFAULT_FILTERS);
     setPage(1);
   };
 
