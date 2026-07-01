@@ -44,7 +44,9 @@ export default function ItemsPage() {
   const [total, setTotal] = useState(0);
   const [page, setPage] = useState(1);
   const [loading, setLoading] = useState(true);
+  const [urlFiltersInitialized, setUrlFiltersInitialized] = useState(false);
   const [filters, setFilters] = useState({
+    projectId: "",
     project: "",
     module: "",
     type: "",
@@ -62,7 +64,8 @@ export default function ItemsPage() {
     setLoading(true);
     try {
       const params = new URLSearchParams();
-      if (filters.project) params.set("project", filters.project);
+      if (filters.projectId) params.set("projectId", filters.projectId);
+      else if (filters.project) params.set("project", filters.project);
       if (filters.module) params.set("module", filters.module);
       if (filters.type) params.set("type", filters.type);
       if (filters.priority) params.set("priority", filters.priority);
@@ -88,8 +91,18 @@ export default function ItemsPage() {
   }, [page, filters]);
 
   useEffect(() => {
-    fetchItems();
-  }, [fetchItems]);
+    const projectId = new URLSearchParams(window.location.search).get("projectId") || "";
+    if (projectId) {
+      setFilters((prev) => ({ ...prev, projectId }));
+    }
+    setUrlFiltersInitialized(true);
+  }, []);
+
+  useEffect(() => {
+    if (urlFiltersInitialized) {
+      fetchItems();
+    }
+  }, [fetchItems, urlFiltersInitialized]);
 
   const handleFilterChange = (key: string, value: string | boolean) => {
     setFilters((prev) => ({ ...prev, [key]: value }));
@@ -98,6 +111,7 @@ export default function ItemsPage() {
 
   const clearFilters = () => {
     setFilters({
+      projectId: "",
       project: "",
       module: "",
       type: "",
@@ -147,6 +161,11 @@ export default function ItemsPage() {
       {/* Filters */}
       <div className="card filter-panel">
         <div className="filter-panel-label"><Icon name="search" size={14} />事项筛选</div>
+        {filters.projectId && (
+          <div style={{ marginBottom: 12, fontSize: 12, color: "var(--text-tertiary)" }}>
+            当前项目筛选已启用
+          </div>
+        )}
         <div className="filter-grid">
           <input
             type="text"

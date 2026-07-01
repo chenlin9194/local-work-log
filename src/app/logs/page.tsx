@@ -27,9 +27,11 @@ export default function LogsPage() {
   const [total, setTotal] = useState(0);
   const [page, setPage] = useState(1);
   const [loading, setLoading] = useState(true);
+  const [urlFiltersInitialized, setUrlFiltersInitialized] = useState(false);
   const [filters, setFilters] = useState({
     startDate: "",
     endDate: "",
+    projectId: "",
     project: "",
     module: "",
     type: "",
@@ -45,7 +47,8 @@ export default function LogsPage() {
       const params = new URLSearchParams();
       if (filters.startDate) params.set("startDate", filters.startDate);
       if (filters.endDate) params.set("endDate", filters.endDate);
-      if (filters.project) params.set("project", filters.project);
+      if (filters.projectId) params.set("projectId", filters.projectId);
+      else if (filters.project) params.set("project", filters.project);
       if (filters.module) params.set("module", filters.module);
       if (filters.type) params.set("type", filters.type);
       if (filters.source) params.set("source", filters.source);
@@ -67,8 +70,18 @@ export default function LogsPage() {
   }, [page, filters]);
 
   useEffect(() => {
-    fetchLogs();
-  }, [fetchLogs]);
+    const projectId = new URLSearchParams(window.location.search).get("projectId") || "";
+    if (projectId) {
+      setFilters((prev) => ({ ...prev, projectId }));
+    }
+    setUrlFiltersInitialized(true);
+  }, []);
+
+  useEffect(() => {
+    if (urlFiltersInitialized) {
+      fetchLogs();
+    }
+  }, [fetchLogs, urlFiltersInitialized]);
 
   const handleFilterChange = (key: string, value: string) => {
     setFilters((prev) => ({ ...prev, [key]: value }));
@@ -79,6 +92,7 @@ export default function LogsPage() {
     setFilters({
       startDate: "",
       endDate: "",
+      projectId: "",
       project: "",
       module: "",
       type: "",
@@ -118,6 +132,11 @@ export default function LogsPage() {
 
       <div className="card filter-panel">
         <div className="filter-panel-label"><Icon name="search" size={14} />日志筛选</div>
+        {filters.projectId && (
+          <div style={{ marginBottom: 12, fontSize: 12, color: "var(--text-tertiary)" }}>
+            当前项目筛选已启用
+          </div>
+        )}
         <div className="filter-grid">
           <input type="date" value={filters.startDate} onChange={(e) => handleFilterChange("startDate", e.target.value)} style={{ padding: "8px 12px", borderRadius: 6, border: "1px solid var(--border-primary)", background: "var(--bg-secondary)", color: "var(--text-primary)", fontSize: 13 }} />
           <input type="date" value={filters.endDate} onChange={(e) => handleFilterChange("endDate", e.target.value)} style={{ padding: "8px 12px", borderRadius: 6, border: "1px solid var(--border-primary)", background: "var(--bg-secondary)", color: "var(--text-primary)", fontSize: 13 }} />

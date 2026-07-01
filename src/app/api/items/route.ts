@@ -10,6 +10,7 @@ import { revalidateWorkHubPaths } from "@/lib/revalidate";
 export async function GET(request: NextRequest) {
   try {
     const searchParams = request.nextUrl.searchParams;
+    const projectId = searchParams.get("projectId");
     const project = searchParams.get("project");
     const moduleParam = searchParams.get("module");
     const type = searchParams.get("type");
@@ -28,7 +29,11 @@ export async function GET(request: NextRequest) {
     // AND clauses accumulated across multiple optional filters
     const andClauses: Record<string, unknown>[] = [];
 
-    if (project) where.project = project;
+    if (projectId) {
+      where.projectId = projectId;
+    } else if (project) {
+      where.project = project;
+    }
     if (moduleParam) where.module = moduleParam;
     if (type) where.type = type;
     if (priority) where.priority = priority;

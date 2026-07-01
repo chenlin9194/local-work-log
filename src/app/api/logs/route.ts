@@ -12,6 +12,7 @@ export async function GET(request: NextRequest) {
     const searchParams = request.nextUrl.searchParams;
     const startDate = searchParams.get("startDate");
     const endDate = searchParams.get("endDate");
+    const projectId = searchParams.get("projectId");
     const project = searchParams.get("project");
     const moduleParam = searchParams.get("module");
     const type = searchParams.get("type");
@@ -23,13 +24,20 @@ export async function GET(request: NextRequest) {
     const pageSize = parseInt(searchParams.get("pageSize") || "20");
 
     const where: Record<string, unknown> = {};
+    const andClauses: Record<string, unknown>[] = [];
 
     if (startDate || endDate) {
       where.workDate = {};
       if (startDate) (where.workDate as Record<string, string>).gte = startDate;
       if (endDate) (where.workDate as Record<string, string>).lte = endDate;
     }
-    if (project) where.project = project;
+    if (projectId) {
+      andClauses.push({
+        OR: [{ projectId }, { item: { projectId } }],
+      });
+    } else if (project) {
+      where.project = project;
+    }
     if (moduleParam) where.module = moduleParam;
     if (type) where.type = type;
     if (source) where.source = source;
@@ -38,11 +46,16 @@ export async function GET(request: NextRequest) {
     if (reportable === "true") where.reportable = true;
     if (reportable === "false") where.reportable = false;
     if (keyword) {
-      where.OR = [
-        { title: { contains: keyword } },
-        { content: { contains: keyword } },
-        { sourceUrl: { contains: keyword } },
-      ];
+      andClauses.push({
+        OR: [
+          { title: { contains: keyword } },
+          { content: { contains: keyword } },
+          { sourceUrl: { contains: keyword } },
+        ],
+      });
+    }
+    if (andClauses.length > 0) {
+      where.AND = andClauses;
     }
 
     const [logs, total] = await Promise.all([

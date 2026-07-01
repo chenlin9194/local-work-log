@@ -187,7 +187,7 @@ export default function ProjectDetailPage() {
             <span className="section-eyebrow">ITEMS</span>
             <h2>关联事项</h2>
           </div>
-          <Link href="/items" className="section-link">
+          <Link href={`/items?projectId=${project.id}`} className="section-link">
             查看全部 <Icon name="chevron-right" size={14} />
           </Link>
         </div>
@@ -210,7 +210,7 @@ export default function ProjectDetailPage() {
             <span className="section-eyebrow">LOGS</span>
             <h2>最近日志</h2>
           </div>
-          <Link href="/logs" className="section-link">
+          <Link href={`/logs?projectId=${project.id}`} className="section-link">
             查看全部 <Icon name="chevron-right" size={14} />
           </Link>
         </div>
