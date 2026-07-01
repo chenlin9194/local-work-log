@@ -89,7 +89,7 @@ export default function ProjectDetailPage() {
       />
 
       <section style={{ marginBottom: 24 }}>
-        <div style={{ display: "flex", gap: 12 }}>
+        <div style={{ display: "flex", gap: 12, flexWrap: "wrap" }}>
           <Link href={`/items/new?projectId=${project.id}`} className="btn btn-primary">
             <Icon name="plus" size={15} />
             新建关联事项
@@ -97,10 +97,6 @@ export default function ProjectDetailPage() {
           <Link href={`/logs/new?projectId=${project.id}`} className="btn btn-secondary">
             <Icon name="edit" size={15} />
             新建关联日志
-          </Link>
-          <Link href={`/projects/${project.id}/snapshot`} className="btn btn-ghost">
-            <Icon name="file-text" size={15} />
-            项目快照事实包
           </Link>
         </div>
       </section>
