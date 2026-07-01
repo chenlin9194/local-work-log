@@ -33,6 +33,7 @@ export default function LogsPage() {
     endDate: "",
     projectId: "",
     project: "",
+    itemId: "",
     module: "",
     type: "",
     source: "",
@@ -49,6 +50,7 @@ export default function LogsPage() {
       if (filters.endDate) params.set("endDate", filters.endDate);
       if (filters.projectId) params.set("projectId", filters.projectId);
       else if (filters.project) params.set("project", filters.project);
+      if (filters.itemId) params.set("itemId", filters.itemId);
       if (filters.module) params.set("module", filters.module);
       if (filters.type) params.set("type", filters.type);
       if (filters.source) params.set("source", filters.source);
@@ -76,6 +78,7 @@ export default function LogsPage() {
       projectId: params.get("projectId") || "",
       startDate: params.get("startDate") || "",
       endDate: params.get("endDate") || "",
+      itemId: params.get("itemId") || "",
       type: params.get("type") || "",
       reportable: params.get("reportable") || "",
     }));
@@ -99,6 +102,7 @@ export default function LogsPage() {
       endDate: "",
       projectId: "",
       project: "",
+      itemId: "",
       module: "",
       type: "",
       source: "",
@@ -140,6 +144,11 @@ export default function LogsPage() {
         {filters.projectId && (
           <div style={{ marginBottom: 12, fontSize: 12, color: "var(--text-tertiary)" }}>
             当前项目筛选已启用
+          </div>
+        )}
+        {filters.itemId && (
+          <div style={{ marginBottom: 12, fontSize: 12, color: "var(--text-tertiary)" }}>
+            当前事项筛选已启用
           </div>
         )}
         <div className="filter-grid">

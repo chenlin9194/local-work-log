@@ -342,9 +342,14 @@ export default function ItemDetailPage() {
 
       {/* Timeline */}
       <div className="card" style={{ padding: 24 }}>
-        <h2 style={{ fontSize: 17, fontWeight: 600, color: "var(--text-primary)", marginBottom: 16 }}>
-          关联日志时间线
-        </h2>
+        <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 12, marginBottom: 16 }}>
+          <h2 style={{ fontSize: 17, fontWeight: 600, color: "var(--text-primary)", margin: 0 }}>
+            关联日志时间线
+          </h2>
+          <Link href={`/logs?itemId=${item.id}`} style={{ fontSize: 12, color: "var(--accent-blue)", textDecoration: "none", whiteSpace: "nowrap" }}>
+            查看全部
+          </Link>
+        </div>
         <Timeline logs={item.logs} />
       </div>
     </div>

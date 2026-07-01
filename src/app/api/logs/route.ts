@@ -14,6 +14,7 @@ export async function GET(request: NextRequest) {
     const endDate = searchParams.get("endDate");
     const projectId = searchParams.get("projectId");
     const project = searchParams.get("project");
+    const itemId = searchParams.get("itemId");
     const moduleParam = searchParams.get("module");
     const type = searchParams.get("type");
     const source = searchParams.get("source");
@@ -38,11 +39,14 @@ export async function GET(request: NextRequest) {
     } else if (project) {
       where.project = project;
     }
+    if (itemId) {
+      andClauses.push({ itemId });
+    }
     if (moduleParam) where.module = moduleParam;
     if (type) where.type = type;
     if (source) where.source = source;
-    if (hasItem === "true") where.itemId = { not: null };
-    if (hasItem === "false") where.itemId = null;
+    if (hasItem === "true") andClauses.push({ itemId: { not: null } });
+    if (hasItem === "false") andClauses.push({ itemId: null });
     if (reportable === "true") where.reportable = true;
     if (reportable === "false") where.reportable = false;
     if (keyword) {
