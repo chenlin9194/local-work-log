@@ -64,7 +64,16 @@ export default async function ExportRangePage({ searchParams }: PageProps) {
 
       <div className="card export-notice">
         <div className="export-notice-icon">i</div>
-        <div><strong>Work Hub 只导出事实包</strong><p>按时间范围汇总工作日志、关闭事项和更新事项，复制 Markdown 后可交给外部工具整理成周报或阶段汇报。Work Hub 只导出事实包，不生成管理结论。外部工具只能基于 Markdown 整理表达，不得补写事实；缺失信息请标记为“待确认”。</p></div>
+        <div style={{ minWidth: 0 }}>
+          <strong>Work Hub 只导出事实包</strong>
+          <p>按时间范围汇总工作日志、关闭事项和更新事项，复制 Markdown 后可交给外部工具整理成周报或阶段汇报。这里新增了质量检查和待确认信息，方便你先判断这份事实包是否够完整。</p>
+          <div style={{ display: "grid", gap: 4, marginTop: 8, color: "var(--text-secondary)", fontSize: 12, lineHeight: 1.6 }}>
+            <div>质量检查：帮助确认周报事实是否够完整、是否覆盖关键变化。</div>
+            <div>待确认信息：提示缺责任人、下一步、项目/模块等需要补齐的内容。</div>
+            <div>追溯编号：关键事实会保留 LOG-01、P-01 之类编号，便于回查具体日志和事项。</div>
+            <div>外部工具只能整理表达，不得补写事实或扩大事实边界。</div>
+          </div>
+        </div>
         <span className="export-ready-tag"><i />可复制事实材料</span>
       </div>
 

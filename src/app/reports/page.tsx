@@ -61,7 +61,7 @@ export default function ReportsPage() {
           </div>
           <h1>汇报入口</h1>
           <p className="page-hero-subtitle">
-            这里不是汇报结论生成器，而是 WorkHub 的事实包入口。先把事实整理出来，再交给外部工具组织成日报、周报或管理层汇报。
+            这里不是汇报结论生成器，而是 WorkHub 的事实包入口。先把事实整理出来，再交给外部工具组织成日报、周报或管理层汇报；复制前先看质量检查和待确认信息，避免外部工具根据缺失事实自由发挥。
           </p>
           <div className="page-hero-actions">
             <Link href="/export/today" className="btn btn-primary">
@@ -163,10 +163,10 @@ export default function ReportsPage() {
 
         <div className="card" style={{ padding: 18, display: "grid", gap: 10 }}>
           <p style={{ margin: 0, color: "var(--text-primary)", fontWeight: 650 }}>
-            WorkHub 只提供事实包入口，不在这里生成管理结论。
+            WorkHub 只提供事实包入口，不在这里生成管理结论。事实包现在包含质量检查和待确认信息。
           </p>
           <p style={{ margin: 0, color: "var(--text-secondary)", lineHeight: 1.7 }}>
-            复制后的 Markdown 可以交给外部工具继续整理成汇报，但外部工具不能补写事实。缺失信息先人工确认，再继续输出。
+            复制后的 Markdown 可以交给外部工具继续整理成汇报，但外部工具不能补写事实。先看质量检查，再人工确认缺口，避免把不完整事实直接加工成结论。
           </p>
         </div>
       </section>

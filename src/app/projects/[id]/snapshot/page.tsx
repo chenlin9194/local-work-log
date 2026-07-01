@@ -392,7 +392,13 @@ export default function ProjectSnapshotPage() {
         <div className="export-notice-icon">i</div>
         <div style={{ minWidth: 0 }}>
           <strong>这是项目快照事实包，不是结论</strong>
-          <p>页面展示的是项目快照结构化数据和 Markdown 预览，可直接复制给外部工具继续整理成汇报材料。</p>
+          <p>页面展示的是项目快照结构化数据和 Markdown 预览，可直接复制给外部工具继续整理成汇报材料。这里也包含质量检查和待确认信息，方便你先判断事实是否够完整。</p>
+          <div style={{ display: "grid", gap: 4, marginTop: 8, color: "var(--text-secondary)", fontSize: 12, lineHeight: 1.6 }}>
+            <div>质量检查覆盖项目当前摘要、下一里程碑、下一动作，以及项目快照中的关键信号。</div>
+            <div>重点事项会检查责任人、下一步和外部来源，里程碑会检查目标日期和负责人是否齐全。</div>
+            <div>待确认信息不是错误，而是提醒你哪些事实还需要人工补齐。</div>
+            <div>外部工具只能整理表达，不得补写事实或把待确认项自动补成结论。</div>
+          </div>
         </div>
         <span className="export-ready-tag">
           <i />
