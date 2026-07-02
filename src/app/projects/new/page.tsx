@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import {
   PROJECT_TYPES,
@@ -11,6 +11,8 @@ import {
 
 export default function NewProjectPage() {
   const router = useRouter();
+  const submittingRef = useRef(false);
+  const submitButtonRef = useRef<HTMLButtonElement>(null);
   const [loading, setLoading] = useState(false);
   const [form, setForm] = useState({
     name: "",
@@ -36,12 +38,19 @@ export default function NewProjectPage() {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    if (submittingRef.current) return;
     if (!form.name.trim()) {
       alert("项目名称不能为空");
       return;
     }
 
+    submittingRef.current = true;
+    if (submitButtonRef.current) {
+      submitButtonRef.current.disabled = true;
+      submitButtonRef.current.textContent = "创建中...";
+    }
     setLoading(true);
+
     try {
       const res = await fetch("/api/projects", {
         method: "POST",
@@ -51,15 +60,26 @@ export default function NewProjectPage() {
 
       if (res.ok) {
         const project = await res.json();
-        router.push(`/projects/${project.id}`);
-      } else {
-        const error = await res.json();
-        alert(error.error || "创建失败");
+        window.location.assign(`/projects/${project.id}`);
+        return;
       }
+
+      const error = await res.json();
+      alert(error.error || "创建失败");
+      submittingRef.current = false;
+      if (submitButtonRef.current) {
+        submitButtonRef.current.disabled = false;
+        submitButtonRef.current.textContent = "创建项目";
+      }
+      setLoading(false);
     } catch (error) {
       console.error("Error creating project:", error);
       alert("创建失败");
-    } finally {
+      submittingRef.current = false;
+      if (submitButtonRef.current) {
+        submitButtonRef.current.disabled = false;
+        submitButtonRef.current.textContent = "创建项目";
+      }
       setLoading(false);
     }
   };
@@ -281,7 +301,7 @@ export default function NewProjectPage() {
               <button type="button" onClick={() => router.back()} className="btn btn-secondary">
                 取消
               </button>
-              <button type="submit" disabled={loading} className="btn btn-primary">
+              <button ref={submitButtonRef} type="submit" disabled={loading} className="btn btn-primary">
                 {loading ? "创建中..." : "创建项目"}
               </button>
             </div>

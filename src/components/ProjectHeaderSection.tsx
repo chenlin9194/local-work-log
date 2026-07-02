@@ -1,6 +1,8 @@
 "use client";
 
+import { useRef, useState } from "react";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import Icon from "@/components/Icon";
 import {
   HEALTH_LABELS,
@@ -29,11 +31,57 @@ type ProjectHeaderSectionProps = {
 };
 
 export default function ProjectHeaderSection({ project }: ProjectHeaderSectionProps) {
+  const router = useRouter();
+  const actionInFlightRef = useRef(false);
+  const [deleting, setDeleting] = useState(false);
   const healthTone = HEALTH_TONE[project.health] || "neutral";
   const healthLabel = HEALTH_LABELS[project.health] || project.health;
   const statusLabel = PROJECT_STATUS_LABELS[project.status] || project.status;
   const stageLabel = project.stage ? PROJECT_STAGE_LABELS[project.stage] || project.stage : "阶段待确认";
   const typeLabel = PROJECT_TYPE_LABELS[project.type] || project.type;
+
+  const readErrorMessage = async (res: Response) => {
+    const text = await res.text();
+    if (!text) return "删除失败";
+
+    try {
+      const data = JSON.parse(text) as { error?: string };
+      return data.error || "删除失败";
+    } catch {
+      return "删除失败";
+    }
+  };
+
+  const handleDelete = async () => {
+    if (actionInFlightRef.current) return;
+
+    const confirmed = window.confirm("确认删除这个项目？关联事项和日志不会被删除，只会解除项目关联。");
+    if (!confirmed) return;
+
+    actionInFlightRef.current = true;
+    setDeleting(true);
+    let shouldRestoreButton = true;
+
+    try {
+      const res = await fetch(`/api/projects/${project.id}`, { method: "DELETE" });
+
+      if (res.ok) {
+        shouldRestoreButton = false;
+        router.replace("/projects");
+        return;
+      }
+
+      alert(await readErrorMessage(res));
+    } catch (error) {
+      console.error("Error deleting project:", error);
+      alert("删除失败");
+    } finally {
+      if (shouldRestoreButton) {
+        actionInFlightRef.current = false;
+        setDeleting(false);
+      }
+    }
+  };
 
   return (
     <section style={{ marginBottom: 24 }}>
@@ -89,6 +137,22 @@ export default function ProjectHeaderSection({ project }: ProjectHeaderSectionPr
             <Icon name="edit" size={15} />
             编辑项目
           </Link>
+          <button
+            type="button"
+            onClick={handleDelete}
+            className="btn btn-secondary"
+            disabled={deleting}
+            style={{ color: "var(--accent-red)" }}
+          >
+            {deleting ? (
+              "删除中..."
+            ) : (
+              <>
+                <Icon name="trash" size={15} />
+                删除项目
+              </>
+            )}
+          </button>
         </div>
       </div>
     </section>

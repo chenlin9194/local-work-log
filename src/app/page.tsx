@@ -5,7 +5,6 @@ import WorkLogCard from "@/components/WorkLogCard";
 import { prisma } from "@/lib/prisma";
 import { formatTodayStr, getLocalDateString, getTodayRange } from "@/lib/utils";
 import { PROJECT_STATUS_LABELS } from "@/lib/constants";
-import { signalToItemsHref, signalToLogsHref } from "@/lib/signalMap";
 
 export const dynamic = "force-dynamic";
 
@@ -59,25 +58,8 @@ function normalizeFocusKey(value?: string): FocusKey | null {
   return null;
 }
 
-function getFocusListHref(focus: FocusKey, today: string) {
-  switch (focus) {
-    case "open":
-      return signalToItemsHref("open");
-    case "following":
-      return signalToItemsHref("following");
-    case "blocked":
-      return signalToItemsHref("blocked");
-    case "p0":
-      return signalToItemsHref("p0");
-    case "p1":
-      return signalToItemsHref("p1");
-    case "todayLogs":
-      return signalToLogsHref("todayLogs", undefined, today);
-    case "todayClosed":
-      return "/?focus=todayClosed";
-    default:
-      return "/items";
-  }
+function getDashboardFocusHref(focus: FocusKey) {
+  return `/?focus=${focus}`;
 }
 
 async function loadFocusView(focus: FocusKey, today: string, todayStart: Date, todayEnd: Date): Promise<FocusView> {
@@ -317,7 +299,8 @@ export default async function Dashboard({ searchParams }: PageProps) {
             return (
               <Link
                 key={stat.label}
-                href={getFocusListHref(stat.focus, today)}
+                href={getDashboardFocusHref(stat.focus)}
+                scroll={false}
                 className={`stat-card stat-card-${stat.tone}${isActive ? " stat-card-active" : ""}`}
                 aria-current={isActive ? "page" : undefined}
               >

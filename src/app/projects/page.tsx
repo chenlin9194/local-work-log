@@ -30,6 +30,23 @@ const RISK_SIGNAL_STYLES: Record<string, { color: string; background: string }> 
   neutral: { color: "var(--text-tertiary)", background: "var(--bg-secondary)" },
 };
 
+type ProjectsApiResponse = {
+  projects?: Project[];
+  total?: number;
+};
+
+async function readProjectsResponse(res: Response): Promise<ProjectsApiResponse> {
+  const text = await res.text();
+  if (!text) return {};
+
+  try {
+    return JSON.parse(text) as ProjectsApiResponse;
+  } catch (error) {
+    console.error("Error parsing projects response:", error);
+    return {};
+  }
+}
+
 export default function ProjectsPage() {
   const [projects, setProjects] = useState<Project[]>([]);
   const [total, setTotal] = useState(0);
@@ -44,7 +61,7 @@ export default function ProjectsPage() {
     try {
       const params = buildProjectsQueryString({ keyword, status, health, stage }, { pageSize: 50 });
       const res = await fetch(`/api/projects?${params.toString()}`);
-      const data = await res.json();
+      const data = await readProjectsResponse(res);
       setProjects(data.projects || []);
       setTotal(data.total || 0);
     } catch (error) {
@@ -195,8 +212,22 @@ export default function ProjectsPage() {
                   <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", marginBottom: 12 }}>
                     <div>
                       <h3 style={{ fontSize: 16, fontWeight: 600, marginBottom: 4 }}>
-                        <Link href={`/projects/${project.id}`} style={{ color: "var(--text-primary)", textDecoration: "none" }}>
+                        <Link
+                          href={`/projects/${project.id}`}
+                          style={{
+                            display: "inline-flex",
+                            alignItems: "center",
+                            gap: 6,
+                            color: "var(--accent-blue)",
+                            textDecoration: "none",
+                            padding: "2px 8px",
+                            marginLeft: -8,
+                            borderRadius: 6,
+                            background: "color-mix(in srgb, var(--accent-blue-light) 45%, transparent)",
+                          }}
+                        >
                           {project.name}
+                          <Icon name="chevron-right" size={13} />
                         </Link>
                         {project.code && (
                           <span style={{ fontSize: 12, color: "var(--text-tertiary)", marginLeft: 8 }}>
@@ -284,9 +315,15 @@ export default function ProjectsPage() {
                     </div>
                   )}
 
-                  <div style={{ display: "flex", gap: 16, marginTop: 12, paddingTop: 12, borderTop: "1px solid var(--border-primary)", fontSize: 12, color: "var(--text-tertiary)" }}>
+                  <div style={{ display: "flex", gap: 16, flexWrap: "wrap", alignItems: "center", marginTop: 12, paddingTop: 12, borderTop: "1px solid var(--border-primary)", fontSize: 12, color: "var(--text-tertiary)" }}>
                     <span><Icon name="clipboard-list" size={12} /> {project._count?.items || 0} 事项</span>
                     <span><Icon name="file-text" size={12} /> {project._count?.logs || 0} 日志</span>
+                    <Link
+                      href={`/projects/${project.id}`}
+                      style={{ marginLeft: "auto", display: "inline-flex", alignItems: "center", gap: 4, color: "var(--accent-blue)", textDecoration: "none", fontWeight: 600 }}
+                    >
+                      进入详情 <Icon name="chevron-right" size={12} />
+                    </Link>
                   </div>
                 </div>
               );
