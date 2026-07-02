@@ -25,7 +25,7 @@ export default function ProjectOverviewSection({ project }: ProjectOverviewSecti
   const hasMeta = Boolean(project.owner || project.pm || project.startDate || project.targetDate || project.releaseDate);
 
   return (
-    <section style={{ marginBottom: 24 }}>
+    <section className="cockpit-section">
       <div className="dashboard-section-title">
         <div>
           <span className="section-eyebrow">OVERVIEW</span>
@@ -33,20 +33,23 @@ export default function ProjectOverviewSection({ project }: ProjectOverviewSecti
         </div>
       </div>
 
-      <div className="card entity-card entity-card--compact" style={{ padding: 20 }}>
+      <div className="card entity-card entity-card--compact project-overview-card" style={{ padding: 20 }}>
         {overviewFieldsEmpty ? (
-          <div style={{ fontSize: 14, color: "var(--text-tertiary)", lineHeight: 1.6, whiteSpace: "pre-wrap", wordBreak: "break-word" }}>
+          <div style={{ color: "var(--text-tertiary)", fontSize: 14, lineHeight: 1.7, whiteSpace: "pre-wrap", wordBreak: "break-word" }}>
             可补充当前摘要、下一里程碑和下一步动作，方便打开项目时快速判断现状。
           </div>
         ) : (
-          <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(min(260px, 100%), 1fr))", gap: 16 }}>
-            <div style={{ minWidth: 0, paddingRight: 4 }}>
-              <div style={{ fontSize: 12, color: "var(--text-tertiary)", marginBottom: 6 }}>当前项目摘要</div>
+          <div className="project-overview-grid">
+            <div className="project-overview-panel">
+              <div style={{ marginBottom: 6, color: "var(--text-tertiary)", fontSize: 11, fontWeight: 700, letterSpacing: "0.06em", textTransform: "uppercase" }}>
+                当前项目摘要
+              </div>
               <div
+                className={hasCurrentSummary ? "entity-card-summary-full" : ""}
                 style={{
-                  fontSize: 15,
                   color: hasCurrentSummary ? "var(--text-primary)" : "var(--text-tertiary)",
-                  lineHeight: 1.7,
+                  fontSize: 15,
+                  lineHeight: 1.72,
                   whiteSpace: "pre-wrap",
                   wordBreak: "break-word",
                 }}
@@ -56,24 +59,37 @@ export default function ProjectOverviewSection({ project }: ProjectOverviewSecti
             </div>
 
             <div style={{ display: "grid", gap: 12, minWidth: 0 }}>
-              <div
-                style={{
-                  padding: 14,
-                  borderRadius: 8,
-                  border: "1px solid var(--border-primary)",
-                  background: "var(--bg-secondary)",
-                  minWidth: 0,
-                }}
-              >
-                <div style={{ fontSize: 12, color: "var(--text-tertiary)", marginBottom: 6 }}>下一步动作</div>
-                <div style={{ fontSize: 14, fontWeight: hasNextAction ? 650 : 400, color: hasNextAction ? "var(--text-primary)" : "var(--text-tertiary)", lineHeight: 1.65, whiteSpace: "pre-wrap", wordBreak: "break-word" }}>
-                  {hasNextAction ? nextAction : "可补充下一步动作，便于明确近期推进。"}
+              <div className="project-overview-panel">
+                <div style={{ marginBottom: 6, color: "var(--text-tertiary)", fontSize: 11, fontWeight: 700, letterSpacing: "0.06em", textTransform: "uppercase" }}>
+                  下一步动作
+                </div>
+                <div
+                  style={{
+                    color: hasNextAction ? "var(--text-primary)" : "var(--text-tertiary)",
+                    fontSize: 14,
+                    fontWeight: hasNextAction ? 650 : 400,
+                    lineHeight: 1.7,
+                    whiteSpace: "pre-wrap",
+                    wordBreak: "break-word",
+                  }}
+                >
+                  {hasNextAction ? nextAction : "可补充下一步动作，便于明确近期推进重点。"}
                 </div>
               </div>
 
-              <div style={{ minWidth: 0 }}>
-                <div style={{ fontSize: 12, color: "var(--text-tertiary)", marginBottom: 4 }}>下一里程碑</div>
-                <div style={{ fontSize: 14, color: hasNextMilestone ? "var(--text-primary)" : "var(--text-tertiary)", lineHeight: 1.6, whiteSpace: "pre-wrap", wordBreak: "break-word" }}>
+              <div className="project-overview-panel">
+                <div style={{ marginBottom: 6, color: "var(--text-tertiary)", fontSize: 11, fontWeight: 700, letterSpacing: "0.06em", textTransform: "uppercase" }}>
+                  下一里程碑
+                </div>
+                <div
+                  style={{
+                    color: hasNextMilestone ? "var(--text-primary)" : "var(--text-tertiary)",
+                    fontSize: 14,
+                    lineHeight: 1.7,
+                    whiteSpace: "pre-wrap",
+                    wordBreak: "break-word",
+                  }}
+                >
                   {hasNextMilestone ? nextMilestone : "可补充下一里程碑，便于判断项目节奏。"}
                 </div>
               </div>
@@ -82,35 +98,35 @@ export default function ProjectOverviewSection({ project }: ProjectOverviewSecti
         )}
 
         {hasMeta && (
-          <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(160px, 1fr))", gap: 12, marginTop: 18, paddingTop: 16, borderTop: "1px solid var(--border-primary)" }}>
+          <div className="project-meta-grid" style={{ marginTop: 18, paddingTop: 16, borderTop: "1px solid var(--border-primary)" }}>
             {project.owner && (
-              <div>
-                <div style={{ fontSize: 12, color: "var(--text-tertiary)", marginBottom: 4 }}>负责人</div>
-                <div style={{ fontSize: 14, color: "var(--text-primary)" }}>{project.owner}</div>
+              <div className="project-meta-item">
+                <div className="project-meta-label">负责人</div>
+                <div className="project-meta-value">{project.owner}</div>
               </div>
             )}
             {project.pm && (
-              <div>
-                <div style={{ fontSize: 12, color: "var(--text-tertiary)", marginBottom: 4 }}>PM</div>
-                <div style={{ fontSize: 14, color: "var(--text-primary)" }}>{project.pm}</div>
+              <div className="project-meta-item">
+                <div className="project-meta-label">PM</div>
+                <div className="project-meta-value">{project.pm}</div>
               </div>
             )}
             {project.startDate && (
-              <div>
-                <div style={{ fontSize: 12, color: "var(--text-tertiary)", marginBottom: 4 }}>开始日期</div>
-                <div style={{ fontSize: 14, color: "var(--text-primary)" }}>{formatDate(project.startDate)}</div>
+              <div className="project-meta-item">
+                <div className="project-meta-label">开始日期</div>
+                <div className="project-meta-value">{formatDate(project.startDate)}</div>
               </div>
             )}
             {project.targetDate && (
-              <div>
-                <div style={{ fontSize: 12, color: "var(--text-tertiary)", marginBottom: 4 }}>目标日期</div>
-                <div style={{ fontSize: 14, color: "var(--text-primary)" }}>{formatDate(project.targetDate)}</div>
+              <div className="project-meta-item">
+                <div className="project-meta-label">目标日期</div>
+                <div className="project-meta-value">{formatDate(project.targetDate)}</div>
               </div>
             )}
             {project.releaseDate && (
-              <div>
-                <div style={{ fontSize: 12, color: "var(--text-tertiary)", marginBottom: 4 }}>发布日期</div>
-                <div style={{ fontSize: 14, color: "var(--text-primary)" }}>{formatDate(project.releaseDate)}</div>
+              <div className="project-meta-item">
+                <div className="project-meta-label">发布日期</div>
+                <div className="project-meta-value">{formatDate(project.releaseDate)}</div>
               </div>
             )}
           </div>

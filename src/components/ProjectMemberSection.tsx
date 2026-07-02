@@ -347,7 +347,7 @@ export default function ProjectMemberSection({ projectId }: ProjectMemberSection
   const displayedMembers = [...coreMembers, ...normalMembers];
 
   return (
-    <section style={{ marginBottom: 24 }}>
+    <section className="cockpit-section">
       <div className="dashboard-section-title">
         <div>
           <span className="section-eyebrow">MEMBERS</span>
@@ -382,30 +382,23 @@ export default function ProjectMemberSection({ projectId }: ProjectMemberSection
 
       {!membersLoading && !membersError && members.length > 0 && (
         <div
-          className="card"
+          className="card entity-card entity-card--compact project-support-summary"
           style={{
-            padding: 14,
-            marginBottom: 12,
-            display: "flex",
-            justifyContent: "space-between",
-            alignItems: "center",
-            gap: 12,
-            flexWrap: "wrap",
             border: coreMembers.length === 0
-              ? "1px solid color-mix(in srgb, var(--accent-orange) 28%, var(--border-primary))"
-              : "1px solid var(--border-primary)",
+              ? "1px solid color-mix(in srgb, var(--accent-orange) 20%, var(--border-primary))"
+              : "1px solid color-mix(in srgb, var(--accent-green) 18%, var(--border-primary))",
           }}
         >
-          <div style={{ minWidth: 0 }}>
-            <div style={{ fontSize: 14, fontWeight: 650, color: "var(--text-primary)", marginBottom: 4 }}>
+          <div className="project-support-summary__title">
+            <div className="project-support-summary__headline">
               {coreMembers.length > 0 ? `核心成员 ${coreMembers.length} 人` : "尚未标记核心成员"}
             </div>
-            <div style={{ fontSize: 12, color: "var(--text-secondary)", lineHeight: 1.6 }}>
+            <div className="project-support-summary__hint">
               成员总数 {members.length}，优先确认核心角色和职责是否清晰。
             </div>
           </div>
           {coreMembers.length === 0 && (
-            <span style={{ fontSize: 12, padding: "2px 8px", borderRadius: 999, background: "var(--accent-orange-light)", color: "var(--accent-orange)", border: "1px solid color-mix(in srgb, var(--accent-orange) 24%, transparent)" }}>
+            <span className="project-support-summary__chip" style={{ background: "var(--accent-orange-light)", color: "var(--accent-orange)", border: "1px solid color-mix(in srgb, var(--accent-orange) 18%, transparent)" }}>
               建议补充核心成员
             </span>
           )}
@@ -441,40 +434,29 @@ export default function ProjectMemberSection({ projectId }: ProjectMemberSection
             return (
               <div
                 key={member.id}
-                className="card"
-                style={{
-                  padding: 16,
-                  border: member.isCore
-                    ? "1px solid color-mix(in srgb, var(--accent-green) 28%, var(--border-primary))"
-                    : "1px solid var(--border-primary)",
-                  background: member.isCore
-                    ? "color-mix(in srgb, var(--accent-green-light) 28%, var(--bg-elevated))"
-                    : "var(--bg-elevated)",
-                }}
+                className={`card project-support-card ${member.isCore ? "project-support-card--accent" : ""}`}
               >
                 <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", gap: 12, flexWrap: "wrap" }}>
                   <div style={{ display: "flex", flexDirection: "column", gap: 8, minWidth: 0, flex: 1 }}>
-                    <div style={{ display: "flex", alignItems: "center", gap: 8, flexWrap: "wrap" }}>
-                      <strong style={{ fontSize: 15, color: "var(--text-primary)" }}>{member.name}</strong>
+                    <div className="project-support-card__title-row">
+                      <strong className="project-support-card__title">{member.name}</strong>
                       {member.isCore && (
-                        <span style={{ fontSize: 12, padding: "2px 8px", borderRadius: 999, background: "var(--accent-green-light)", color: "var(--accent-green)", border: "1px solid color-mix(in srgb, var(--accent-green) 24%, transparent)" }}>
-                          核心成员
-                        </span>
+                        <span className="entity-pill entity-pill--success">核心成员</span>
                       )}
                       {member.role && (
-                        <span style={{ fontSize: 12, padding: "2px 8px", borderRadius: 999, background: "var(--bg-secondary)", color: "var(--text-secondary)" }}>
+                        <span className="entity-pill entity-pill--muted">
                           {member.role}
                         </span>
                       )}
                     </div>
 
                     {member.responsibility && (
-                      <p style={{ margin: 0, fontSize: 13, color: "var(--text-secondary)", lineHeight: 1.6, whiteSpace: "pre-wrap", wordBreak: "break-word" }}>
+                      <p className="project-support-card__description" style={{ margin: 0 }}>
                         {member.responsibility}
                       </p>
                     )}
 
-                    <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(180px, 1fr))", gap: 8, fontSize: 12, color: "var(--text-tertiary)" }}>
+                    <div className="project-support-card__meta">
                       <span>团队：{member.team || "-"}</span>
                       <span>联系方式：{member.contact || "-"}</span>
                     </div>

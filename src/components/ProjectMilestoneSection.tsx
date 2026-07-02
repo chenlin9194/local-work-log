@@ -312,7 +312,7 @@ export default function ProjectMilestoneSection({ projectId }: ProjectMilestoneS
   const nextKeyMilestone = displayedMilestones.find((milestone) => !isMilestoneClosed(milestone)) ?? null;
 
   return (
-    <section style={{ marginBottom: 24 }}>
+    <section className="cockpit-section">
       <div className="dashboard-section-title">
         <div>
           <span className="section-eyebrow">MILESTONES</span>
@@ -355,31 +355,28 @@ export default function ProjectMilestoneSection({ projectId }: ProjectMilestoneS
 
       {milestones.length > 0 && (
         <div
-          className="card"
+          className="card entity-card entity-card--compact project-milestone-summary"
           style={{
-            padding: 14,
-            marginBottom: 12,
-            display: "grid",
-            gridTemplateColumns: "repeat(auto-fit, minmax(min(220px, 100%), 1fr))",
-            gap: 12,
             border: riskMilestoneCount > 0
-              ? "1px solid color-mix(in srgb, var(--accent-red) 28%, var(--border-primary))"
-              : "1px solid var(--border-primary)",
+              ? "1px solid color-mix(in srgb, var(--accent-red) 22%, var(--border-primary))"
+              : "1px solid color-mix(in srgb, var(--accent-green) 18%, var(--border-primary))",
           }}
         >
-          <div style={{ minWidth: 0 }}>
-            <div style={{ fontSize: 12, color: "var(--text-tertiary)", marginBottom: 4 }}>下一关键节点</div>
-            <div style={{ fontSize: 14, fontWeight: 650, color: nextKeyMilestone ? "var(--text-primary)" : "var(--text-tertiary)", lineHeight: 1.5, wordBreak: "break-word" }}>
+          <div className="project-milestone-summary__title">
+            <div className="project-milestone-summary__headline">
+              下一关键节点
+            </div>
+            <div style={{ color: nextKeyMilestone ? "var(--text-primary)" : "var(--text-tertiary)", lineHeight: 1.55, wordBreak: "break-word" }}>
               {nextKeyMilestone ? nextKeyMilestone.title : "暂无未关闭节点"}
             </div>
             {nextKeyMilestone?.targetDate && (
-              <div style={{ marginTop: 4, fontSize: 12, color: "var(--text-secondary)" }}>
+              <div className="project-milestone-summary__hint">
                 目标 {formatDate(nextKeyMilestone.targetDate)}
                 {nextKeyMilestone.owner ? ` · ${nextKeyMilestone.owner}` : ""}
               </div>
             )}
           </div>
-          <div style={{ display: "flex", flexWrap: "wrap", gap: 8, alignItems: "center" }}>
+          <div className="project-milestone-summary__chips">
             <span
               style={{
                 fontSize: 12,
@@ -710,106 +707,82 @@ export default function ProjectMilestoneSection({ projectId }: ProjectMilestoneS
               );
             }
 
-            return (
-              <div
-                key={milestone.id}
-                className="card"
-                style={{
-                  padding: 16,
-                  border: isRiskMilestone
-                    ? "1px solid color-mix(in srgb, var(--accent-red) 30%, var(--border-primary))"
-                    : isClosedMilestone
-                      ? "1px solid var(--border-primary)"
-                      : "1px solid color-mix(in srgb, var(--accent-blue) 18%, var(--border-primary))",
-                  background: isRiskMilestone
-                    ? "color-mix(in srgb, var(--accent-red-light) 34%, var(--bg-elevated))"
-                    : isClosedMilestone
-                      ? "color-mix(in srgb, var(--bg-secondary) 55%, var(--bg-elevated))"
-                      : "var(--bg-elevated)",
-                  opacity: isClosedMilestone ? 0.78 : 1,
-                }}
-              >
-                <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", gap: 12, marginBottom: 8, flexWrap: "wrap" }}>
+              return (
+                <div
+                  key={milestone.id}
+                  className={`card project-milestone-card ${isRiskMilestone ? "project-milestone-card--risk" : ""} ${isClosedMilestone ? "project-milestone-card--closed" : ""}`}
+                >
+                  <div className="project-milestone-card__header">
                     <div style={{ display: "flex", flexDirection: "column", gap: 8, minWidth: 0, flex: 1 }}>
-                    <div style={{ display: "flex", alignItems: "center", gap: 8, flexWrap: "wrap" }}>
-                      <strong style={{ fontSize: 15, color: "var(--text-primary)" }}>{milestone.title}</strong>
-                      {isRiskMilestone && (
-                        <span style={{ fontSize: 12, padding: "2px 8px", borderRadius: 999, background: "var(--accent-red-light)", color: "var(--accent-red)", border: "1px solid color-mix(in srgb, var(--accent-red) 24%, transparent)" }}>
-                          需要关注
+                      <div className="project-milestone-card__title-row">
+                        <strong className="project-milestone-card__title">{milestone.title}</strong>
+                        {isRiskMilestone && (
+                          <span className="entity-pill entity-pill--danger">需要关注</span>
+                        )}
+                        <span className="entity-pill entity-pill--muted">
+                          {PROJECT_MILESTONE_STATUS_LABELS[milestone.status] || milestone.status}
                         </span>
+                        <span className="entity-pill entity-pill--muted">
+                          {PROJECT_PLAN_TYPE_LABELS[milestone.planType || "milestone"] || PROJECT_PLAN_TYPE_LABELS.milestone}
+                        </span>
+                      </div>
+
+                      <div className="project-milestone-card__meta">
+                        <span>目标日期：{milestone.targetDate ? formatDate(milestone.targetDate) : "-"}</span>
+                        <span>实际日期：{milestone.actualDate ? formatDate(milestone.actualDate) : "-"}</span>
+                        <span>负责人：{milestone.owner || "-"}</span>
+                      </div>
+
+                      {milestone.description && (
+                        <p style={{ margin: 0, color: "var(--text-secondary)", fontSize: 13, lineHeight: 1.65, whiteSpace: "pre-wrap", wordBreak: "break-word" }}>
+                          {milestone.description}
+                        </p>
                       )}
-                      <span style={{ fontSize: 12, padding: "2px 8px", borderRadius: 999, background: "var(--bg-secondary)", color: "var(--text-secondary)" }}>
-                        {PROJECT_MILESTONE_STATUS_LABELS[milestone.status] || milestone.status}
-                      </span>
-                      <span style={{ fontSize: 12, padding: "2px 8px", borderRadius: 999, background: "var(--bg-secondary)", color: "var(--text-secondary)" }}>
-                        {PROJECT_PLAN_TYPE_LABELS[milestone.planType || "milestone"] || PROJECT_PLAN_TYPE_LABELS.milestone}
-                      </span>
                     </div>
-
-                    <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(180px, 1fr))", gap: 8, fontSize: 13, color: "var(--text-secondary)" }}>
-                      <span>目标日期：{milestone.targetDate ? formatDate(milestone.targetDate) : "-"}</span>
-                      <span>实际日期：{milestone.actualDate ? formatDate(milestone.actualDate) : "-"}</span>
-                      <span>负责人：{milestone.owner || "-"}</span>
-                    </div>
-
-                    {milestone.description && (
-                      <p style={{ margin: 0, fontSize: 13, color: "var(--text-secondary)", lineHeight: 1.6, whiteSpace: "pre-wrap", wordBreak: "break-word" }}>
-                        {milestone.description}
-                      </p>
-                    )}
-                  </div>
 
                     <div style={{ display: "flex", gap: 8, flexWrap: "wrap", minWidth: 0 }}>
-                    <button
-                      type="button"
-                      onClick={() => openMilestoneEditForm(milestone)}
-                      className="btn btn-secondary"
-                      disabled={isDeletingMilestone}
-                    >
-                      <Icon name="edit" size={14} />
-                      编辑
-                    </button>
-                    <button
-                      type="button"
-                      onClick={() => handleMilestoneDelete(milestone.id)}
-                      className="btn btn-secondary"
-                      disabled={isDeletingMilestone}
-                      style={{ color: "var(--accent-red)" }}
-                    >
-                      <Icon name="trash-2" size={14} />
-                      {isDeletingMilestone ? "删除中..." : "删除"}
-                    </button>
-                  </div>
-                </div>
-
-                {milestone.sourceUrl ? (
-                  <div style={{ display: "flex", flexDirection: "column", gap: 6, minWidth: 0 }}>
-                    <a
-                      href={milestone.sourceUrl}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      style={{ color: "var(--accent-blue)", textDecoration: "underline", fontSize: 14 }}
-                    >
-                      打开关联链接
-                    </a>
-                      <div
-                        style={{
-                          minWidth: 0,
-                          fontSize: 13,
-                          color: "var(--text-secondary)",
-                        wordBreak: "break-word",
-                        overflowWrap: "anywhere",
-                      }}
-                    >
-                      {milestone.sourceUrl}
+                      <button
+                        type="button"
+                        onClick={() => openMilestoneEditForm(milestone)}
+                        className="btn btn-secondary"
+                        disabled={isDeletingMilestone}
+                      >
+                        <Icon name="edit" size={14} />
+                        编辑
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => handleMilestoneDelete(milestone.id)}
+                        className="btn btn-secondary"
+                        disabled={isDeletingMilestone}
+                        style={{ color: "var(--accent-red)" }}
+                      >
+                        <Icon name="trash-2" size={14} />
+                        {isDeletingMilestone ? "删除中..." : "删除"}
+                      </button>
                     </div>
                   </div>
-                ) : (
-                  <div style={{ fontSize: 13, color: "var(--text-secondary)" }}>关联链接：-</div>
-                )}
-              </div>
-            );
-          })}
+
+                  {milestone.sourceUrl ? (
+                    <div style={{ display: "flex", flexDirection: "column", gap: 6, minWidth: 0 }}>
+                      <a
+                        href={milestone.sourceUrl}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="project-milestone-card__link"
+                      >
+                        打开关联链接
+                      </a>
+                      <div style={{ minWidth: 0, color: "var(--text-secondary)", fontSize: 13, wordBreak: "break-word", overflowWrap: "anywhere" }}>
+                        {milestone.sourceUrl}
+                      </div>
+                    </div>
+                  ) : (
+                    <div style={{ fontSize: 13, color: "var(--text-secondary)" }}>关联链接：-</div>
+                  )}
+                </div>
+              );
+            })}
         </div>
       )}
     </section>

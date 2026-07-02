@@ -175,7 +175,7 @@ export default function ProjectDetailPage() {
   });
 
   return (
-    <div className="page-shell">
+    <div className="page-shell cockpit-page">
       <ProjectHeaderSection project={project} />
       <ProjectOverviewSection project={project} />
       <ProjectSignalSection
@@ -188,16 +188,22 @@ export default function ProjectDetailPage() {
         overdueCount={overdueCount}
       />
 
-      <section style={{ marginBottom: 24 }}>
-        <div style={{ display: "flex", gap: 12, flexWrap: "wrap" }}>
-          <Link href={`/items/new?projectId=${project.id}`} className="btn btn-primary">
-            <Icon name="plus" size={15} />
-            新建关联事项
-          </Link>
-          <Link href={`/logs/new?projectId=${project.id}`} className="btn btn-secondary">
-            <Icon name="edit" size={15} />
-            新建关联日志
-          </Link>
+      <section className="cockpit-section">
+        <div className="card project-support-summary">
+          <div className="project-support-summary__title">
+            <div className="project-support-summary__headline">快速操作</div>
+            <div className="project-support-summary__hint">从这里快速补充本项目的事项和日志，便于把新变化直接落到事实记录里。</div>
+          </div>
+          <div style={{ display: "flex", gap: 12, flexWrap: "wrap" }}>
+            <Link href={`/items/new?projectId=${project.id}`} className="btn btn-primary">
+              <Icon name="plus" size={15} />
+              新建关联事项
+            </Link>
+            <Link href={`/logs/new?projectId=${project.id}`} className="btn btn-secondary">
+              <Icon name="edit" size={15} />
+              新建关联日志
+            </Link>
+          </div>
         </div>
       </section>
 
@@ -205,7 +211,7 @@ export default function ProjectDetailPage() {
       <ProjectMemberSection projectId={project.id} />
       <ProjectLinkSection projectId={project.id} />
 
-      <section style={{ marginBottom: 24 }}>
+      <section className="cockpit-section">
         <div className="dashboard-section-title">
           <div>
             <span className="section-eyebrow">PROJECT INFO</span>
@@ -277,7 +283,7 @@ export default function ProjectDetailPage() {
         </div>
       </section>
 
-      <section style={{ marginBottom: 24 }}>
+      <section className="cockpit-section">
         <div className="dashboard-section-title">
           <div>
             <span className="section-eyebrow">ITEMS</span>
@@ -347,7 +353,7 @@ export default function ProjectDetailPage() {
         )}
       </section>
 
-      <section>
+      <section className="cockpit-section">
         <div className="dashboard-section-title">
           <div>
             <span className="section-eyebrow">LOGS</span>

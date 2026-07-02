@@ -16,7 +16,7 @@ const HEALTH_TONE: Record<string, string> = {
   green: "success",
   yellow: "warning",
   red: "danger",
-  unknown: "neutral",
+  unknown: "muted",
 };
 
 const HEALTH_HEADLINE: Record<string, string> = {
@@ -34,7 +34,8 @@ export default function ProjectHeaderSection({ project }: ProjectHeaderSectionPr
   const router = useRouter();
   const actionInFlightRef = useRef(false);
   const [deleting, setDeleting] = useState(false);
-  const healthTone = HEALTH_TONE[project.health] || "neutral";
+
+  const healthTone = HEALTH_TONE[project.health] || "muted";
   const healthLabel = HEALTH_LABELS[project.health] || project.health;
   const statusLabel = PROJECT_STATUS_LABELS[project.status] || project.status;
   const stageLabel = project.stage ? PROJECT_STAGE_LABELS[project.stage] || project.stage : "阶段待确认";
@@ -84,75 +85,75 @@ export default function ProjectHeaderSection({ project }: ProjectHeaderSectionPr
   };
 
   return (
-    <section style={{ marginBottom: 24 }}>
-      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", gap: 16, marginBottom: 16, flexWrap: "wrap" }}>
-        <div style={{ minWidth: 0, flex: "1 1 420px" }}>
-          <div style={{ display: "flex", alignItems: "center", gap: 12, marginBottom: 8 }}>
-            <Link href="/projects" style={{ color: "var(--text-tertiary)", fontSize: 13 }}>
+    <section className="cockpit-section">
+      <div className="card cockpit-header">
+        <div className="cockpit-header-top">
+          <div className="cockpit-header-title">
+            <Link href="/projects" className="cockpit-header-back">
               <Icon name="arrow-left" size={14} /> 返回列表
             </Link>
-          </div>
-          <h1 style={{ fontSize: 24, fontWeight: 700, color: "var(--text-primary)", marginBottom: 4, wordBreak: "break-word" }}>
-            {project.name}
-            {project.code && <span style={{ fontSize: 14, color: "var(--text-tertiary)", marginLeft: 12 }}>{project.code}</span>}
-          </h1>
 
-          <div
-            style={{
-              display: "flex",
-              alignItems: "center",
-              gap: 10,
-              flexWrap: "wrap",
-              marginTop: 12,
-              padding: "10px 12px",
-              borderRadius: 8,
-              background: "var(--bg-secondary)",
-              border: "1px solid var(--border-primary)",
-            }}
-          >
-            <strong style={{ fontSize: 14, color: "var(--text-primary)" }}>
-              {HEALTH_HEADLINE[project.health] || healthLabel}
-            </strong>
-            <span className={`badge badge-${healthTone}`}>
-              健康：{healthLabel}
-            </span>
-            <span style={{ fontSize: 12, padding: "2px 8px", borderRadius: 999, background: "var(--bg-primary)", color: "var(--text-secondary)", border: "1px solid var(--border-primary)" }}>
-              状态：{statusLabel}
-            </span>
-            <span style={{ fontSize: 12, padding: "2px 8px", borderRadius: 999, background: "var(--bg-primary)", color: "var(--text-secondary)", border: "1px solid var(--border-primary)" }}>
-              阶段：{stageLabel}
-            </span>
-            <span style={{ fontSize: 12, padding: "2px 8px", borderRadius: 999, background: "var(--bg-primary)", color: "var(--text-secondary)", border: "1px solid var(--border-primary)" }}>
-              类型：{typeLabel}
-            </span>
+            <div className="cockpit-header-name-row">
+              <h1 className="cockpit-header-name">{project.name}</h1>
+              {project.code && <span className="cockpit-header-code">{project.code}</span>}
+            </div>
+
+            <div className="cockpit-header-status">
+              <strong style={{ color: "var(--text-primary)", fontSize: 14, fontWeight: 700 }}>
+                {HEALTH_HEADLINE[project.health] || healthLabel}
+              </strong>
+              <span className={`entity-pill entity-pill--${healthTone}`}>健康：{healthLabel}</span>
+              <span className="entity-pill entity-pill--muted">状态：{statusLabel}</span>
+              <span className="entity-pill entity-pill--muted">阶段：{stageLabel}</span>
+              <span className="entity-pill entity-pill--muted">类型：{typeLabel}</span>
+            </div>
+          </div>
+
+          <div className="cockpit-header-actions">
+            <Link href={`/projects/${project.id}/snapshot`} className="btn btn-ghost">
+              <Icon name="file-text" size={15} />
+              项目快照事实包
+            </Link>
+            <Link href={`/projects/${project.id}/edit`} className="btn btn-secondary">
+              <Icon name="edit" size={15} />
+              编辑项目
+            </Link>
+            <button
+              type="button"
+              onClick={handleDelete}
+              className="btn btn-secondary"
+              disabled={deleting}
+              style={{ color: "var(--accent-red)" }}
+            >
+              {deleting ? (
+                "删除中..."
+              ) : (
+                <>
+                  <Icon name="trash" size={15} />
+                  删除项目
+                </>
+              )}
+            </button>
           </div>
         </div>
 
-        <div style={{ display: "flex", flexWrap: "wrap", gap: 8 }}>
-          <Link href={`/projects/${project.id}/snapshot`} className="btn btn-ghost">
-            <Icon name="file-text" size={15} />
-            项目快照事实包
-          </Link>
-          <Link href={`/projects/${project.id}/edit`} className="btn btn-secondary">
-            <Icon name="edit" size={15} />
-            编辑项目
-          </Link>
-          <button
-            type="button"
-            onClick={handleDelete}
-            className="btn btn-secondary"
-            disabled={deleting}
-            style={{ color: "var(--accent-red)" }}
-          >
-            {deleting ? (
-              "删除中..."
-            ) : (
-              <>
-                <Icon name="trash" size={15} />
-                删除项目
-              </>
-            )}
-          </button>
+        <div className="project-meta-grid">
+          <div className="project-meta-item">
+            <div className="project-meta-label">健康</div>
+            <div className="project-meta-value">{healthLabel}</div>
+          </div>
+          <div className="project-meta-item">
+            <div className="project-meta-label">状态</div>
+            <div className="project-meta-value">{statusLabel}</div>
+          </div>
+          <div className="project-meta-item">
+            <div className="project-meta-label">阶段</div>
+            <div className="project-meta-value">{stageLabel}</div>
+          </div>
+          <div className="project-meta-item">
+            <div className="project-meta-label">类型</div>
+            <div className="project-meta-value">{typeLabel}</div>
+          </div>
         </div>
       </div>
     </section>

@@ -15,27 +15,11 @@ type ProjectSignalSectionProps = {
 
 type SignalTone = "neutral" | "danger" | "warning" | "success";
 
-const SIGNAL_TONE_STYLE: Record<SignalTone, { border: string; background: string; color: string }> = {
-  neutral: {
-    border: "1px solid var(--border-primary)",
-    background: "var(--bg-secondary)",
-    color: "var(--text-primary)",
-  },
-  danger: {
-    border: "1px solid color-mix(in srgb, var(--accent-red) 28%, var(--border-primary))",
-    background: "var(--accent-red-light)",
-    color: "var(--accent-red)",
-  },
-  warning: {
-    border: "1px solid color-mix(in srgb, var(--accent-orange) 28%, var(--border-primary))",
-    background: "var(--accent-orange-light)",
-    color: "var(--accent-orange)",
-  },
-  success: {
-    border: "1px solid color-mix(in srgb, var(--accent-green) 24%, var(--border-primary))",
-    background: "var(--accent-green-light)",
-    color: "var(--accent-green)",
-  },
+const SIGNAL_TONE_CLASS: Record<SignalTone, string> = {
+  neutral: "project-signal-card--neutral",
+  danger: "project-signal-card--danger",
+  warning: "project-signal-card--warning",
+  success: "project-signal-card--success",
 };
 
 function SignalCard({
@@ -51,42 +35,37 @@ function SignalCard({
   tone?: SignalTone;
   href?: string;
 }) {
-  const toneStyle = SIGNAL_TONE_STYLE[tone];
+  const resolvedTone = value > 0 ? tone : "neutral";
+  const cardClassName = [
+    "card",
+    "entity-card",
+    "entity-card--compact",
+    "project-signal-card",
+    SIGNAL_TONE_CLASS[resolvedTone],
+    value === 0 ? "project-signal-card--zero" : "",
+  ]
+    .filter(Boolean)
+    .join(" ");
 
   const content = (
     <>
-      <div style={{ display: "flex", alignItems: "baseline", justifyContent: "space-between", gap: 8 }}>
-        <div className="entity-card-note">{label}</div>
-        <div style={{ fontSize: 24, fontWeight: 700, color: value > 0 ? toneStyle.color : "var(--text-primary)" }}>{value}</div>
+      <div className="project-signal-card__topline">
+        <div className="project-signal-card__label">{label}</div>
+        <div className="project-signal-card__value">{value}</div>
       </div>
-      {hint && <div className="entity-card-summary" style={{ marginTop: 6 }}>{hint}</div>}
+      {hint && <div className="project-signal-card__hint">{hint}</div>}
     </>
   );
 
   if (href) {
     return (
-      <Link
-        className="card entity-card entity-card--compact"
-        href={href}
-        style={{
-          display: "block",
-          padding: 16,
-          border: toneStyle.border,
-          background: toneStyle.background,
-          textDecoration: "none",
-          color: "inherit",
-        }}
-      >
+      <Link className={cardClassName} href={href} style={{ textDecoration: "none", color: "inherit" }}>
         {content}
       </Link>
     );
   }
 
-  return (
-    <div className="card entity-card entity-card--compact" style={{ padding: 16, border: toneStyle.border, background: toneStyle.background }}>
-      {content}
-    </div>
-  );
+  return <div className={cardClassName}>{content}</div>;
 }
 
 export default function ProjectSignalSection({
@@ -101,15 +80,15 @@ export default function ProjectSignalSection({
   const mustHandleCount = p0p1Count + blockedCount + overdueCount;
   const hasHardSignal = mustHandleCount > 0;
   const hasRiskSignal = redYellowCount > 0;
-  const signalTitle = hasHardSignal ? "存在需要优先处理的信号" : hasRiskSignal ? "存在需要关注的风险信号" : "暂无高优先级风险信号";
+  const signalTitle = hasHardSignal ? "存在需要优先处理的信号" : hasRiskSignal ? "存在需要关注的风险信号" : "当前没有高优先级风险信号";
   const signalHint = hasHardSignal
     ? `P0/P1 ${p0p1Count} · 阻塞 ${blockedCount} · 逾期 ${overdueCount}`
     : hasRiskSignal
-      ? `红黄状态事项 ${redYellowCount}，建议结合关联事项确认影响。`
+      ? `红黄状态事项 ${redYellowCount}，建议结合关联事项继续确认影响。`
       : "当前没有 P0/P1、阻塞或逾期事项。";
 
   return (
-    <section style={{ marginBottom: 24 }}>
+    <section className="cockpit-section">
       <div className="dashboard-section-title">
         <div>
           <span className="section-eyebrow">SIGNALS</span>
@@ -118,40 +97,30 @@ export default function ProjectSignalSection({
       </div>
 
       <div
-        className="card entity-card entity-card--compact"
+        className="card entity-card entity-card--compact project-signal-summary"
         style={{
           padding: 16,
-          marginBottom: 12,
-          display: "flex",
-          justifyContent: "space-between",
-          alignItems: "center",
-          gap: 16,
-          flexWrap: "wrap",
           border: hasHardSignal
-            ? "1px solid color-mix(in srgb, var(--accent-red) 28%, var(--border-primary))"
+            ? "1px solid color-mix(in srgb, var(--accent-red) 22%, var(--border-primary))"
             : hasRiskSignal
-              ? "1px solid color-mix(in srgb, var(--accent-orange) 28%, var(--border-primary))"
-              : "1px solid color-mix(in srgb, var(--accent-green) 22%, var(--border-primary))",
+              ? "1px solid color-mix(in srgb, var(--accent-orange) 20%, var(--border-primary))"
+              : "1px solid color-mix(in srgb, var(--accent-green) 18%, var(--border-primary))",
         }}
       >
-        <div style={{ minWidth: 0 }}>
-          <div style={{ fontSize: 15, fontWeight: 700, color: "var(--text-primary)", marginBottom: 4 }}>
-            {signalTitle}
-          </div>
-          <div style={{ fontSize: 12, color: "var(--text-secondary)", lineHeight: 1.6, wordBreak: "break-word" }}>
-            {signalHint}
-          </div>
+        <div className="project-signal-summary__title">
+          <div className="project-signal-summary__headline">{signalTitle}</div>
+          <div className="project-signal-summary__hint">{signalHint}</div>
         </div>
-        <div style={{ fontSize: 12, color: "var(--text-tertiary)", lineHeight: 1.6 }}>
+        <div className="project-signal-summary__meta">
           事项 {itemCount} · 日志 {logCount}
         </div>
       </div>
 
-      <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(120px, 1fr))", gap: 12 }}>
+      <div className="project-signal-grid">
         <SignalCard
           value={p0p1Count}
           label="P0 / P1"
-          hint="高优先级未关闭"
+          hint="高优先级未关闭事项"
           tone={p0p1Count > 0 ? "danger" : "success"}
           href={signalToItemsHref("p0p1", projectId)}
         />
@@ -174,37 +143,11 @@ export default function ProjectSignalSection({
         <SignalCard value={logCount} label="日志总数" hint="事实支撑记录" />
       </div>
 
-      <div style={{ display: "flex", flexWrap: "wrap", gap: 8, marginTop: 12 }}>
-        <Link
-          href={signalToLogsHref("risk", projectId)}
-          style={{
-            display: "inline-flex",
-            alignItems: "center",
-            padding: "4px 10px",
-            borderRadius: 999,
-            background: "var(--accent-red-light)",
-            color: "var(--accent-red)",
-            textDecoration: "none",
-            fontSize: 12,
-            fontWeight: 600,
-          }}
-        >
+      <div className="project-signal-links">
+        <Link href={signalToLogsHref("risk", projectId)} className="project-signal-link" style={{ background: "var(--accent-red-light)", color: "var(--accent-red)" }}>
           Risk Logs
         </Link>
-        <Link
-          href={signalToLogsHref("blocker", projectId)}
-          style={{
-            display: "inline-flex",
-            alignItems: "center",
-            padding: "4px 10px",
-            borderRadius: 999,
-            background: "var(--bg-secondary)",
-            color: "var(--text-secondary)",
-            textDecoration: "none",
-            fontSize: 12,
-            fontWeight: 600,
-          }}
-        >
+        <Link href={signalToLogsHref("blocker", projectId)} className="project-signal-link" style={{ background: "var(--bg-secondary)", color: "var(--text-secondary)" }}>
           Blocked Logs
         </Link>
       </div>
