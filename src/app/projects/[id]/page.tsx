@@ -66,6 +66,29 @@ function getLogEvidenceLabel(log: WorkLog) {
   return undefined;
 }
 
+const ATTENTION_CHIP_STYLES = {
+  danger: {
+    color: "var(--accent-red)",
+    background: "color-mix(in srgb, var(--accent-red-light) 70%, var(--bg-secondary))",
+    border: "color-mix(in srgb, var(--accent-red) 20%, var(--border-primary))",
+  },
+  warning: {
+    color: "var(--accent-orange)",
+    background: "color-mix(in srgb, var(--accent-orange-light) 70%, var(--bg-secondary))",
+    border: "color-mix(in srgb, var(--accent-orange) 20%, var(--border-primary))",
+  },
+  success: {
+    color: "var(--accent-green)",
+    background: "color-mix(in srgb, var(--accent-green-light) 70%, var(--bg-secondary))",
+    border: "color-mix(in srgb, var(--accent-green) 20%, var(--border-primary))",
+  },
+  neutral: {
+    color: "var(--text-secondary)",
+    background: "var(--bg-secondary)",
+    border: "var(--border-primary)",
+  },
+} as const;
+
 export default function ProjectDetailPage() {
   const params = useParams();
   const id = params.id as string;
@@ -296,19 +319,19 @@ export default function ProjectDetailPage() {
               <div style={{ display: "flex", flexWrap: "wrap", gap: 8 }}>
                 <Link
                   href={signalToItemsHref("blocked", project.id)}
-                  style={{ display: "inline-flex", alignItems: "center", fontSize: 12, padding: "2px 8px", borderRadius: 999, background: "var(--accent-red-light)", color: "var(--accent-red)", textDecoration: "none" }}
+                  style={{ display: "inline-flex", alignItems: "center", fontSize: 12, padding: "2px 8px", borderRadius: 999, background: ATTENTION_CHIP_STYLES.danger.background, color: ATTENTION_CHIP_STYLES.danger.color, border: `1px solid ${ATTENTION_CHIP_STYLES.danger.border}`, textDecoration: "none" }}
                 >
                   阻塞 {blockedCount}
                 </Link>
                 <Link
                   href={signalToItemsHref("p0p1", project.id)}
-                  style={{ display: "inline-flex", alignItems: "center", fontSize: 12, padding: "2px 8px", borderRadius: 999, background: "var(--accent-orange-light)", color: "var(--accent-orange)", textDecoration: "none" }}
+                  style={{ display: "inline-flex", alignItems: "center", fontSize: 12, padding: "2px 8px", borderRadius: 999, background: ATTENTION_CHIP_STYLES.warning.background, color: ATTENTION_CHIP_STYLES.warning.color, border: `1px solid ${ATTENTION_CHIP_STYLES.warning.border}`, textDecoration: "none" }}
                 >
                   P0/P1 {p0p1Count}
                 </Link>
                 <Link
                   href={signalToItemsHref("overdue", project.id)}
-                  style={{ display: "inline-flex", alignItems: "center", fontSize: 12, padding: "2px 8px", borderRadius: 999, background: "var(--accent-red-light)", color: "var(--accent-red)", textDecoration: "none" }}
+                  style={{ display: "inline-flex", alignItems: "center", fontSize: 12, padding: "2px 8px", borderRadius: 999, background: ATTENTION_CHIP_STYLES.danger.background, color: ATTENTION_CHIP_STYLES.danger.color, border: `1px solid ${ATTENTION_CHIP_STYLES.danger.border}`, textDecoration: "none" }}
                 >
                   逾期 {overdueCount}
                 </Link>
@@ -361,12 +384,12 @@ export default function ProjectDetailPage() {
                 </div>
               </div>
               <div style={{ display: "flex", flexWrap: "wrap", gap: 8 }}>
-                <Link href={signalToLogsHref("risk", project.id)} style={{ fontSize: 12, padding: "2px 8px", borderRadius: 999, background: "var(--accent-red-light)", color: "var(--accent-red)", textDecoration: "none" }}>
+                <Link href={signalToLogsHref("risk", project.id)} style={{ display: "inline-flex", alignItems: "center", fontSize: 12, padding: "2px 8px", borderRadius: 999, background: ATTENTION_CHIP_STYLES.danger.background, color: ATTENTION_CHIP_STYLES.danger.color, border: `1px solid ${ATTENTION_CHIP_STYLES.danger.border}`, textDecoration: "none" }}>
                   风险 {riskLogCount}
                 </Link>
                 <Link
                   href={signalToLogsHref("reportable", project.id)}
-                  style={{ display: "inline-flex", alignItems: "center", fontSize: 12, padding: "2px 8px", borderRadius: 999, background: "var(--accent-green-light)", color: "var(--accent-green)", textDecoration: "none" }}
+                  style={{ display: "inline-flex", alignItems: "center", fontSize: 12, padding: "2px 8px", borderRadius: 999, background: ATTENTION_CHIP_STYLES.success.background, color: ATTENTION_CHIP_STYLES.success.color, border: `1px solid ${ATTENTION_CHIP_STYLES.success.border}`, textDecoration: "none" }}
                 >
                   可汇报 {reportableLogCount}
                 </Link>

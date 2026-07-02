@@ -295,13 +295,14 @@ export default async function Dashboard({ searchParams }: PageProps) {
         <div className="situation-grid">
           {stats.map((stat) => {
             const isActive = focus === stat.focus;
+            const statTone = stat.value > 0 ? stat.tone : "neutral";
 
             return (
               <Link
                 key={stat.label}
                 href={getDashboardFocusHref(stat.focus)}
                 scroll={false}
-                className={`stat-card stat-card-${stat.tone}${isActive ? " stat-card-active" : ""}`}
+                className={`stat-card stat-card-${statTone}${isActive ? " stat-card-active" : ""}`}
                 aria-current={isActive ? "page" : undefined}
               >
                 <div className="stat-topline">

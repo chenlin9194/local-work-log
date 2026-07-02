@@ -24,11 +24,27 @@ const HEALTH_TONE: Record<string, string> = {
   unknown: "neutral",
 };
 
-const RISK_SIGNAL_STYLES: Record<string, { color: string; background: string }> = {
-  critical: { color: "var(--critical, #ef4444)", background: "rgba(239, 68, 68, 0.08)" },
-  danger: { color: "var(--danger, #f97316)", background: "rgba(249, 115, 22, 0.08)" },
-  warning: { color: "var(--warning, #eab308)", background: "rgba(234, 179, 8, 0.08)" },
-  neutral: { color: "var(--text-tertiary)", background: "var(--bg-secondary)" },
+const RISK_SIGNAL_STYLES: Record<string, { color: string; background: string; border: string }> = {
+  critical: {
+    color: "var(--accent-red)",
+    background: "color-mix(in srgb, var(--accent-red-light) 70%, var(--bg-secondary))",
+    border: "color-mix(in srgb, var(--accent-red) 20%, var(--border-primary))",
+  },
+  danger: {
+    color: "var(--accent-orange)",
+    background: "color-mix(in srgb, var(--accent-orange-light) 70%, var(--bg-secondary))",
+    border: "color-mix(in srgb, var(--accent-orange) 20%, var(--border-primary))",
+  },
+  warning: {
+    color: "var(--accent-orange)",
+    background: "color-mix(in srgb, var(--accent-orange-light) 70%, var(--bg-secondary))",
+    border: "color-mix(in srgb, var(--accent-orange) 20%, var(--border-primary))",
+  },
+  neutral: {
+    color: "var(--text-tertiary)",
+    background: "var(--bg-secondary)",
+    border: "var(--border-primary)",
+  },
 };
 
 type ProjectsApiResponse = {
@@ -271,7 +287,18 @@ export default function ProjectsPage() {
                     <div style={{ display: "flex", flexWrap: "wrap", gap: 8, marginBottom: 10 }}>
                       {riskSignals.map((signal) => {
                         const style = RISK_SIGNAL_STYLES[signal.tone] || RISK_SIGNAL_STYLES.neutral;
-                        const chipStyle = { fontSize: 12, padding: "2px 8px", borderRadius: 999, color: style.color, background: style.background, fontWeight: 600, textDecoration: "none" };
+                        const chipStyle = {
+                          fontSize: 12,
+                          padding: "2px 8px",
+                          borderRadius: 999,
+                          color: style.color,
+                          background: style.background,
+                          border: `1px solid ${style.border}`,
+                          fontWeight: 600,
+                          textDecoration: "none",
+                          display: "inline-flex",
+                          alignItems: "center",
+                        };
                         return signal.href ? (
                           <Link key={signal.key} href={signal.href} style={chipStyle}>
                             {signal.label} {signal.value}
