@@ -1,265 +1,141 @@
-# Local Work Hub
+# WorkHub
+
+WorkHub 是一个面向个人的软件项目经理的关键事实管理控制台，也可以理解为“个人项目管理控制台 / 关键事实导航系统”。
+
+它只服务于你真正需要持续跟踪、快速定位、可以汇报的内容，不是完整项目管理系统，也不是 Jira、ALM、飞书或团队协同平台的替代品。
 
 ## 项目定位
 
-Local Work Hub 是一个面向手机 OS 软件项目经理的本地工作事项集散中心。
-它只负责记录事实、管理事项、导出上下文，不内置任何 AI 能力。
+WorkHub 的目标很明确：
 
-## WorkItem vs WorkLog
+- 个人使用
+- 管理关键事实，而不是管理所有细节
+- 支撑日报、周报、项目快照
+- 快速找到风险、阻塞、决策、变更和关键节点
+- 保持轻量，不扩展成全量项目管理系统
 
-- **WorkItem**：持续跟踪的工作事项，有生命周期（open → following/blocked → closed）
-- **WorkLog**：每天发生的一条工作记录，可以独立存在，也可以关联到 WorkItem
+## 当前核心能力
 
-## 安装方式
+WorkHub 第一版已经包含以下能力：
 
-```bash
-npm install
-```
+- 工作台 `cockpit`
+- 项目管理
+- 事项 `WorkItem`
+- 日志 `WorkLog`
+- 项目详情 `cockpit`
+- 项目信号 `signal`
+- `signal → filter → list` 导航链路
+- 日报、周报、项目快照导出
+- 工具链接配置
 
-## 环境配置
+其中：
 
-创建 `.env` 文件：
+- `signalMap` 负责把信号语义映射到列表跳转语义
+- `filterLinks` 负责构造列表筛选 URL
+- `items` / `logs` 列表页负责读取和同步 URL 筛选条件
 
-```bash
-DATABASE_URL="file:./dev.db"
-```
+## 核心工作流
 
-## 数据库初始化
+1. 创建项目
+2. 录入关键事项
+3. 记录关键日志
+4. 通过项目 cockpit 或工作台信号定位风险
+5. 进入 `items` / `logs` 列表查看筛选结果
+6. 导出日报、周报或项目快照事实包
 
-```bash
-npm run db:push
-```
+## 信息收录边界
 
-### 重置数据库
+### 应该收录
 
-```bash
-rm prisma/dev.db
-npm run db:push
-```
+- 关键风险
+- 关键阻塞
+- 关键决策
+- 关键变更
+- 关键项目节点
+- 需要持续跟踪的事项
+- 可汇报日志
 
-## 本地启动
+### 不应该收录
 
-```bash
-npm run dev
-```
+- 全量需求
+- 全量 bug
+- 所有会议全文
+- 细粒度执行任务树
+- 完整文档库
+- 企业权限和多用户流程
 
-默认绑定 `127.0.0.1:3000`，仅本地访问。
+## 当前架构
 
-## 页面说明
+当前技术栈很简单：
 
-| 路由 | 说明 |
-|---|---|
-| `/` | Dashboard 仪表盘 |
-| `/items` | WorkItem 列表 |
-| `/items/new` | 新增 WorkItem |
-| `/items/[id]` | WorkItem 详情 |
-| `/items/[id]/edit` | 编辑 WorkItem |
-| `/logs` | WorkLog 列表 |
-| `/logs/new` | 新增 WorkLog |
-| `/logs/[id]` | WorkLog 详情 |
-| `/logs/[id]/edit` | 编辑 WorkLog |
-| `/today` | 今日工作视图 |
-| `/stats` | 统计页面 |
-| `/export/today` | 今日 Markdown 导出 |
-| `/export/range` | 日期范围 Markdown 导出 |
+- Next.js
+- TypeScript
+- Prisma
+- SQLite
+- URL filter
+- `signalMap`
+- `filterLinks`
 
-## WorkItem 操作
+维护时只需要记住两件事：
 
-### 创建 WorkItem
+- 页面层尽量只负责展示、筛选和跳转
+- 信号语义和筛选语义分别收口到 `signalMap` 和 `filterLinks`
 
-访问 `/items/new`，填写表单：
-- **标题**（必填）
-- **描述**（可选）
-- **项目/模块**（可选）
-- **类型**：task / risk / issue / decision / blocker / other
-- **优先级**：P0 / P1 / P2 / P3
-- **状态**：open / following / blocked / closed
-- **责任人**（可选）
-- **截止日期**（可选）
-- **下一步行动**（可选）
-- **标签**（可选，逗号分隔）
+## 页面入口
 
-### 查看 WorkItem 列表
+主要入口保持简洁：
 
-访问 `/items`，支持筛选：
-- 项目、模块、类型、优先级、状态、责任人
-- 关键词搜索
-- 逾期事项筛选
+- `/` 工作台
+- `/projects` 项目列表
+- `/items` 事项列表
+- `/logs` 日志列表
+- `/today` 今日视图
+- `/reports` 汇报入口
+- `/projects/[id]` 项目详情 cockpit
 
-### WorkItem 详情
+## 启动与验证
 
-访问 `/items/[id]`，可以：
-- 查看完整信息
-- 查看关联的 WorkLog 时间线
-- 修改状态
-- 标记为 closed（自动记录关闭时间）
-- 添加关联 WorkLog
-
-## WorkLog 操作
-
-### 创建 WorkLog
-
-访问 `/logs/new`，填写表单：
-- **工作日期**（必填，默认今天）
-- **标题**（必填）
-- **内容**（必填）
-- **类型**：note / meeting / update / risk / decision / todo / feishu / issue / blocker / other
-- **来源**：manual / meeting / feishu / phone / mail / other
-- **项目/模块**（可选）
-- **标签**（可选）
-- **关联事项**（可选）
-
-### 查看 WorkLog 列表
-
-访问 `/logs`，支持筛选：
-- 日期范围、项目、模块、类型、来源
-- 是否关联事项
-- 关键词搜索
-
-### WorkLog 详情
-
-访问 `/logs/[id]`，可以：
-- 查看完整信息
-- 查看关联的 WorkItem
-- 复制 Markdown
-
-## 如何使用 /export/today
-
-1. 访问 `http://localhost:3000/export/today`
-2. 页面会显示今日工作内容的 Markdown
-3. 点击复制按钮，复制到剪贴板
-4. 粘贴到外部 AI 工具中生成日报
-
-导出内容包含：
-- AI 日报提示词（顶部）
-- 概览统计
-- 一、今日新增日志
-- 二、今日关闭事项
-- 三、今日更新事项
-- 四、当前 P0/P1 未关闭事项
-- 五、今日到期事项
-- 六、逾期未关闭事项
-- 七、今日风险/阻塞
-- 八、今日决策
-
-## 如何使用 /export/range
-
-1. 访问 `http://localhost:3000/export/range?start=2025-01-01&end=2025-01-07`
-2. 页面会显示指定日期范围的工作内容的 Markdown
-3. 点击复制按钮，复制到剪贴板
-4. 粘贴到外部 AI 工具中生成周报
-
-## 导出 API
-
-### /api/export/today
-
-```
-GET /api/export/today?format=markdown
-GET /api/export/today?format=json
-```
-
-JSON 字段：
-- `workLogs`：今日日志
-- `closedItems`：今日关闭事项
-- `updatedItems`：今日更新事项
-- `openHighPriorityItems`：P0/P1 未关闭事项
-- `dueTodayItems`：今日到期事项
-- `overdueItems`：逾期未关闭事项
-- `riskAndBlockerLogs`：今日风险/阻塞日志
-- `decisionLogs`：今日决策日志
-
-### /api/export/range
-
-```
-GET /api/export/range?start=YYYY-MM-DD&end=YYYY-MM-DD&format=markdown
-GET /api/export/range?start=YYYY-MM-DD&end=YYYY-MM-DD&format=json
-```
-
-JSON 字段：
-- `workLogs`：日期范围内日志
-- `closedItems`：日期范围内关闭事项
-- `updatedItems`：日期范围内更新事项
-
-## 如何用 Claude Code / Codex CLI 生成日报周报
-
-### 生成日报
+Windows 侧使用以下命令：
 
 ```bash
-npm run report:today:claude
-# 或
-npm run report:today:codex
+npm.cmd install
+npm.cmd run typecheck
+npm.cmd run build
+npm.cmd run dev
 ```
 
-脚本会：
-1. 导出今日数据到 `.local-ai/exports/today-YYYY-MM-DD.md`
-2. 调用 Claude/Codex 生成日报
-3. 输出到 `.local-ai/reports/daily-YYYY-MM-DD.md`
-
-### 生成周报
+如需同步 Prisma schema，再执行：
 
 ```bash
-npm run report:week:claude
-# 或
-npm run report:week:codex
+npx prisma db push
 ```
 
-脚本会：
-1. 导出本周数据到 `.local-ai/exports/week-YYYY-MM-DD.md`
-2. 调用 Claude/Codex 生成周报
-3. 输出到 `.local-ai/reports/weekly-YYYY-MM-DD.md`
+## 工具链接配置
 
-### 手动导出
+工具链接在 `/settings/tools` 中维护，用于记录常用外部链接，例如 Jira、Gerrit、Jenkins 等。
 
-```bash
-npm run export:today
-npm run export:week
-```
+原则很简单：
 
-## 安全说明
+- 只保留本地跳转需要的链接
+- 不做账号体系
+- 不做权限系统
+- 不做多用户协同
 
-- **默认仅本地访问**：dev server 绑定 `127.0.0.1:3000`
-- **不建议暴露到局域网**：如需局域网访问，请自行配置反向代理和认证
-- **无认证机制**：本项目不做登录/多用户，适合个人本地使用
-- **数据存储**：SQLite 数据库文件 `prisma/dev.db`，请妥善备份
+## 当前稳定状态
 
-## 非目标说明
+当前 WorkHub 第一版稳定收口到以下状态：
 
-本项目：
-- ❌ 不内置 AI
-- ❌ 不接 OpenAI / Claude / Codex API
-- ❌ 不做 RAG / MCP / 向量数据库
-- ❌ 不做登录 / 多用户
-- ❌ 不做飞书集成
-- ✅ 只负责记录事实、管理事项、导出上下文
+- Phase 11 快速定位完成
+- Phase 12 `signal → filter → list` 收敛完成
+- Phase 13A freeze 验收通过
+- 当前稳定提交：`adc4fe6 feat: unify signal navigation layer with DSL-based routing`
 
-## 开发命令
+## 维护提醒
 
-```bash
-npm run dev          # 启动开发服务器
-npm run build        # 构建生产版本
-npm run start        # 启动生产服务器
-npm run typecheck    # TypeScript 类型检查
-npm run lint         # ESLint 代码检查
-npm run db:push      # 推送数据库 schema
-npm run db:studio    # 打开 Prisma Studio
-```
+后续如果继续扩展，优先遵守这几个约束：
 
-## 常用工具管理
+- 不要把它扩成完整项目管理系统
+- 不要引入复杂状态管理
+- 不要把列表页改成搜索中心或保存视图中心
+- 不要把信号映射和筛选构造逻辑分散到各个页面
 
-常用工具菜单由页面维护，入口在 `/settings/tools`。
-
-首次使用时，请先到 `/settings/tools` 手动添加需要的工具，例如 JIRA、Gerrit、Jenkins。
-
-操作方式：
-
-1. 打开 `/settings/tools`
-2. 新增一条工具链接，填写 `name`、`url`、`enabled`、`sortOrder`
-3. 在列表中可继续编辑、删除、启用、停用和调整排序
-4. 右上角“常用工具”菜单会自动读取已启用且链接非空的工具
-
-说明：
-
-- 新增或调整常用工具不需要改代码，只需要在页面里维护
-- 这只做本地跳转，不做登录、OAuth、API 集成或状态同步
-- 不保存账号密码或 token
-- `config/tool-links.json` 只是历史文件，不再参与运行
