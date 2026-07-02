@@ -3,6 +3,7 @@
 import { useState, useEffect, useCallback } from "react";
 import Link from "next/link";
 import Icon from "@/components/Icon";
+import PageLoadingState from "@/components/PageLoadingState";
 import {
   PROJECT_STATUSES,
   PROJECT_STAGES,
@@ -164,9 +165,11 @@ export default function ProjectsPage() {
         </div>
 
         {loading ? (
-          <div className="card empty-state">
-            <p>加载中...</p>
-          </div>
+          <PageLoadingState
+            title="加载项目列表..."
+            description="正在读取项目、状态和风险信号。"
+            rows={4}
+          />
         ) : projects.length === 0 ? (
           <div className="card empty-state">
             <div className="empty-icon">

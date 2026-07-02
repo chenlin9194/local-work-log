@@ -5,6 +5,7 @@ import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import WorkLogCard from "@/components/WorkLogCard";
 import Icon from "@/components/Icon";
+import PageLoadingState from "@/components/PageLoadingState";
 import { WORK_LOG_TYPES, SOURCES } from "@/lib/constants";
 import { buildLogsQueryString } from "@/lib/filterLinks";
 
@@ -203,7 +204,11 @@ export default function LogsPage() {
       <div style={{ fontSize: 13, color: "var(--text-tertiary)" }}>共 {total} 条记录</div>
 
       {loading ? (
-        <div style={{ textAlign: "center", padding: 40, color: "var(--text-tertiary)" }}>加载中...</div>
+        <PageLoadingState
+          title="加载日志列表..."
+          description="正在读取筛选后的日志与关联信息。"
+          rows={4}
+        />
       ) : logs.length === 0 ? (
         <div className="card empty-state compact-list-empty">
           <div className="empty-icon"><Icon name="file-text" size={25} /></div>

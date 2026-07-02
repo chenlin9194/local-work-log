@@ -5,6 +5,7 @@ import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import WorkItemCard from "@/components/WorkItemCard";
 import Icon from "@/components/Icon";
+import PageLoadingState from "@/components/PageLoadingState";
 import {
   WORK_ITEM_TYPES,
   PRIORITIES,
@@ -313,7 +314,11 @@ export default function ItemsPage() {
 
       {/* Items List */}
       {loading ? (
-        <div style={{ textAlign: "center", padding: 40, color: "var(--text-tertiary)" }}>加载中...</div>
+        <PageLoadingState
+          title="加载事项列表..."
+          description="正在读取筛选后的事项与当前状态。"
+          rows={4}
+        />
       ) : items.length === 0 ? (
         <div className="card empty-state compact-list-empty">
           <div className="empty-icon"><Icon name="clipboard-list" size={25} /></div>

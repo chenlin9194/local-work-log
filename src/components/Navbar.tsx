@@ -1,8 +1,8 @@
 "use client";
 
 import Link from "next/link";
-import { usePathname, useRouter } from "next/navigation";
-import { useCallback, useEffect, useRef, useState, useTransition, type MouseEvent as ReactMouseEvent } from "react";
+import { usePathname } from "next/navigation";
+import { useEffect, useRef, useState } from "react";
 import { useTheme } from "./ThemeProvider";
 import Icon from "./Icon";
 
@@ -20,8 +20,6 @@ interface ToolLink {
   enabled: boolean;
   sortOrder: number;
 }
-
-const refreshTargets = new Set(["/", "/projects", "/items", "/logs", "/reports"]);
 
 const navItems: NavItem[] = [
   { href: "/", label: "工作台", icon: "home", exact: true },
@@ -51,30 +49,13 @@ function getActiveHref(pathname: string, items: NavItem[]): string | null {
 
 export default function Navbar() {
   const pathname = usePathname();
-  const router = useRouter();
   const { theme, toggle } = useTheme();
-  const [isPending, startTransition] = useTransition();
   const [toolMenuOpen, setToolMenuOpen] = useState(false);
   const [toolLinks, setToolLinks] = useState<ToolLink[]>([]);
   const [toolLinksLoaded, setToolLinksLoaded] = useState(false);
   const toolMenuRef = useRef<HTMLDivElement>(null);
 
   const activeHref = getActiveHref(pathname, navItems);
-
-  const handleNav = useCallback(
-    (href: string, e: ReactMouseEvent) => {
-      e.preventDefault();
-      setToolMenuOpen(false);
-      if (href === pathname) return;
-      startTransition(() => {
-        router.push(href);
-        if (refreshTargets.has(href)) {
-          router.refresh();
-        }
-      });
-    },
-    [pathname, router, startTransition]
-  );
 
   useEffect(() => {
     const handleOutsideClick = (event: MouseEvent) => {
@@ -137,11 +118,7 @@ export default function Navbar() {
     <nav className="navbar">
       <div className="navbar-container">
         <div className="navbar-main-row">
-          <Link
-            href="/"
-            onClick={(e) => handleNav("/", e)}
-            className="navbar-brand"
-          >
+          <Link href="/" onClick={() => setToolMenuOpen(false)} className="navbar-brand">
             <span className="navbar-brand-mark">
               <Icon name="clipboard-list" size={18} />
             </span>
@@ -159,7 +136,7 @@ export default function Navbar() {
                   key={item.href}
                   href={item.href}
                   prefetch={true}
-                  onClick={(e) => handleNav(item.href, e)}
+                  onClick={() => setToolMenuOpen(false)}
                   className={`nav-link ${isActive ? "nav-link-active" : ""}`}
                   aria-current={isActive ? "page" : undefined}
                 >
@@ -171,7 +148,6 @@ export default function Navbar() {
           </div>
 
           <div className="navbar-actions">
-            {isPending && <div className="nav-loading-dot" />}
             <button
               onClick={toggle}
               className="btn btn-ghost btn-sm"
@@ -230,7 +206,7 @@ export default function Navbar() {
                         whiteSpace: "normal",
                       }}
                     >
-                      暂无常用工具，请到 常用工具设置 中添加。
+                      暂无常用工具，请到“常用工具设置”中添加。
                     </div>
                   ) : (
                     availableToolLinks.map((tool) => (
@@ -284,6 +260,7 @@ export default function Navbar() {
             </div>
           </div>
         </div>
+
         <div className="mobile-nav" aria-label="移动端导航">
           {navItems.map((item) => {
             const isActive = activeHref === item.href;
@@ -292,7 +269,7 @@ export default function Navbar() {
                 key={item.href}
                 href={item.href}
                 prefetch={true}
-                onClick={(e) => handleNav(item.href, e)}
+                onClick={() => setToolMenuOpen(false)}
                 className={`nav-link-mobile ${isActive ? "nav-link-mobile-active" : ""}`}
                 aria-current={isActive ? "page" : undefined}
               >

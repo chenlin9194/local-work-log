@@ -6,6 +6,7 @@ import Link from "next/link";
 import Icon from "@/components/Icon";
 import WorkItemCard from "@/components/WorkItemCard";
 import WorkLogCard from "@/components/WorkLogCard";
+import PageLoadingState from "@/components/PageLoadingState";
 import ProjectHeaderSection from "@/components/ProjectHeaderSection";
 import ProjectOverviewSection from "@/components/ProjectOverviewSection";
 import ProjectSignalSection from "@/components/ProjectSignalSection";
@@ -93,9 +94,11 @@ export default function ProjectDetailPage() {
   if (loading) {
     return (
       <div className="page-shell">
-        <div className="card empty-state">
-          <p>加载中...</p>
-        </div>
+        <PageLoadingState
+          title="加载项目详情..."
+          description="正在读取项目主体、风险信号和相关记录。"
+          rows={5}
+        />
       </div>
     );
   }

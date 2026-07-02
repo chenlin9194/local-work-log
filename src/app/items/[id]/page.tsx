@@ -4,6 +4,7 @@ import { useState, useEffect, useCallback, useRef } from "react";
 import { useParams, useRouter } from "next/navigation";
 import Link from "next/link";
 import Timeline from "@/components/Timeline";
+import PageLoadingState from "@/components/PageLoadingState";
 import {
   WORK_ITEM_TYPE_LABELS,
   PRIORITY_LABELS,
@@ -95,7 +96,6 @@ export default function ItemDetailPage() {
 
       if (res.ok) {
         await fetchItem();
-        router.refresh();
       } else {
         alert("更新失败");
       }
@@ -144,7 +144,13 @@ export default function ItemDetailPage() {
   };
 
   if (loading) {
-    return <div style={{ textAlign: "center", padding: 40, color: "var(--text-tertiary)" }}>加载中...</div>;
+    return (
+      <PageLoadingState
+        title="加载事项详情..."
+        description="正在读取事项主体、时间线和关联记录。"
+        rows={5}
+      />
+    );
   }
 
   if (!item) {

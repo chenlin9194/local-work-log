@@ -7,6 +7,7 @@ import { WORK_LOG_TYPE_LABELS, SOURCE_LABELS } from "@/lib/constants";
 import { generateWorkLogMarkdown } from "@/lib/utils";
 import AutoLinkText from "@/components/AutoLinkText";
 import ActionItemSection from "@/components/ActionItemSection";
+import PageLoadingState from "@/components/PageLoadingState";
 
 interface WorkLog {
   id: string;
@@ -97,7 +98,13 @@ export default function LogDetailPage() {
   };
 
   if (loading) {
-    return <div style={{ textAlign: "center", padding: 40, color: "var(--text-tertiary)" }}>加载中...</div>;
+    return (
+      <PageLoadingState
+        title="加载日志详情..."
+        description="正在读取日志正文、关联事项和后续动作。"
+        rows={5}
+      />
+    );
   }
 
   if (!log) {
