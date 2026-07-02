@@ -21,6 +21,7 @@ type ItemFilters = {
   project: string;
   module: string;
   type: string;
+  visibility: string;
   priority: string;
   status: string;
   owner: string;
@@ -61,6 +62,7 @@ const DEFAULT_FILTERS: ItemFilters = {
   project: "",
   module: "",
   type: "",
+  visibility: "open",
   priority: "",
   status: "",
   owner: "",
@@ -77,6 +79,7 @@ function readItemFilters(searchParams: URLSearchParams): ItemFilters {
     project: searchParams.get("project") || "",
     module: searchParams.get("module") || "",
     type: searchParams.get("type") || "",
+    visibility: searchParams.get("visibility") || "open",
     priority: searchParams.get("priority") || "",
     status: searchParams.get("status") || "",
     owner: searchParams.get("owner") || "",
@@ -203,6 +206,15 @@ export default function ItemsPage() {
             onChange={(e) => handleFilterChange("keyword", e.target.value)}
             style={{ padding: "8px 12px", borderRadius: 6, border: "1px solid var(--border-primary)", background: "var(--bg-secondary)", color: "var(--text-primary)", fontSize: 13 }}
           />
+          <select
+            value={filters.visibility}
+            onChange={(e) => handleFilterChange("visibility", e.target.value)}
+            style={{ padding: "8px 12px", borderRadius: 6, border: "1px solid var(--border-primary)", background: "var(--bg-secondary)", color: "var(--text-primary)", fontSize: 13 }}
+          >
+            <option value="open">默认未关闭</option>
+            <option value="closed">仅已关闭</option>
+            <option value="all">全部事项</option>
+          </select>
           <select
             value={filters.type}
             onChange={(e) => handleFilterChange("type", e.target.value)}

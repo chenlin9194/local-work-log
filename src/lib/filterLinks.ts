@@ -3,6 +3,7 @@ type ItemQuery = {
   project?: string;
   module?: string;
   type?: string;
+  visibility?: string;
   priority?: string | string[];
   status?: string;
   owner?: string;
@@ -64,6 +65,7 @@ export function buildItemsQueryString(filters: ItemQuery, pagination?: Paginatio
   if (!filters.projectId) appendString(params, "project", filters.project);
   appendString(params, "module", filters.module);
   appendString(params, "type", filters.type);
+  appendString(params, "visibility", filters.visibility);
   appendPriority(params, filters.priority);
   appendString(params, "status", filters.status);
   appendString(params, "owner", filters.owner);

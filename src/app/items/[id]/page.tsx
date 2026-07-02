@@ -14,6 +14,7 @@ import {
 } from "@/lib/constants";
 import { isOverdue, generateWorkItemMarkdown } from "@/lib/utils";
 import AutoLinkText from "@/components/AutoLinkText";
+import ActionItemSection from "@/components/ActionItemSection";
 import { itemToAddLogHref, itemToLogsHref } from "@/lib/signalMap";
 
 interface WorkItem {
@@ -315,6 +316,8 @@ export default function ItemDetailPage() {
           </div>
         )}
       </div>
+
+      <ActionItemSection workItemId={item.id} projectId={item.projectId ?? undefined} />
 
       {/* Status Actions */}
       <div className="card" style={{ padding: 16, marginBottom: 16 }}>

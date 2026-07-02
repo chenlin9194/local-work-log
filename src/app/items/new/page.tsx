@@ -11,6 +11,8 @@ import {
   REPORT_LEVEL_OPTIONS,
   SOURCE_SYSTEM_OPTIONS,
 } from "@/lib/constants";
+import ActionItemDraftSection from "@/components/ActionItemDraftSection";
+import type { ActionItemDraft } from "@/lib/types";
 
 interface ProjectOption {
   id: string;
@@ -27,6 +29,8 @@ function NewItemForm() {
   const submittingRef = useRef(false);
   const submitButtonRef = useRef<HTMLButtonElement>(null);
   const [projects, setProjects] = useState<ProjectOption[]>([]);
+  const [actionItemsEnabled, setActionItemsEnabled] = useState(false);
+  const [actionItemDrafts, setActionItemDrafts] = useState<ActionItemDraft[]>([]);
   const [form, setForm] = useState({
     title: "",
     description: "",
@@ -82,6 +86,46 @@ function NewItemForm() {
     }
   };
 
+  const createActionItems = async (parentItemId: string) => {
+    const activeDrafts = actionItemsEnabled
+      ? actionItemDrafts.filter((draft) => draft.title.trim())
+      : [];
+
+    if (activeDrafts.length === 0) {
+      return;
+    }
+
+    const results = await Promise.allSettled(
+      activeDrafts.map((draft, index) =>
+        fetch("/api/action-items", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            title: draft.title.trim(),
+            status: draft.status,
+            owner: draft.owner,
+            dueDate: draft.dueDate,
+            workItemId: parentItemId,
+            projectId: form.projectId || undefined,
+            sortOrder: index,
+          }),
+        }).then(async (res) => {
+          if (!res.ok) {
+            const errorBody = await res.json().catch(() => null);
+            throw new Error(errorBody?.error || "创建 Action Item 失败");
+          }
+
+          return res.json();
+        })
+      )
+    );
+
+    const failures = results.filter((result) => result.status === "rejected");
+    if (failures.length > 0) {
+      alert(`父记录已保存，但有 ${failures.length} 条 Action Item 创建失败`);
+    }
+  };
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (submittingRef.current) return;
@@ -105,6 +149,7 @@ function NewItemForm() {
 
       if (res.ok) {
         const item = await res.json();
+        await createActionItems(item.id);
         window.location.assign(`/items/${item.id}`);
         return;
       }
@@ -434,6 +479,13 @@ function NewItemForm() {
                 style={{ width: "100%", padding: "10px 12px", borderRadius: 6, border: "1px solid var(--border-primary)", background: "var(--bg-secondary)", color: "var(--text-primary)", fontSize: 14 }}
               />
             </div>
+
+            <ActionItemDraftSection
+              enabled={actionItemsEnabled}
+              drafts={actionItemDrafts}
+              onEnabledChange={setActionItemsEnabled}
+              onDraftsChange={setActionItemDrafts}
+            />
 
             {/* Buttons */}
             <div style={{ display: "flex", gap: 12, justifyContent: "flex-end", marginTop: 8 }}>

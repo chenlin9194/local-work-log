@@ -117,14 +117,15 @@ export default function ProjectDetailPage() {
   }
 
   const items = project.items || [];
+  const openItems = items.filter((item) => item.status !== "closed");
   const logs = project.logs || [];
-  const p0p1Count = items.filter((i) => (i.priority === "P0" || i.priority === "P1") && i.status !== "closed").length;
-  const blockedCount = items.filter((i) => i.status === "blocked").length;
-  const redYellowCount = items.filter((i) => i.health === "red" || i.health === "yellow").length;
+  const p0p1Count = openItems.filter((i) => i.priority === "P0" || i.priority === "P1").length;
+  const blockedCount = openItems.filter((i) => i.status === "blocked").length;
+  const redYellowCount = openItems.filter((i) => i.health === "red" || i.health === "yellow").length;
   const today = getLocalDateString();
-  const overdueCount = items.filter((i) => i.dueDate && i.dueDate < today && i.status !== "closed").length;
-  const attentionItems = items.filter((item) => getItemEvidenceRank(item, today) <= 3);
-  const sortedItems = [...items].sort((a, b) => {
+  const overdueCount = openItems.filter((i) => i.dueDate && i.dueDate < today).length;
+  const attentionItems = openItems.filter((item) => getItemEvidenceRank(item, today) <= 3);
+  const sortedItems = [...openItems].sort((a, b) => {
     const rankDiff = getItemEvidenceRank(a, today) - getItemEvidenceRank(b, today);
     if (rankDiff !== 0) return rankDiff;
 
@@ -260,7 +261,7 @@ export default function ProjectDetailPage() {
             查看全部 <Icon name="chevron-right" size={14} />
           </Link>
         </div>
-        {items.length === 0 ? (
+        {openItems.length === 0 ? (
           <div className="card empty-state">
             <p>暂无关联事项</p>
           </div>

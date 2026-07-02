@@ -119,7 +119,11 @@ export async function POST(request: NextRequest) {
       },
     });
 
-    revalidateWorkHubPaths({ logId: log.id, itemId: itemId || undefined });
+    revalidateWorkHubPaths({
+      logId: log.id,
+      itemId: itemId || undefined,
+      projectId: log.projectId ?? undefined,
+    });
 
     return NextResponse.json(log, { status: 201 });
   } catch (error) {

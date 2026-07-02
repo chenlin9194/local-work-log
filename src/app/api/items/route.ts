@@ -16,6 +16,7 @@ export async function GET(request: NextRequest) {
     const type = searchParams.get("type");
     const priority = searchParams.get("priority");
     const status = searchParams.get("status");
+    const visibility = searchParams.get("visibility") || "open";
     const owner = searchParams.get("owner");
     const health = searchParams.get("health");
     const reportLevel = searchParams.get("reportLevel");
@@ -60,9 +61,13 @@ export async function GET(request: NextRequest) {
       where.dueDate = { lt: today };
       andClauses.push({ status: { not: "closed" } });
     }
-    // Apply explicit status filter after overdue check so both conditions are respected
     if (status) {
+      // Explicit status takes precedence over visibility.
       andClauses.push({ status });
+    } else if (visibility === "closed") {
+      andClauses.push({ status: "closed" });
+    } else if (visibility === "open") {
+      andClauses.push({ status: { not: "closed" } });
     }
     if (andClauses.length > 0) {
       where.AND = andClauses;
@@ -158,7 +163,7 @@ export async function POST(request: NextRequest) {
       },
     });
 
-    revalidateWorkHubPaths({ itemId: item.id });
+    revalidateWorkHubPaths({ itemId: item.id, projectId: item.projectId ?? undefined });
 
     return NextResponse.json(item, { status: 201 });
   } catch (error) {

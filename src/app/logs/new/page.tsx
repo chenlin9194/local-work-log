@@ -5,6 +5,8 @@ import { useRouter, useSearchParams } from "next/navigation";
 import { MODULES, PRIORITIES, SOURCES, STATUSES, WORK_ITEM_TYPES, WORK_LOG_TYPES } from "@/lib/constants";
 import { getLocalDateString } from "@/lib/utils";
 import Icon from "@/components/Icon";
+import ActionItemDraftSection from "@/components/ActionItemDraftSection";
+import type { ActionItemDraft } from "@/lib/types";
 
 type RelationMode = "none" | "existing" | "new";
 
@@ -32,6 +34,8 @@ function NewLogForm() {
   const submitButtonRef = useRef<HTMLButtonElement>(null);
   const [items, setItems] = useState<ExistingItem[]>([]);
   const [projects, setProjects] = useState<ProjectOption[]>([]);
+  const [actionItemsEnabled, setActionItemsEnabled] = useState(false);
+  const [actionItemDrafts, setActionItemDrafts] = useState<ActionItemDraft[]>([]);
   const [form, setForm] = useState({
     workDate: getLocalDateString(),
     title: "",
@@ -143,6 +147,47 @@ function NewLogForm() {
       setForm({ ...form, projectId, project: proj.name });
     } else {
       setForm({ ...form, projectId: "" });
+    }
+  };
+
+  const createActionItems = async (workLogId: string, workItemId?: string | null) => {
+    const activeDrafts = actionItemsEnabled
+      ? actionItemDrafts.filter((draft) => draft.title.trim())
+      : [];
+
+    if (activeDrafts.length === 0) {
+      return;
+    }
+
+    const results = await Promise.allSettled(
+      activeDrafts.map((draft, index) =>
+        fetch("/api/action-items", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            title: draft.title.trim(),
+            status: draft.status,
+            owner: draft.owner,
+            dueDate: draft.dueDate,
+            workLogId,
+            workItemId: workItemId || undefined,
+            projectId: form.projectId || undefined,
+            sortOrder: index,
+          }),
+        }).then(async (res) => {
+          if (!res.ok) {
+            const errorBody = await res.json().catch(() => null);
+            throw new Error(errorBody?.error || "创建 Action Item 失败");
+          }
+
+          return res.json();
+        })
+      )
+    );
+
+    const failures = results.filter((result) => result.status === "rejected");
+    if (failures.length > 0) {
+      alert(`父记录已保存，但有 ${failures.length} 条 Action Item 创建失败`);
     }
   };
 
@@ -260,6 +305,7 @@ function NewLogForm() {
 
       if (logRes.ok) {
         const log = await logRes.json();
+        await createActionItems(log.id, itemIdToLink);
         shouldRestoreSubmit = false;
         window.location.assign(`/logs/${log.id}`);
         return;
@@ -557,6 +603,13 @@ function NewLogForm() {
                 </select>
               </div>
             </div>
+
+            <ActionItemDraftSection
+              enabled={actionItemsEnabled}
+              drafts={actionItemDrafts}
+              onEnabledChange={setActionItemsEnabled}
+              onDraftsChange={setActionItemDrafts}
+            />
 
             <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 16 }}>
               <div>

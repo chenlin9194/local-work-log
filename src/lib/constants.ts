@@ -128,6 +128,12 @@ export const WORK_LOG_TYPES = [
   { value: "other", label: "其他" },
 ] as const;
 
+export const ACTION_ITEM_STATUSES = [
+  { value: "pending", label: "待处理" },
+  { value: "in_progress", label: "处理中" },
+  { value: "done", label: "已处理" },
+] as const;
+
 export const PRIORITIES = [
   { value: "P0", label: "P0 - 紧急" },
   { value: "P1", label: "P1 - 高" },
@@ -168,6 +174,10 @@ export const WORK_ITEM_TYPE_LABELS: Record<string, string> = Object.fromEntries(
 
 export const WORK_LOG_TYPE_LABELS: Record<string, string> = Object.fromEntries(
   WORK_LOG_TYPES.map((t) => [t.value, t.label])
+);
+
+export const ACTION_ITEM_STATUS_LABELS: Record<string, string> = Object.fromEntries(
+  ACTION_ITEM_STATUSES.map((status) => [status.value, status.label])
 );
 
 export const PRIORITY_LABELS: Record<string, string> = Object.fromEntries(

@@ -42,6 +42,7 @@ model WorkItem {
   closedAt    DateTime?
 
   logs        WorkLog[]
+  actionItems ActionItem[]
 }
 
 model WorkLog {
@@ -69,6 +70,8 @@ model WorkLog {
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
+
+  actionItems ActionItem[]
 }
 
 model Project {
@@ -107,6 +110,31 @@ model Project {
   links           ProjectLink[]
   milestones      ProjectMilestone[]
   members         ProjectMember[]
+  actionItems     ActionItem[]
+}
+
+model ActionItem {
+  id          String   @id @default(cuid())
+  title       String
+  status      String   @default("pending")
+  owner       String?
+  dueDate     String?
+  sortOrder   Int      @default(0)
+  workItemId  String?
+  workLogId   String?
+  projectId   String?
+  doneAt      DateTime?
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  workItem    WorkItem? @relation(fields: [workItemId], references: [id], onDelete: Cascade)
+  workLog     WorkLog?  @relation(fields: [workLogId], references: [id], onDelete: Cascade)
+  project     Project?  @relation(fields: [projectId], references: [id], onDelete: SetNull)
+
+  @@index([workItemId])
+  @@index([workLogId])
+  @@index([projectId])
+  @@index([status])
 }
 
 model ProjectLink {

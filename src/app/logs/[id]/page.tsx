@@ -6,6 +6,7 @@ import Link from "next/link";
 import { WORK_LOG_TYPE_LABELS, SOURCE_LABELS } from "@/lib/constants";
 import { generateWorkLogMarkdown } from "@/lib/utils";
 import AutoLinkText from "@/components/AutoLinkText";
+import ActionItemSection from "@/components/ActionItemSection";
 
 interface WorkLog {
   id: string;
@@ -15,6 +16,7 @@ interface WorkLog {
   type: string;
   source: string;
   project?: string | null;
+  projectId?: string | null;
   module?: string | null;
   tags?: string | null;
   itemId?: string | null;
@@ -172,6 +174,12 @@ export default function LogDetailPage() {
           </div>
         )}
       </div>
+
+      <ActionItemSection
+        workLogId={log.id}
+        workItemId={log.itemId ?? undefined}
+        projectId={log.projectId ?? undefined}
+      />
     </div>
   );
 }

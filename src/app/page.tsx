@@ -170,7 +170,7 @@ export default async function Dashboard({ searchParams }: PageProps) {
       take: 10,
     }),
     prisma.workLog.findMany({ orderBy: { createdAt: "desc" }, take: 10 }),
-    prisma.workItem.findMany({ orderBy: { updatedAt: "desc" }, take: 10 }),
+    prisma.workItem.findMany({ where: { status: { not: "closed" } }, orderBy: { updatedAt: "desc" }, take: 10 }),
     prisma.project.findMany({
       where: { status: { in: ["active", "planning"] } },
       include: {

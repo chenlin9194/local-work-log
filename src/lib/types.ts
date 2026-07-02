@@ -27,7 +27,23 @@ export interface Project {
   links?: ProjectLink[];
   milestones?: ProjectMilestone[];
   members?: ProjectMember[];
+  actionItems?: ActionItem[];
   portfolioSignals?: ProjectPortfolioSignals | null;
+}
+
+export interface ActionItem {
+  id: string;
+  title: string;
+  status: string;
+  owner?: string | null;
+  dueDate?: string | null;
+  sortOrder: number;
+  workItemId?: string | null;
+  workLogId?: string | null;
+  projectId?: string | null;
+  doneAt?: string | Date | null;
+  createdAt: string | Date;
+  updatedAt: string | Date;
 }
 
 export interface ProjectPortfolioMilestone {
@@ -290,6 +306,7 @@ export interface WorkItem {
   updatedAt: Date;
   closedAt?: Date | null;
   logs?: WorkLog[];
+  actionItems?: ActionItem[];
 }
 
 export interface WorkLog {
@@ -310,4 +327,12 @@ export interface WorkLog {
   item?: WorkItem | null;
   createdAt: Date;
   updatedAt: Date;
+  actionItems?: ActionItem[];
+}
+
+export interface ActionItemDraft {
+  title: string;
+  status: string;
+  owner: string;
+  dueDate: string;
 }

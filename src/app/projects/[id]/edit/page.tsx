@@ -1,7 +1,7 @@
 "use client";
 
-import { useState, useEffect, useCallback } from "react";
-import { useRouter, useParams } from "next/navigation";
+import { useState, useEffect, useCallback, useRef } from "react";
+import { useParams } from "next/navigation";
 import Link from "next/link";
 import Icon from "@/components/Icon";
 import {
@@ -12,9 +12,10 @@ import {
 } from "@/lib/constants";
 
 export default function EditProjectPage() {
-  const router = useRouter();
   const params = useParams();
   const id = params.id as string;
+  const submittingRef = useRef(false);
+  const submitButtonRef = useRef<HTMLButtonElement>(null);
   const [loading, setLoading] = useState(false);
   const [fetching, setFetching] = useState(true);
   const [form, setForm] = useState({
@@ -79,12 +80,19 @@ export default function EditProjectPage() {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    if (submittingRef.current) return;
     if (!form.name.trim()) {
       alert("项目名称不能为空");
       return;
     }
 
+    submittingRef.current = true;
+    if (submitButtonRef.current) {
+      submitButtonRef.current.disabled = true;
+      submitButtonRef.current.textContent = "保存中...";
+    }
     setLoading(true);
+
     try {
       const res = await fetch(`/api/projects/${id}`, {
         method: "PUT",
@@ -93,15 +101,26 @@ export default function EditProjectPage() {
       });
 
       if (res.ok) {
-        router.push(`/projects/${id}`);
-      } else {
-        const error = await res.json();
-        alert(error.error || "更新失败");
+        window.location.assign(`/projects/${id}`);
+        return;
       }
+
+      const error = await res.json().catch(() => null);
+      alert(error?.error || "更新失败");
+      submittingRef.current = false;
+      if (submitButtonRef.current) {
+        submitButtonRef.current.disabled = false;
+        submitButtonRef.current.textContent = "保存修改";
+      }
+      setLoading(false);
     } catch (error) {
       console.error("Error updating project:", error);
       alert("更新失败");
-    } finally {
+      submittingRef.current = false;
+      if (submitButtonRef.current) {
+        submitButtonRef.current.disabled = false;
+        submitButtonRef.current.textContent = "保存修改";
+      }
       setLoading(false);
     }
   };
@@ -127,7 +146,7 @@ export default function EditProjectPage() {
 
       <h1 style={{ fontSize: 22, fontWeight: 700, color: "var(--text-primary)", marginBottom: 8 }}>编辑项目</h1>
 
-      <form onSubmit={handleSubmit}>
+      <form onSubmit={handleSubmit} noValidate>
         <div className="card" style={{ padding: 24 }}>
           <div style={{ display: "flex", flexDirection: "column", gap: 16 }}>
             {/* Name & Code */}
@@ -294,7 +313,7 @@ export default function EditProjectPage() {
               <div>
                 <label style={labelStyle}>来源链接</label>
                 <input
-                  type="url"
+                  type="text"
                   value={form.sourceUrl}
                   onChange={(e) => setForm({ ...form, sourceUrl: e.target.value })}
                   style={inputStyle}
@@ -318,7 +337,7 @@ export default function EditProjectPage() {
               <Link href={`/projects/${id}`} className="btn btn-secondary">
                 取消
               </Link>
-              <button type="submit" disabled={loading} className="btn btn-primary">
+              <button ref={submitButtonRef} type="submit" disabled={loading} className="btn btn-primary">
                 {loading ? "保存中..." : "保存修改"}
               </button>
             </div>

@@ -62,7 +62,11 @@ export async function PUT(
       data,
     });
 
-    revalidateWorkHubPaths({ logId: id, itemId: currentLog.itemId ?? undefined });
+    revalidateWorkHubPaths({
+      logId: id,
+      itemId: currentLog.itemId ?? undefined,
+      projectId: log.projectId ?? undefined,
+    });
     if ("itemId" in body) {
       const nextItemId = body.itemId || undefined;
       if (nextItemId && nextItemId !== currentLog.itemId) {

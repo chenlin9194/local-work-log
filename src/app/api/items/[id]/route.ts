@@ -98,7 +98,27 @@ export async function PUT(
 
     if ("title" in body) data.title = body.title;
     if ("description" in body) data.description = toNullableString(body.description);
-    if ("project" in body) data.project = toNullableString(body.project);
+    if ("projectId" in body) {
+      const nextProjectId = toNullableString(body.projectId);
+      if (nextProjectId) {
+        const project = await prisma.project.findUnique({
+          where: { id: nextProjectId },
+          select: { name: true },
+        });
+
+        if (!project) {
+          return NextResponse.json({ error: "项目不存在" }, { status: 400 });
+        }
+
+        data.projectId = nextProjectId;
+        data.project = project.name;
+      } else {
+        data.projectId = null;
+        data.project = "project" in body ? toNullableString(body.project) : null;
+      }
+    } else if ("project" in body) {
+      data.project = toNullableString(body.project);
+    }
     if ("module" in body) data.module = toNullableString(body.module);
     if ("type" in body) data.type = body.type;
     if ("priority" in body) data.priority = body.priority;
@@ -183,7 +203,10 @@ export async function PUT(
       }
     }
 
-    revalidateWorkHubPaths({ itemId: id });
+    revalidateWorkHubPaths({ itemId: id, projectId: item.projectId ?? undefined });
+    if (currentItem.projectId && currentItem.projectId !== item.projectId) {
+      revalidateWorkHubPaths({ projectId: currentItem.projectId });
+    }
 
     return NextResponse.json(item);
   } catch (error) {
@@ -198,6 +221,14 @@ export async function DELETE(
 ) {
   try {
     const { id } = await params;
+    const currentItem = await prisma.workItem.findUnique({
+      where: { id },
+      select: { projectId: true },
+    });
+
+    if (!currentItem) {
+      return NextResponse.json({ error: "工作事项不存在" }, { status: 404 });
+    }
 
     // First, unlink all associated work logs
     await prisma.workLog.updateMany({
@@ -208,7 +239,7 @@ export async function DELETE(
     // Then delete the work item
     await prisma.workItem.delete({ where: { id } });
 
-    revalidateWorkHubPaths({ itemId: id });
+    revalidateWorkHubPaths({ itemId: id, projectId: currentItem.projectId ?? undefined });
 
     return NextResponse.json({ success: true });
   } catch (error) {
