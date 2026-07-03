@@ -2670,6 +2670,72 @@ input.input[type="date"], input.input[type="url"], input.input[type="number"] { 
   font-size: 12px;
 }
 
+/* ===== Auxiliary Pages Phase B.4 ===== */
+.app-shell-main > .auxiliary-page {
+  width: 100%;
+  max-width: none;
+  margin: 0;
+  display: grid;
+  gap: 14px;
+}
+
+.app-shell-main > .page-shell.auxiliary-page {
+  width: 100%;
+  max-width: none;
+  margin: 0;
+}
+
+.auxiliary-page .command-page-header,
+.auxiliary-page .export-header,
+.auxiliary-page .tool-settings-header,
+.auxiliary-page .reports-header {
+  align-items: flex-start;
+}
+
+.auxiliary-page .command-page-header h1,
+.auxiliary-page .export-header h1,
+.auxiliary-page .tool-settings-header h1 {
+  font-size: 24px;
+}
+
+.auxiliary-page .command-page-header p,
+.auxiliary-page .export-header p,
+.auxiliary-page .tool-settings-header p,
+.auxiliary-page .reports-header p {
+  max-width: 68ch;
+}
+
+.reports-page {
+  gap: 16px;
+}
+
+.reports-page .dashboard-section-title {
+  margin-bottom: 10px;
+}
+
+.tool-settings-page {
+  gap: 16px;
+}
+
+.export-page {
+  gap: 14px;
+}
+
+.stats-page {
+  gap: 18px;
+}
+
+.today-page {
+  gap: 16px;
+}
+
+.command-page-header .page-header-actions,
+.export-header .page-header-actions,
+.tool-settings-header .page-header-actions,
+.reports-header .page-header-actions {
+  align-self: flex-start;
+}
+
 @media (max-width: 1180px) {
   .dashboard-shell {
     grid-template-columns: 58px minmax(0, 1fr);

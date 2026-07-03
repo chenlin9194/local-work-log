@@ -69,14 +69,16 @@ export default async function ExportTodayPage() {
   });
 
   return (
-    <div className="export-page">
-      <div className="export-header">
+    <div className="page-shell auxiliary-page export-page">
+      <div className="export-header command-page-header">
         <div>
           <span className="section-eyebrow">FACT PACKAGE / TODAY</span>
           <h1>今日日报事实包</h1>
           <p>{formatTodayStr()}</p>
         </div>
-        <CopyButton text={md} label="复制今日日报事实包" />
+        <div className="page-header-actions">
+          <CopyButton text={md} label="复制今日日报事实包" />
+        </div>
       </div>
 
       <div className="card export-notice">

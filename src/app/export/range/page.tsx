@@ -13,8 +13,8 @@ export default async function ExportRangePage({ searchParams }: PageProps) {
 
   if (!start || !end) {
     return (
-      <div className="export-page">
-        <div className="export-header">
+      <div className="page-shell auxiliary-page export-page">
+        <div className="export-header command-page-header">
           <div><span className="section-eyebrow">FACT PACKAGE / RANGE</span><h1>区间 / 周报事实包</h1></div>
         </div>
         <div className="card export-notice">
@@ -52,14 +52,16 @@ export default async function ExportRangePage({ searchParams }: PageProps) {
   const md = generateRangeMarkdown({ start, end, workLogs, closedItems, updatedItems });
 
   return (
-    <div className="export-page">
-      <div className="export-header">
+    <div className="page-shell auxiliary-page export-page">
+      <div className="export-header command-page-header">
         <div>
           <span className="section-eyebrow">FACT PACKAGE / RANGE</span>
           <h1>区间 / 周报事实包</h1>
           <p>{start} 至 {end}</p>
         </div>
-        <CopyButton text={md} label="复制区间 / 周报事实包" />
+        <div className="page-header-actions">
+          <CopyButton text={md} label="复制区间 / 周报事实包" />
+        </div>
       </div>
 
       <div className="card export-notice">

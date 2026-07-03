@@ -52,29 +52,26 @@ const workflowSteps = [
 
 export default function ReportsPage() {
   return (
-    <div className="page-shell">
-      <section className="page-hero">
-        <div className="page-hero-content">
-          <div className="page-hero-kicker">
-            <span className="page-hero-dot" />
-            FACT PACKAGE HUB
-          </div>
+    <div className="page-shell auxiliary-page reports-page">
+      <header className="command-page-header reports-header">
+        <div>
+          <span className="section-eyebrow">FACT PACKAGE HUB</span>
           <h1>汇报入口</h1>
-          <p className="page-hero-subtitle">
+          <p>
             这里不是汇报结论生成器，而是 WorkHub 的事实包入口。先把事实整理出来，再交给外部工具组织成日报、周报或管理层汇报；复制前先看质量检查和待确认信息，避免外部工具根据缺失事实自由发挥。
           </p>
-          <div className="page-hero-actions">
-            <Link href="/export/today" className="btn btn-primary">
-              <Icon name="calendar" size={15} />
-              今日日报事实包
-            </Link>
-            <Link href="/projects" className="btn btn-secondary">
-              <Icon name="folder" size={15} />
-              项目快照事实包
-            </Link>
-          </div>
         </div>
-      </section>
+        <div className="page-header-actions">
+          <Link href="/export/today" className="btn btn-primary">
+            <Icon name="calendar" size={15} />
+            今日日报事实包
+          </Link>
+          <Link href="/projects" className="btn btn-secondary">
+            <Icon name="folder" size={15} />
+            项目快照事实包
+          </Link>
+        </div>
+      </header>
 
       <section style={{ marginBottom: 24 }}>
         <div className="dashboard-section-title">

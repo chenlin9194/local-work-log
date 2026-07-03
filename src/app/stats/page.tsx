@@ -75,7 +75,7 @@ export default function StatsPage() {
   ];
 
   return (
-    <div className="stats-page">
+    <div className="page-shell auxiliary-page stats-page">
       <header className="command-page-header">
         <div>
           <span className="section-eyebrow">DELIVERY HEALTH MONITOR</span>

@@ -52,14 +52,16 @@ export default async function TodayPage() {
   ];
 
   return (
-    <div className="today-page">
+    <div className="page-shell auxiliary-page today-page">
       <header className="command-page-header">
         <div>
           <span className="section-eyebrow">DAILY DELIVERY PULSE</span>
           <h1>今日工作视图</h1>
           <p>{formatTodayStr()}</p>
         </div>
-        <Link href="/export/today" className="btn btn-secondary"><Icon name="download" size={15} />导出今日</Link>
+        <div className="page-header-actions">
+          <Link href="/export/today" className="btn btn-secondary"><Icon name="download" size={15} />导出今日</Link>
+        </div>
       </header>
 
       <section className="today-situation card" aria-label="今日态势">

@@ -65,7 +65,7 @@ function ToolLinkRow({
           删除
         </button>
         <label style={{ display: "flex", alignItems: "center", gap: 8, fontSize: 13, color: "var(--text-primary)" }}>
-          <span>sortOrder</span>
+          <span>排序值</span>
           <input
             type="number"
             value={sortOrder}
@@ -243,17 +243,20 @@ export default function ToolSettingsPage() {
   };
 
   return (
-    <div className="tool-settings-page">
-      <div className="tool-settings-header">
+    <div className="page-shell auxiliary-page tool-settings-page">
+      <div className="command-page-header tool-settings-header">
         <div>
+          <span className="section-eyebrow">TOOLS / SETUP</span>
           <h1>常用工具设置</h1>
           <p>
             这里维护右上角常用工具菜单。只负责跳转，不做登录、OAuth、API 集成或状态同步。
           </p>
         </div>
-        <Link href="/" className="btn btn-secondary" style={{ fontSize: 13 }}>
-          返回 Dashboard
-        </Link>
+        <div className="page-header-actions">
+          <Link href="/" className="btn btn-secondary" style={{ fontSize: 13 }}>
+            返回工作台
+          </Link>
+        </div>
       </div>
 
       <div className="card form-card" style={{ padding: 20 }}>
@@ -323,7 +326,7 @@ export default function ToolSettingsPage() {
             </div>
             <div>
               <label style={{ display: "block", fontSize: 13, fontWeight: 500, color: "var(--text-primary)", marginBottom: 6 }}>
-                sortOrder
+                排序值
               </label>
               <input
                 type="number"
