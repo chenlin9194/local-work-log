@@ -375,8 +375,8 @@ export default function ProjectMemberSection({ projectId }: ProjectMemberSection
       )}
 
       {memberActionError && (
-        <div className="card" style={{ padding: 12, marginBottom: 12 }}>
-          <p style={{ margin: 0, fontSize: 13, color: "var(--accent-red)" }}>{memberActionError}</p>
+        <div className="feedback-note feedback-note--error" style={{ marginBottom: 12 }}>
+          {memberActionError}
         </div>
       )}
 
@@ -406,15 +406,26 @@ export default function ProjectMemberSection({ projectId }: ProjectMemberSection
       )}
 
       {membersLoading ? (
-        <div className="card empty-state">
-          <p>加载中...</p>
+        <div className="card empty-state empty-state--loading">
+          <div className="empty-icon">…</div>
+          <strong>正在读取项目成员</strong>
+          <p>成员信息会用于快速判断协作关系和责任边界。</p>
         </div>
       ) : membersError ? (
-        <div className="card empty-state">
-          <p>项目成员加载失败</p>
+        <div className="card empty-state empty-state--error">
+          <div className="empty-icon">!</div>
+          <strong>项目成员暂时加载失败</strong>
+          <p>可以稍后重试，不影响项目其它信息查看。</p>
+          <div className="empty-actions">
+            <button type="button" className="btn btn-secondary" onClick={() => void fetchMembers()}>
+              重试
+            </button>
+          </div>
         </div>
       ) : members.length === 0 ? (
         <div className="card empty-state">
+          <div className="empty-icon">👥</div>
+          <strong>还没有项目成员</strong>
           <p>可补充核心成员，便于明确协作关系。</p>
         </div>
       ) : (

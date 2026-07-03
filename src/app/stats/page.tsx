@@ -27,19 +27,35 @@ export default function StatsPage() {
   }, []);
 
   const fetchStats = async () => {
+    setLoading(true);
     try {
       const res = await fetch("/api/stats");
+      if (!res.ok) throw new Error("stats request failed");
       const data = await res.json();
       setStats(data);
     } catch (error) {
       console.error("Error fetching stats:", error);
+      setStats(null);
     } finally {
       setLoading(false);
     }
   };
 
   if (loading) return <div className="panel-loading"><span className="nav-loading-dot" />正在读取交付状态...</div>;
-  if (!stats) return <div className="panel-loading">统计数据加载失败</div>;
+  if (!stats) {
+    return (
+      <div className="card empty-state empty-state--error compact-list-empty">
+        <div className="empty-icon">!</div>
+        <strong>统计数据暂时加载失败</strong>
+        <p>可以稍后重试，或回到工作台查看事项和日志的基础状态。</p>
+        <div className="empty-actions">
+          <button type="button" className="btn btn-secondary" onClick={() => void fetchStats()}>
+            重试
+          </button>
+        </div>
+      </div>
+    );
+  }
 
   const itemTotal = Math.max(stats.items.total, 1);
   const completionRate = Math.round((stats.items.closed / itemTotal) * 100);

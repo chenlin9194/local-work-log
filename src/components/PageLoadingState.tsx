@@ -14,15 +14,11 @@ export default function PageLoadingState({
   const rowCount = Math.max(1, Math.min(rows, 6));
 
   return (
-    <div className="card empty-state" style={{ padding: 20 }}>
+    <div className="card empty-state empty-state--loading" style={{ padding: 20 }}>
       <div style={{ display: "grid", gap: 12, width: "100%" }}>
         <div style={{ display: "grid", gap: 8 }}>
-          <div style={{ fontSize: 15, fontWeight: 600, color: "var(--text-primary)" }}>{title}</div>
-          {description && (
-            <div style={{ fontSize: 13, color: "var(--text-tertiary)", lineHeight: 1.6 }}>
-              {description}
-            </div>
-          )}
+          <strong>{title}</strong>
+          {description && <p>{description}</p>}
         </div>
 
         <div style={{ display: "grid", gap: 10 }}>

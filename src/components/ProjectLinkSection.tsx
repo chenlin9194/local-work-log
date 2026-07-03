@@ -366,8 +366,8 @@ export default function ProjectLinkSection({ projectId }: ProjectLinkSectionProp
       )}
 
       {linkActionError && (
-        <div className="card" style={{ padding: 12, marginBottom: 12 }}>
-          <p style={{ margin: 0, fontSize: 13, color: "var(--accent-red)" }}>{linkActionError}</p>
+        <div className="feedback-note feedback-note--error" style={{ marginBottom: 12 }}>
+          {linkActionError}
         </div>
       )}
 
@@ -397,15 +397,26 @@ export default function ProjectLinkSection({ projectId }: ProjectLinkSectionProp
       )}
 
       {linksLoading ? (
-        <div className="card empty-state">
-          <p>加载中...</p>
+        <div className="card empty-state empty-state--loading">
+          <div className="empty-icon">…</div>
+          <strong>正在读取关键链接</strong>
+          <p>关键链接会显示项目常用资料入口和外部系统地址。</p>
         </div>
       ) : linksError ? (
-        <div className="card empty-state">
-          <p>关键链接加载失败</p>
+        <div className="card empty-state empty-state--error">
+          <div className="empty-icon">!</div>
+          <strong>关键链接暂时加载失败</strong>
+          <p>可以稍后重试，不影响项目其它信息查看。</p>
+          <div className="empty-actions">
+            <button type="button" className="btn btn-secondary" onClick={() => void fetchLinks()}>
+              重试
+            </button>
+          </div>
         </div>
       ) : links.length === 0 ? (
         <div className="card empty-state">
+          <div className="empty-icon">🔗</div>
+          <strong>还没有关键链接</strong>
           <p>可补充主链接，便于快速回到外部资料。</p>
         </div>
       ) : (

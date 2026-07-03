@@ -40,3 +40,5 @@ dev.db-journal
 
 # AI exports and reports
 .local-ai/
+
+screenshot/

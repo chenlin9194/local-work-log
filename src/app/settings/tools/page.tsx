@@ -33,19 +33,12 @@ function ToolLinkRow({
   }, [tool.sortOrder]);
 
   return (
-    <div className="card" style={{ padding: 16, display: "flex", flexDirection: "column", gap: 12 }}>
-      <div style={{ display: "flex", justifyContent: "space-between", gap: 12, flexWrap: "wrap" }}>
+    <div className="card tool-card">
+      <div className="tool-card-header">
         <div>
-          <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 4 }}>
-            <h3 style={{ fontSize: 16, fontWeight: 600, color: "var(--text-primary)" }}>{tool.name}</h3>
-            <span
-              className="badge"
-              style={{
-                fontSize: 10,
-                background: tool.enabled ? "var(--accent-green)" : "var(--bg-tertiary)",
-                color: tool.enabled ? "white" : "var(--text-secondary)",
-              }}
-            >
+          <div className="tool-card-title-row">
+            <h3 className="tool-card-title">{tool.name}</h3>
+            <span className={`entity-pill ${tool.enabled ? "entity-pill--success" : "entity-pill--muted"}`}>
               {tool.enabled ? "已启用" : "已停用"}
             </span>
           </div>
@@ -53,15 +46,15 @@ function ToolLinkRow({
             href={tool.url}
             target="_blank"
             rel="noopener noreferrer"
-            style={{ color: "var(--accent-blue)", fontSize: 13, wordBreak: "break-all", textDecoration: "none" }}
+            className="tool-card-url"
           >
             {tool.url}
           </a>
         </div>
-        <div style={{ fontSize: 12, color: "var(--text-tertiary)" }}>排序 {tool.sortOrder}</div>
+        <div className="entity-card-note">排序 {tool.sortOrder}</div>
       </div>
 
-      <div style={{ display: "flex", gap: 8, flexWrap: "wrap", alignItems: "center" }}>
+      <div className="tool-card-actions">
         <button className="btn btn-secondary" style={{ fontSize: 12 }} onClick={() => onEdit(tool)}>
           编辑
         </button>
@@ -98,6 +91,7 @@ function ToolLinkRow({
 export default function ToolSettingsPage() {
   const [toolLinks, setToolLinks] = useState<ToolLink[]>([]);
   const [loading, setLoading] = useState(true);
+  const [loadingError, setLoadingError] = useState("");
   const [saving, setSaving] = useState(false);
   const [editingId, setEditingId] = useState<string | null>(null);
   const [form, setForm] = useState({
@@ -109,13 +103,16 @@ export default function ToolSettingsPage() {
 
   const fetchToolLinks = async () => {
     setLoading(true);
+    setLoadingError("");
     try {
       const res = await fetch("/api/tool-links", { cache: "no-store" });
+      if (!res.ok) throw new Error("tool links request failed");
       const data = await res.json();
       setToolLinks(data.toolLinks || []);
     } catch (error) {
       console.error("Error fetching tool links:", error);
       setToolLinks([]);
+      setLoadingError("常用工具暂时加载失败");
     } finally {
       setLoading(false);
     }
@@ -246,11 +243,11 @@ export default function ToolSettingsPage() {
   };
 
   return (
-    <div style={{ maxWidth: 1000, margin: "0 auto", display: "flex", flexDirection: "column", gap: 20 }}>
-      <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 12, flexWrap: "wrap" }}>
+    <div className="tool-settings-page">
+      <div className="tool-settings-header">
         <div>
-          <h1 style={{ fontSize: 22, fontWeight: 700, color: "var(--text-primary)", marginBottom: 4 }}>常用工具设置</h1>
-          <p style={{ fontSize: 13, color: "var(--text-secondary)", lineHeight: 1.6 }}>
+          <h1>常用工具设置</h1>
+          <p>
             这里维护右上角常用工具菜单。只负责跳转，不做登录、OAuth、API 集成或状态同步。
           </p>
         </div>
@@ -259,10 +256,11 @@ export default function ToolSettingsPage() {
         </Link>
       </div>
 
-      <div className="card" style={{ padding: 20 }}>
-        <h2 style={{ fontSize: 16, fontWeight: 600, color: "var(--text-primary)", marginBottom: 16 }}>
-          {editingId ? "编辑工具" : "新增工具"}
-        </h2>
+      <div className="card form-card" style={{ padding: 20 }}>
+        <div className="form-section-header">
+          <h2>{editingId ? "编辑工具" : "新增工具"}</h2>
+          <p>只维护常用入口，排序越小越靠前显示。</p>
+        </div>
         <form onSubmit={handleSubmit} style={{ display: "flex", flexDirection: "column", gap: 16 }}>
           <div style={{ display: "grid", gridTemplateColumns: "1fr 2fr", gap: 16 }}>
             <div>
@@ -357,19 +355,33 @@ export default function ToolSettingsPage() {
       </div>
 
       <div>
-        <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 12 }}>
-          <h2 style={{ fontSize: 17, fontWeight: 600, color: "var(--text-primary)" }}>工具列表</h2>
-          <span style={{ fontSize: 13, color: "var(--text-tertiary)" }}>{toolLinks.length} 项</span>
+        <div className="tool-list-header">
+          <h2>工具列表</h2>
+          <span className="entity-card-note">{toolLinks.length} 项</span>
         </div>
 
         {loading ? (
-          <div className="card" style={{ padding: 24, textAlign: "center", color: "var(--text-tertiary)" }}>
-            加载中...
+          <div className="card empty-state empty-state--loading">
+            <div className="empty-icon">…</div>
+            <strong>正在读取常用工具</strong>
+            <p>菜单项会显示在右上角工具入口中。</p>
+          </div>
+        ) : loadingError ? (
+          <div className="card empty-state empty-state--error">
+            <div className="empty-icon">!</div>
+            <strong>{loadingError}</strong>
+            <p>可以稍后重试，不影响工作台和项目数据。</p>
+            <div className="empty-actions">
+              <button type="button" className="btn btn-secondary" onClick={() => void fetchToolLinks()}>
+                重试
+              </button>
+            </div>
           </div>
         ) : toolLinks.length === 0 ? (
           <div className="card empty-state">
             <div className="empty-icon">🔧</div>
-            暂无常用工具，请先添加 JIRA、Gerrit、Jenkins 等链接。
+            <strong>还没有常用工具</strong>
+            <p>请先添加 JIRA、Gerrit、Jenkins 等链接。</p>
           </div>
         ) : (
           <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
