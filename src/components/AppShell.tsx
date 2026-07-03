@@ -204,9 +204,10 @@ export default function AppShell({ children }: { children: React.ReactNode }) {
 
       <div className="cockpit-content">
         <header className="cockpit-topbar app-shell-topbar">
-          <div>
-            <span className="cockpit-path">{shellTitle.path}</span>
-            <strong>{shellTitle.title}</strong>
+          <div className="cockpit-topbar-context">
+            <span className="cockpit-path" title={shellTitle.title}>
+              {shellTitle.path}
+            </span>
           </div>
 
           <form action="/items" className="cockpit-search">

@@ -1859,12 +1859,12 @@ input.input[type="date"], input.input[type="url"], input.input[type="number"] { 
   position: sticky;
   top: 80px;
   z-index: 15;
-  min-height: 52px;
+  min-height: 44px;
   display: grid;
-  grid-template-columns: minmax(230px, 1fr) minmax(280px, 420px) auto;
+  grid-template-columns: minmax(170px, 1fr) minmax(280px, 420px) auto;
   align-items: center;
-  gap: 14px;
-  padding: 7px 12px;
+  gap: 10px;
+  padding: 5px 10px;
   border: 1px solid color-mix(in srgb, var(--border-primary) 82%, transparent);
   border-radius: var(--radius-lg);
   background: color-mix(in srgb, var(--bg-secondary) 76%, transparent);
@@ -1872,26 +1872,46 @@ input.input[type="date"], input.input[type="url"], input.input[type="number"] { 
   box-shadow: var(--shadow-sm);
 }
 
-.cockpit-topbar strong {
-  display: block;
-  margin-top: 3px;
-  color: var(--text-primary);
-  font-size: 13px;
+.cockpit-topbar-context {
+  min-width: 0;
+  display: flex;
+  align-items: center;
 }
 
 .cockpit-path {
-  color: var(--text-tertiary);
-  font-size: 11px;
+  display: inline-flex;
+  align-items: center;
+  max-width: 100%;
+  padding: 4px 9px;
+  border: 1px solid color-mix(in srgb, var(--border-primary) 86%, transparent);
+  border-radius: 999px;
+  color: var(--text-secondary);
+  background: color-mix(in srgb, var(--bg-secondary) 90%, var(--bg-tertiary));
+  font-size: 10px;
+  font-weight: 650;
+  line-height: 1;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.cockpit-path[title] {
+  cursor: help;
+}
+
+.cockpit-path:hover {
+  color: var(--text-primary);
+  border-color: var(--border-secondary);
 }
 
 .cockpit-search {
-  min-height: 38px;
+  min-height: 34px;
   display: flex;
   align-items: center;
   gap: 8px;
-  padding: 0 12px;
+  padding: 0 10px;
   border: 1px solid var(--border-primary);
-  border-radius: 10px;
+  border-radius: 9px;
   color: var(--text-tertiary);
   background: var(--bg-tertiary);
 }
@@ -1909,7 +1929,7 @@ input.input[type="date"], input.input[type="url"], input.input[type="number"] { 
 .cockpit-topbar-actions {
   display: flex;
   justify-content: flex-end;
-  gap: 8px;
+  gap: 6px;
 }
 
 .shell-tool-menu {
@@ -1951,12 +1971,12 @@ input.input[type="date"], input.input[type="url"], input.input[type="number"] { 
 }
 
 .cockpit-icon-btn {
-  width: 36px;
-  height: 36px;
+  width: 32px;
+  height: 32px;
   display: grid;
   place-items: center;
   border: 1px solid var(--border-primary);
-  border-radius: 9px;
+  border-radius: 8px;
   color: var(--text-secondary);
   background: var(--bg-secondary);
   text-decoration: none;
