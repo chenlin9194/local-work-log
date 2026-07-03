@@ -175,7 +175,7 @@ export default function ProjectDetailPage() {
   });
 
   return (
-    <div className="page-shell cockpit-page">
+    <div className="page-shell cockpit-page detail-page project-detail-page">
       <ProjectHeaderSection project={project} />
       <ProjectOverviewSection project={project} />
       <ProjectSignalSection

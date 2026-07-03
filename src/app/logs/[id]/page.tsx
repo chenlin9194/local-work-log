@@ -3,6 +3,7 @@
 import { useState, useEffect, useCallback, useRef } from "react";
 import { useParams, useRouter } from "next/navigation";
 import Link from "next/link";
+import Icon from "@/components/Icon";
 import { WORK_LOG_TYPE_LABELS, SOURCE_LABELS } from "@/lib/constants";
 import { generateWorkLogMarkdown } from "@/lib/utils";
 import AutoLinkText from "@/components/AutoLinkText";
@@ -112,71 +113,103 @@ export default function LogDetailPage() {
   }
 
   return (
-    <div style={{ maxWidth: 800, margin: "0 auto" }}>
-      <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 20, flexWrap: "wrap", gap: 12 }}>
-        <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
-          <Link href="/logs" style={{ color: "var(--text-tertiary)", textDecoration: "none" }}>← 返回列表</Link>
-          <h1 style={{ fontSize: 22, fontWeight: 700, color: "var(--text-primary)" }}>{log.title}</h1>
-        </div>
-        <div style={{ display: "flex", gap: 8 }}>
-          <button onClick={copyMarkdown} className="btn btn-secondary" style={{ fontSize: 13 }}>复制 Markdown</button>
-          <Link href={`/logs/${log.id}/edit`} className="btn btn-secondary" style={{ fontSize: 13 }}>编辑</Link>
-          <button onClick={handleDelete} className="btn btn-secondary" style={{ fontSize: 13, color: "var(--accent-red)" }} disabled={deleting}>{deleting ? "删除中..." : "删除"}</button>
-        </div>
-      </div>
-
-      <div className="card" style={{ padding: 24, marginBottom: 16 }}>
-        <div style={{ display: "flex", flexWrap: "wrap", gap: 12, marginBottom: 16 }}>
-          <span style={{ fontSize: 13, color: "var(--text-tertiary)" }}>{log.workDate}</span>
-          <span className="badge" style={{ background: "var(--accent-blue)", color: "white" }}>{WORK_LOG_TYPE_LABELS[log.type] || log.type}</span>
-          <span style={{ padding: "4px 8px", borderRadius: 6, background: "var(--bg-tertiary)", color: "var(--text-secondary)", fontSize: 12 }}>{SOURCE_LABELS[log.source] || log.source}</span>
-        </div>
-
-        <div style={{ fontSize: 14, color: "var(--text-secondary)", lineHeight: 1.8, whiteSpace: "pre-wrap", marginBottom: 16 }}>
-          <AutoLinkText text={log.content} />
-        </div>
-
-        <div style={{ display: "flex", gap: 8, flexWrap: "wrap", marginBottom: 16 }}>
-          <span className="badge" style={{ background: log.reportable ? "var(--accent-green)" : "var(--bg-tertiary)", color: log.reportable ? "white" : "var(--text-primary)" }}>
-            {log.reportable ? "可汇报" : "不可汇报"}
-          </span>
-          {log.sourceUrl && (
-            <a href={log.sourceUrl} target="_blank" rel="noopener noreferrer" className="badge" style={{ background: "var(--bg-tertiary)", color: "var(--text-primary)", textDecoration: "none", wordBreak: "break-word", overflowWrap: "anywhere", maxWidth: "100%" }}>
-              来源链接
-            </a>
-          )}
-        </div>
-
-        <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(200px, 1fr))", gap: 16, fontSize: 13 }}>
-          <div>
-            <span style={{ color: "var(--text-tertiary)" }}>汇报状态</span>
-            <div style={{ color: "var(--text-primary)", fontWeight: 500 }}>{log.reportable ? "可汇报" : "不可汇报"}</div>
+    <div className="detail-page detail-page--log">
+      <header className="card detail-header">
+        <div className="detail-header-main">
+          <Link href="/logs" className="detail-back-link">
+            <Icon name="arrow-left" size={14} />
+            返回列表
+          </Link>
+          <div className="detail-title-row">
+            <span className="section-eyebrow">WORK LOG</span>
+            <h1 className="detail-title">{log.title}</h1>
           </div>
-          {log.project && (<div><span style={{ color: "var(--text-tertiary)" }}>项目</span><div style={{ color: "var(--text-primary)", fontWeight: 500 }}>{log.project}</div></div>)}
-          {log.module && (<div><span style={{ color: "var(--text-tertiary)" }}>模块</span><div style={{ color: "var(--text-primary)", fontWeight: 500 }}>{log.module}</div></div>)}
-          {log.sourceUrl && (
-            <div style={{ minWidth: 0 }}>
-              <span style={{ color: "var(--text-tertiary)" }}>来源链接</span>
-              <div style={{ minWidth: 0, wordBreak: "break-word", overflowWrap: "anywhere" }}>
-                <a href={log.sourceUrl} target="_blank" rel="noopener noreferrer" style={{ color: "var(--accent-blue)", textDecoration: "none", wordBreak: "break-word", overflowWrap: "anywhere" }}>
-                  {log.sourceUrl}
-                </a>
-              </div>
+          <div className="detail-status-row">
+            <span className={`badge badge-${log.type}`}>
+              {WORK_LOG_TYPE_LABELS[log.type] || log.type}
+            </span>
+            <span className="entity-pill entity-pill--muted">{log.workDate}</span>
+            <span className="entity-pill entity-pill--muted">
+              {SOURCE_LABELS[log.source] || log.source}
+            </span>
+            <span className={`badge ${log.reportable ? "badge-reportable" : "badge-other"}`}>
+              {log.reportable ? "可汇报" : "不可汇报"}
+            </span>
+          </div>
+        </div>
+        <div className="detail-actions">
+          <button onClick={copyMarkdown} className="btn btn-secondary">
+            <Icon name="copy" size={14} />
+            复制 Markdown
+          </button>
+          <Link href={`/logs/${log.id}/edit`} className="btn btn-secondary">
+            <Icon name="edit" size={14} />
+            编辑
+          </Link>
+          <button onClick={handleDelete} className="btn btn-danger" disabled={deleting}>
+            {deleting ? (
+              "删除中..."
+            ) : (
+              <>
+                <Icon name="trash" size={14} />
+                删除
+              </>
+            )}
+          </button>
+        </div>
+      </header>
+
+      <div className="card detail-main-card">
+        <div className="detail-copy-block">
+          <div className="detail-field-label">日志正文</div>
+          <div className="detail-body-text detail-body-text--prewrap">
+            <AutoLinkText text={log.content} />
+          </div>
+        </div>
+
+        <div className="detail-meta-grid">
+          <div className="detail-meta-item">
+            <span>汇报状态</span>
+            <strong>{log.reportable ? "可汇报" : "不可汇报"}</strong>
+          </div>
+          {log.project && (
+            <div className="detail-meta-item">
+              <span>项目</span>
+              <strong>{log.project}</strong>
+            </div>
+          )}
+          {log.module && (
+            <div className="detail-meta-item">
+              <span>模块</span>
+              <strong>{log.module}</strong>
             </div>
           )}
           {log.item && (
-            <div>
-              <span style={{ color: "var(--text-tertiary)" }}>关联事项</span>
-              <div><Link href={`/items/${log.item.id}`} style={{ color: "var(--accent-blue)", textDecoration: "none" }}>{log.item.title}</Link></div>
+            <div className="detail-meta-item detail-meta-item--wide">
+              <span>关联事项</span>
+              <Link href={`/items/${log.item.id}`}>{log.item.title}</Link>
             </div>
           )}
-          <div><span style={{ color: "var(--text-tertiary)" }}>创建时间</span><div style={{ color: "var(--text-primary)" }}>{new Date(log.createdAt).toLocaleString("zh-CN")}</div></div>
+          {log.sourceUrl && (
+            <div className="detail-meta-item detail-meta-item--wide">
+              <span>来源链接</span>
+              <a href={log.sourceUrl} target="_blank" rel="noopener noreferrer">
+                {log.sourceUrl}
+              </a>
+            </div>
+          )}
+          <div className="detail-meta-item">
+            <span>创建时间</span>
+            <strong>{new Date(log.createdAt).toLocaleString("zh-CN")}</strong>
+          </div>
         </div>
 
         {log.tags && (
-          <div style={{ marginTop: 16, display: "flex", gap: 6, flexWrap: "wrap" }}>
-            {log.tags.split(",").map((tag, i) => (
-              <span key={i} style={{ padding: "2px 8px", borderRadius: 4, background: "var(--bg-tertiary)", color: "var(--text-secondary)", fontSize: 12 }}>{tag.trim()}</span>
+          <div className="detail-tag-row">
+            {log.tags.split(",").map((tag, index) => (
+              <span key={index} className="entity-pill entity-pill--muted">
+                {tag.trim()}
+              </span>
             ))}
           </div>
         )}

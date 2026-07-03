@@ -3,6 +3,7 @@
 import { useState, useEffect, useCallback, useRef } from "react";
 import { useParams, useRouter } from "next/navigation";
 import Link from "next/link";
+import Icon from "@/components/Icon";
 import Timeline from "@/components/Timeline";
 import PageLoadingState from "@/components/PageLoadingState";
 import {
@@ -158,73 +159,94 @@ export default function ItemDetailPage() {
   }
 
   const overdue = isOverdue(item.dueDate, item.status);
-    const addLogHref = itemToAddLogHref(item.id, item.projectId ?? undefined);
+  const addLogHref = itemToAddLogHref(item.id, item.projectId ?? undefined);
 
   return (
-    <div style={{ maxWidth: 900, margin: "0 auto" }}>
-      {/* Header */}
-      <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 20, flexWrap: "wrap", gap: 12 }}>
-        <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
-          <Link href="/items" style={{ color: "var(--text-tertiary)", textDecoration: "none" }}>
-            ← 返回列表
+    <div className="detail-page detail-page--item">
+      <header className="card detail-header">
+        <div className="detail-header-main">
+          <Link href="/items" className="detail-back-link">
+            <Icon name="arrow-left" size={14} />
+            返回列表
           </Link>
-          <h1 style={{ fontSize: 22, fontWeight: 700, color: "var(--text-primary)" }}>{item.title}</h1>
+          <div className="detail-title-row">
+            <span className="section-eyebrow">WORK ITEM</span>
+            <h1 className="detail-title">{item.title}</h1>
+          </div>
+          <div className="detail-status-row">
+            <span className={`badge badge-${item.priority.toLowerCase()}`}>
+              {PRIORITY_LABELS[item.priority] || item.priority}
+            </span>
+            <span className={`badge badge-${item.status}`}>
+              {STATUS_LABELS[item.status] || item.status}
+            </span>
+            <span className="entity-pill entity-pill--muted">
+              {WORK_ITEM_TYPE_LABELS[item.type] || item.type}
+            </span>
+            <span className="entity-pill entity-pill--muted">
+              {HEALTH_LABELS[item.health] || item.health}
+            </span>
+            {overdue && <span className="badge badge-overdue">逾期</span>}
+          </div>
         </div>
-        <div style={{ display: "flex", gap: 8 }}>
-          <button onClick={copyMarkdown} className="btn btn-secondary" style={{ fontSize: 13 }}>
+        <div className="detail-actions">
+          <button onClick={copyMarkdown} className="btn btn-secondary">
+            <Icon name="copy" size={14} />
             复制 Markdown
           </button>
-          <Link href={`/items/${item.id}/edit`} className="btn btn-secondary" style={{ fontSize: 13 }}>
+          <Link href={`/items/${item.id}/edit`} className="btn btn-secondary">
+            <Icon name="edit" size={14} />
             编辑
           </Link>
-          <Link href={addLogHref} className="btn btn-primary" style={{ fontSize: 13 }}>
+          <Link href={addLogHref} className="btn btn-primary">
+            <Icon name="plus" size={14} />
             添加日志
           </Link>
-          <button onClick={handleDelete} className="btn btn-secondary" style={{ fontSize: 13, color: "var(--accent-red)" }} disabled={deleting}>
-            {deleting ? "删除中..." : "删除"}
+          <button onClick={handleDelete} className="btn btn-danger" disabled={deleting}>
+            {deleting ? (
+              "删除中..."
+            ) : (
+              <>
+                <Icon name="trash" size={14} />
+                删除
+              </>
+            )}
           </button>
         </div>
-      </div>
+      </header>
 
-      {/* Main Info */}
-      <div className="card" style={{ padding: 24, marginBottom: 16 }}>
-        <div style={{ display: "flex", flexWrap: "wrap", gap: 12, marginBottom: 16 }}>
-          <span className={`badge badge-${item.priority.toLowerCase()}`}>
-            {PRIORITY_LABELS[item.priority] || item.priority}
-          </span>
-          <span className={`badge badge-${item.status}`}>
-            {STATUS_LABELS[item.status] || item.status}
-          </span>
-          <span style={{ padding: "4px 8px", borderRadius: 6, background: "var(--bg-tertiary)", color: "var(--text-secondary)", fontSize: 12 }}>
-            {WORK_ITEM_TYPE_LABELS[item.type] || item.type}
-          </span>
-          {overdue && (
-            <span className="badge" style={{ background: "var(--accent-red)", color: "white" }}>
-              逾期
-            </span>
-          )}
-        </div>
-
+      <div className="card detail-main-card">
         {item.description && (
-          <p style={{ fontSize: 14, color: "var(--text-secondary)", marginBottom: 16, lineHeight: 1.6 }}>
-            <AutoLinkText text={item.description} />
-          </p>
+          <div className="detail-copy-block">
+            <div className="detail-field-label">事项描述</div>
+            <p className="detail-body-text">
+              <AutoLinkText text={item.description} />
+            </p>
+          </div>
         )}
 
-        {(item.currentSummary || item.trackingReason) && (
-          <div style={{ display: "grid", gap: 12, marginBottom: 16 }}>
+        {(item.currentSummary || item.trackingReason || item.nextAction) && (
+          <div className="detail-insight-grid">
             {item.currentSummary && (
-              <div style={{ padding: 12, borderRadius: 8, background: "var(--bg-tertiary)" }}>
-                <div style={{ fontSize: 12, color: "var(--text-tertiary)", marginBottom: 4 }}>当前摘要</div>
-                <div style={{ fontSize: 14, color: "var(--text-primary)", lineHeight: 1.7, whiteSpace: "pre-wrap" }}>
+              <div className="detail-insight-panel">
+                <div className="detail-field-label">当前摘要</div>
+                <div className="detail-field-value detail-field-value--body">
                   <AutoLinkText text={item.currentSummary} />
                 </div>
               </div>
             )}
+            {item.nextAction && (
+              <div className="detail-insight-panel detail-insight-panel--accent">
+                <div className="detail-field-label">Next Action</div>
+                <div className="detail-field-value detail-field-value--strong">
+                  <AutoLinkText text={item.nextAction} />
+                </div>
+              </div>
+            )}
             {item.trackingReason && (
-              <div style={{ padding: 12, borderRadius: 8, background: "var(--bg-tertiary)" }}>
-                <div style={{ fontSize: 12, color: "var(--text-tertiary)", marginBottom: 4 }}>跟踪原因</div>
-                <div style={{ fontSize: 14, color: "var(--text-primary)", lineHeight: 1.7, whiteSpace: "pre-wrap" }}>
+              <div className="detail-insight-panel">
+                <div className="detail-field-label">跟踪原因</div>
+                <div className="detail-field-value detail-field-value--body">
                   <AutoLinkText text={item.trackingReason} />
                 </div>
               </div>
@@ -232,90 +254,79 @@ export default function ItemDetailPage() {
           </div>
         )}
 
-        <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(200px, 1fr))", gap: 16, fontSize: 13 }}>
-          <div>
-            <span style={{ color: "var(--text-tertiary)" }}>健康度</span>
-            <div style={{ color: "var(--text-primary)", fontWeight: 500 }}>{HEALTH_LABELS[item.health] || item.health}</div>
+        <div className="detail-meta-grid">
+          <div className="detail-meta-item">
+            <span>健康度</span>
+            <strong>{HEALTH_LABELS[item.health] || item.health}</strong>
           </div>
-          <div>
-            <span style={{ color: "var(--text-tertiary)" }}>汇报层级</span>
-            <div style={{ color: "var(--text-primary)", fontWeight: 500 }}>{REPORT_LEVEL_LABELS[item.reportLevel] || item.reportLevel}</div>
+          <div className="detail-meta-item">
+            <span>汇报层级</span>
+            <strong>{REPORT_LEVEL_LABELS[item.reportLevel] || item.reportLevel}</strong>
           </div>
           {item.sourceSystem && (
-            <div>
-              <span style={{ color: "var(--text-tertiary)" }}>来源系统</span>
-              <div style={{ color: "var(--text-primary)", fontWeight: 500 }}>{SOURCE_SYSTEM_LABELS[item.sourceSystem] || item.sourceSystem}</div>
+            <div className="detail-meta-item">
+              <span>来源系统</span>
+              <strong>{SOURCE_SYSTEM_LABELS[item.sourceSystem] || item.sourceSystem}</strong>
             </div>
           )}
           {item.sourceId && (
-            <div>
-              <span style={{ color: "var(--text-tertiary)" }}>来源编号</span>
-              <div style={{ color: "var(--text-primary)", fontWeight: 500 }}>{item.sourceId}</div>
+            <div className="detail-meta-item">
+              <span>来源编号</span>
+              <strong>{item.sourceId}</strong>
             </div>
           )}
           {item.nextCheckpoint && (
-            <div>
-              <span style={{ color: "var(--text-tertiary)" }}>下个检查点</span>
-              <div style={{ color: "var(--text-primary)", fontWeight: 500 }}>{item.nextCheckpoint}</div>
+            <div className="detail-meta-item">
+              <span>下个检查点</span>
+              <strong>{item.nextCheckpoint}</strong>
             </div>
           )}
           {item.project && (
-            <div>
-              <span style={{ color: "var(--text-tertiary)" }}>项目</span>
-              <div style={{ color: "var(--text-primary)", fontWeight: 500 }}>{item.project}</div>
+            <div className="detail-meta-item">
+              <span>项目</span>
+              <strong>{item.project}</strong>
             </div>
           )}
           {item.module && (
-            <div>
-              <span style={{ color: "var(--text-tertiary)" }}>模块</span>
-              <div style={{ color: "var(--text-primary)", fontWeight: 500 }}>{item.module}</div>
+            <div className="detail-meta-item">
+              <span>模块</span>
+              <strong>{item.module}</strong>
             </div>
           )}
           {item.owner && (
-            <div>
-              <span style={{ color: "var(--text-tertiary)" }}>责任人</span>
-              <div style={{ color: "var(--text-primary)", fontWeight: 500 }}>{item.owner}</div>
+            <div className="detail-meta-item">
+              <span>负责人</span>
+              <strong>{item.owner}</strong>
             </div>
           )}
           {item.dueDate && (
-            <div>
-              <span style={{ color: "var(--text-tertiary)" }}>截止日期</span>
-              <div style={{ color: overdue ? "var(--accent-red)" : "var(--text-primary)", fontWeight: 500 }}>{item.dueDate}</div>
+            <div className={`detail-meta-item ${overdue ? "detail-meta-item--danger" : ""}`}>
+              <span>截止日期</span>
+              <strong>{item.dueDate}</strong>
             </div>
           )}
           {item.sourceUrl && (
-            <div style={{ minWidth: 0 }}>
-              <span style={{ color: "var(--text-tertiary)" }}>来源链接</span>
-              <div style={{ color: "var(--accent-blue)", fontWeight: 500, minWidth: 0, wordBreak: "break-word", overflowWrap: "anywhere" }}>
-                <a href={item.sourceUrl} target="_blank" rel="noopener noreferrer" style={{ color: "inherit", textDecoration: "none", wordBreak: "break-word", overflowWrap: "anywhere" }}>
-                  打开来源链接
-                </a>
-              </div>
+            <div className="detail-meta-item detail-meta-item--wide">
+              <span>来源链接</span>
+              <a href={item.sourceUrl} target="_blank" rel="noopener noreferrer">
+                打开来源链接
+              </a>
             </div>
           )}
-          <div>
-            <span style={{ color: "var(--text-tertiary)" }}>创建时间</span>
-            <div style={{ color: "var(--text-primary)" }}>{new Date(item.createdAt).toLocaleString("zh-CN")}</div>
+          <div className="detail-meta-item">
+            <span>创建时间</span>
+            <strong>{new Date(item.createdAt).toLocaleString("zh-CN")}</strong>
           </div>
-          <div>
-            <span style={{ color: "var(--text-tertiary)" }}>更新时间</span>
-            <div style={{ color: "var(--text-primary)" }}>{new Date(item.updatedAt).toLocaleString("zh-CN")}</div>
+          <div className="detail-meta-item">
+            <span>更新时间</span>
+            <strong>{new Date(item.updatedAt).toLocaleString("zh-CN")}</strong>
           </div>
         </div>
 
-        {item.nextAction && (
-          <div style={{ marginTop: 16, padding: 12, background: "var(--bg-tertiary)", borderRadius: 8 }}>
-            <span style={{ fontSize: 12, color: "var(--text-tertiary)" }}>下一步行动</span>
-            <div style={{ fontSize: 14, color: "var(--text-primary)", marginTop: 4 }}>
-              <AutoLinkText text={item.nextAction} />
-            </div>
-          </div>
-        )}
-
         {item.tags && (
-          <div style={{ marginTop: 16, display: "flex", gap: 6, flexWrap: "wrap" }}>
-            {item.tags.split(",").map((tag, i) => (
-              <span key={i} style={{ padding: "2px 8px", borderRadius: 4, background: "var(--bg-tertiary)", color: "var(--text-secondary)", fontSize: 12 }}>
+          <div className="detail-tag-row">
+            {item.tags.split(",").map((tag, index) => (
+              <span key={index} className="entity-pill entity-pill--muted">
                 {tag.trim()}
               </span>
             ))}
@@ -325,41 +336,45 @@ export default function ItemDetailPage() {
 
       <ActionItemSection workItemId={item.id} projectId={item.projectId ?? undefined} />
 
-      {/* Status Actions */}
-      <div className="card" style={{ padding: 16, marginBottom: 16 }}>
-        <div style={{ fontSize: 13, fontWeight: 500, color: "var(--text-primary)", marginBottom: 8 }}>快速操作</div>
-        <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
+      <div className="card detail-section-card">
+        <div className="detail-section-heading">
+          <div>
+            <span className="section-eyebrow">ACTIONS</span>
+            <h2>快速操作</h2>
+          </div>
+        </div>
+        <div className="detail-actions detail-actions--inline">
           {item.status !== "open" && (
-            <button onClick={() => handleStatusChange("open")} className="btn btn-secondary" style={{ fontSize: 12 }}>
+            <button onClick={() => handleStatusChange("open")} className="btn btn-secondary">
               设为待处理
             </button>
           )}
           {item.status !== "following" && (
-            <button onClick={() => handleStatusChange("following")} className="btn btn-secondary" style={{ fontSize: 12 }}>
+            <button onClick={() => handleStatusChange("following")} className="btn btn-secondary">
               设为跟进中
             </button>
           )}
           {item.status !== "blocked" && (
-            <button onClick={() => handleStatusChange("blocked")} className="btn btn-secondary" style={{ fontSize: 12 }}>
+            <button onClick={() => handleStatusChange("blocked")} className="btn btn-secondary">
               设为已阻塞
             </button>
           )}
           {item.status !== "closed" && (
-            <button onClick={() => handleStatusChange("closed")} className="btn btn-primary" style={{ fontSize: 12 }}>
+            <button onClick={() => handleStatusChange("closed")} className="btn btn-primary">
               标记为已关闭
             </button>
           )}
         </div>
       </div>
 
-      {/* Timeline */}
-      <div className="card" style={{ padding: 24 }}>
-        <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 12, marginBottom: 16 }}>
-          <h2 style={{ fontSize: 17, fontWeight: 600, color: "var(--text-primary)", margin: 0 }}>
-            关联日志时间线
-          </h2>
-          <Link href={itemToLogsHref(item.id)} style={{ fontSize: 12, color: "var(--accent-blue)", textDecoration: "none", whiteSpace: "nowrap" }}>
-            查看全部
+      <div className="card detail-section-card">
+        <div className="detail-section-heading">
+          <div>
+            <span className="section-eyebrow">TIMELINE</span>
+            <h2>关联日志时间线</h2>
+          </div>
+          <Link href={itemToLogsHref(item.id)} className="section-link">
+            查看全部 <Icon name="chevron-right" size={14} />
           </Link>
         </div>
         <Timeline logs={item.logs} />
