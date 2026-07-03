@@ -1,7 +1,6 @@
 import type { Metadata } from "next";
-import { Suspense } from "react";
 import "./globals.css";
-import Navbar from "@/components/Navbar";
+import AppShell from "@/components/AppShell";
 import ThemeProvider from "@/components/ThemeProvider";
 
 export const metadata: Metadata = {
@@ -18,12 +17,9 @@ export default function RootLayout({
     <html lang="zh-CN" suppressHydrationWarning>
       <body>
         <ThemeProvider>
-          <Suspense fallback={null}>
-            <Navbar />
-          </Suspense>
-          <main className="app-main page-enter">
+          <AppShell>
             {children}
-          </main>
+          </AppShell>
         </ThemeProvider>
       </body>
     </html>
