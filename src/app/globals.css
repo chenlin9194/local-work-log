@@ -1301,6 +1301,27 @@ input.input[type="date"], input.input[type="url"], input.input[type="number"] { 
 .command-form-page .field-actions {
   padding-top: 2px;
 }
+.command-form-stack { display: grid; gap: 16px; }
+.command-form-message { text-align: center; padding: 40px; color: var(--text-tertiary); }
+.form-field-narrow { width: min(260px, 100%); }
+.form-field-label {
+  display: block;
+  margin-bottom: 6px;
+  color: var(--text-primary);
+  font-size: 13px;
+  font-weight: 500;
+}
+.form-field-control {
+  width: 100%;
+  min-width: 0;
+  padding: 10px 12px;
+  border: 1px solid var(--border-primary);
+  border-radius: 6px;
+  color: var(--text-primary);
+  background: var(--bg-secondary);
+  font-size: 14px;
+}
+.form-field-textarea { resize: vertical; }
 .project-list-page .command-page-header {
   display: grid;
   grid-template-columns: minmax(0, 1fr) auto;

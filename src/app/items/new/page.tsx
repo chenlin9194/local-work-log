@@ -190,7 +190,7 @@ function NewItemForm() {
 
       <form onSubmit={handleSubmit}>
         <div className="card form-card command-form-card">
-          <div style={{ display: "grid", gap: 16 }}>
+          <div className="command-form-stack">
             <section className="command-form-section">
               <div className="command-form-section-header">
                 <h2>基础信息</h2>
@@ -198,25 +198,25 @@ function NewItemForm() {
               </div>
 
               <div>
-                <label style={fieldLabel}>标题 *</label>
+                <label className="form-field-label">标题 *</label>
                 <input
                   type="text"
                   value={form.title}
                   onChange={(e) => setForm({ ...form, title: e.target.value })}
                   placeholder="输入事项标题"
                   required
-                  style={fieldInput}
+                  className="form-field-control"
                 />
               </div>
 
               <div>
-                <label style={fieldLabel}>描述</label>
+                <label className="form-field-label">描述</label>
                 <textarea
                   value={form.description}
                   onChange={(e) => setForm({ ...form, description: e.target.value })}
                   placeholder="输入事项描述"
                   rows={4}
-                  style={{ ...fieldInput, resize: "vertical" as const }}
+                  className="form-field-control form-field-textarea"
                 />
               </div>
             </section>
@@ -229,11 +229,11 @@ function NewItemForm() {
 
               <div className="field-grid-2">
                 <div>
-                  <label style={fieldLabel}>项目</label>
+                  <label className="form-field-label">项目</label>
                   <select
                     value={form.projectId}
                     onChange={(e) => handleProjectChange(e.target.value)}
-                    style={fieldInput}
+                    className="form-field-control"
                   >
                     <option value="">选择已有项目（可选）</option>
                     {projects.map((p) => (
@@ -244,24 +244,24 @@ function NewItemForm() {
                   </select>
                 </div>
                 <div>
-                  <label style={fieldLabel}>项目名称</label>
+                  <label className="form-field-label">项目名称</label>
                   <input
                     type="text"
                     value={form.project}
                     onChange={(e) => setForm({ ...form, project: e.target.value })}
                     placeholder="可手填或由项目选择同步"
-                    style={fieldInput}
+                    className="form-field-control"
                   />
                 </div>
               </div>
 
               <div className="field-grid-2">
                 <div>
-                  <label style={fieldLabel}>模块</label>
+                  <label className="form-field-label">模块</label>
                   <select
                     value={form.module}
                     onChange={(e) => setForm({ ...form, module: e.target.value })}
-                    style={fieldInput}
+                    className="form-field-control"
                   >
                     <option value="">选择模块</option>
                     {MODULES.map((m) => (
@@ -270,13 +270,13 @@ function NewItemForm() {
                   </select>
                 </div>
                 <div>
-                  <label style={fieldLabel}>标签</label>
+                  <label className="form-field-label">标签</label>
                   <input
                     type="text"
                     value={form.tags}
                     onChange={(e) => setForm({ ...form, tags: e.target.value })}
                     placeholder="标签，用逗号分隔"
-                    style={fieldInput}
+                    className="form-field-control"
                   />
                 </div>
               </div>
@@ -290,11 +290,11 @@ function NewItemForm() {
 
               <div className="field-grid-3">
                 <div>
-                  <label style={fieldLabel}>类型</label>
+                  <label className="form-field-label">类型</label>
                   <select
                     value={form.type}
                     onChange={(e) => setForm({ ...form, type: e.target.value })}
-                    style={fieldInput}
+                    className="form-field-control"
                   >
                     {WORK_ITEM_TYPES.map((t) => (
                       <option key={t.value} value={t.value}>{t.label}</option>
@@ -302,11 +302,11 @@ function NewItemForm() {
                   </select>
                 </div>
                 <div>
-                  <label style={fieldLabel}>优先级</label>
+                  <label className="form-field-label">优先级</label>
                   <select
                     value={form.priority}
                     onChange={(e) => setForm({ ...form, priority: e.target.value })}
-                    style={fieldInput}
+                    className="form-field-control"
                   >
                     {PRIORITIES.map((p) => (
                       <option key={p.value} value={p.value}>{p.label}</option>
@@ -314,11 +314,11 @@ function NewItemForm() {
                   </select>
                 </div>
                 <div>
-                  <label style={fieldLabel}>状态</label>
+                  <label className="form-field-label">状态</label>
                   <select
                     value={form.status}
                     onChange={(e) => setForm({ ...form, status: e.target.value })}
-                    style={fieldInput}
+                    className="form-field-control"
                   >
                     {STATUSES.map((s) => (
                       <option key={s.value} value={s.value}>{s.label}</option>
@@ -329,22 +329,22 @@ function NewItemForm() {
 
               <div className="field-grid-2">
                 <div>
-                  <label style={fieldLabel}>负责人</label>
+                  <label className="form-field-label">负责人</label>
                   <input
                     type="text"
                     value={form.owner}
                     onChange={(e) => setForm({ ...form, owner: e.target.value })}
                     placeholder="可选"
-                    style={fieldInput}
+                    className="form-field-control"
                   />
                 </div>
                 <div>
-                  <label style={fieldLabel}>截止日期</label>
+                  <label className="form-field-label">截止日期</label>
                   <input
                     type="date"
                     value={form.dueDate}
                     onChange={(e) => setForm({ ...form, dueDate: e.target.value })}
-                    style={fieldInput}
+                    className="form-field-control"
                   />
                 </div>
               </div>
@@ -357,23 +357,23 @@ function NewItemForm() {
               </div>
 
               <div>
-                <label style={fieldLabel}>下一步行动</label>
+                <label className="form-field-label">下一步行动</label>
                 <textarea
                   value={form.nextAction}
                   onChange={(e) => setForm({ ...form, nextAction: e.target.value })}
                   placeholder="下一步行动"
                   rows={3}
-                  style={{ ...fieldInput, resize: "vertical" as const }}
+                  className="form-field-control form-field-textarea"
                 />
               </div>
 
               <div className="field-grid-3">
                 <div>
-                  <label style={fieldLabel}>健康度</label>
+                  <label className="form-field-label">健康度</label>
                   <select
                     value={form.health}
                     onChange={(e) => setForm({ ...form, health: e.target.value })}
-                    style={fieldInput}
+                    className="form-field-control"
                   >
                     {HEALTH_OPTIONS.map((option) => (
                       <option key={option.value} value={option.value}>{option.label}</option>
@@ -381,11 +381,11 @@ function NewItemForm() {
                   </select>
                 </div>
                 <div>
-                  <label style={fieldLabel}>汇报层级</label>
+                  <label className="form-field-label">汇报层级</label>
                   <select
                     value={form.reportLevel}
                     onChange={(e) => setForm({ ...form, reportLevel: e.target.value })}
-                    style={fieldInput}
+                    className="form-field-control"
                   >
                     {REPORT_LEVEL_OPTIONS.map((option) => (
                       <option key={option.value} value={option.value}>{option.label}</option>
@@ -393,11 +393,11 @@ function NewItemForm() {
                   </select>
                 </div>
                 <div>
-                  <label style={fieldLabel}>来源系统</label>
+                  <label className="form-field-label">来源系统</label>
                   <select
                     value={form.sourceSystem}
                     onChange={(e) => setForm({ ...form, sourceSystem: e.target.value })}
-                    style={fieldInput}
+                    className="form-field-control"
                   >
                     <option value="">选择来源系统</option>
                     {SOURCE_SYSTEM_OPTIONS.map((option) => (
@@ -409,58 +409,58 @@ function NewItemForm() {
 
               <div className="field-grid-2">
                 <div>
-                  <label style={fieldLabel}>来源编号</label>
+                  <label className="form-field-label">来源编号</label>
                   <input
                     type="text"
                     value={form.sourceId}
                     onChange={(e) => setForm({ ...form, sourceId: e.target.value })}
                     placeholder="来源系统中的编号"
-                    style={fieldInput}
+                    className="form-field-control"
                   />
                 </div>
                 <div>
-                  <label style={fieldLabel}>来源链接</label>
+                  <label className="form-field-label">来源链接</label>
                   <input
                     type="url"
                     value={form.sourceUrl}
                     onChange={(e) => setForm({ ...form, sourceUrl: e.target.value })}
                     placeholder="https://..."
-                    style={fieldInput}
+                    className="form-field-control"
                   />
                 </div>
               </div>
 
               <div className="field-grid-2">
                 <div>
-                  <label style={fieldLabel}>当前摘要</label>
+                  <label className="form-field-label">当前摘要</label>
                   <textarea
                     value={form.currentSummary}
                     onChange={(e) => setForm({ ...form, currentSummary: e.target.value })}
                     rows={3}
                     placeholder="当前状态、结论或摘要"
-                    style={{ ...fieldInput, resize: "vertical" as const }}
+                    className="form-field-control form-field-textarea"
                   />
                 </div>
                 <div>
-                  <label style={fieldLabel}>跟踪原因</label>
+                  <label className="form-field-label">跟踪原因</label>
                   <textarea
                     value={form.trackingReason}
                     onChange={(e) => setForm({ ...form, trackingReason: e.target.value })}
                     rows={3}
                     placeholder="为什么需要跟踪这件事"
-                    style={{ ...fieldInput, resize: "vertical" as const }}
+                    className="form-field-control form-field-textarea"
                   />
                 </div>
               </div>
 
               <div className="field-grid-2">
                 <div>
-                  <label style={fieldLabel}>下一检查点</label>
+                  <label className="form-field-label">下一检查点</label>
                   <input
                     type="date"
                     value={form.nextCheckpoint}
                     onChange={(e) => setForm({ ...form, nextCheckpoint: e.target.value })}
-                    style={fieldInput}
+                    className="form-field-control"
                   />
                 </div>
                 <div />
@@ -496,26 +496,9 @@ function NewItemForm() {
 
 export default function NewItemPage() {
   return (
-    <Suspense fallback={<div style={{ textAlign: "center", padding: 40, color: "var(--text-tertiary)" }}>加载中...</div>}>
+    <Suspense fallback={<div className="command-form-message">加载中...</div>}>
       <NewItemForm />
     </Suspense>
   );
 }
 
-const fieldInput = {
-  width: "100%",
-  padding: "10px 12px",
-  borderRadius: 6,
-  border: "1px solid var(--border-primary)",
-  background: "var(--bg-secondary)",
-  color: "var(--text-primary)",
-  fontSize: 14,
-};
-
-const fieldLabel = {
-  display: "block" as const,
-  fontSize: 13,
-  fontWeight: 500,
-  color: "var(--text-primary)",
-  marginBottom: 6,
-};

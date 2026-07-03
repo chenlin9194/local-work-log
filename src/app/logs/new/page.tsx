@@ -359,7 +359,7 @@ function NewLogForm() {
 
       <form onSubmit={handleSubmit}>
         <div className="card form-card log-entry-card command-form-card">
-          <div style={{ display: "grid", gap: 16 }}>
+          <div className="command-form-stack">
             <section className="command-form-section">
               <div className="command-form-section-header">
                 <h2>记录上下文</h2>
@@ -367,8 +367,8 @@ function NewLogForm() {
               </div>
 
               <div className="field-grid-2">
-                <div style={{ width: "min(260px, 100%)" }}>
-                  <label style={fieldLabel}>工作日期 *</label>
+                <div className="form-field-narrow">
+                  <label className="form-field-label">工作日期 *</label>
                   <input
                     type="date"
                     value={form.workDate}
@@ -414,11 +414,11 @@ function NewLogForm() {
 
               {form.relationMode === "existing" && (
                 <div>
-                  <label style={fieldLabel}>选择已有事项</label>
+                  <label className="form-field-label">选择已有事项</label>
                   <select
                     value={form.itemId}
                     onChange={(e) => handleItemChange(e.target.value)}
-                    style={fieldInput}
+                    className="form-field-control"
                     disabled={items.length === 0}
                   >
                     <option value="">{items.length === 0 ? "当前没有可关联事项" : "请选择已有事项"}</option>
@@ -439,11 +439,11 @@ function NewLogForm() {
                   </div>
 
                   <div>
-                    <label style={fieldLabel}>事项类型</label>
+                    <label className="form-field-label">事项类型</label>
                     <select
                       value={form.newType}
                       onChange={(e) => setForm({ ...form, newType: e.target.value })}
-                      style={fieldInput}
+                      className="form-field-control"
                     >
                       {WORK_ITEM_TYPES.map((t) => (
                         <option key={t.value} value={t.value}>{t.label}</option>
@@ -453,11 +453,11 @@ function NewLogForm() {
 
                   <div className="field-grid-2">
                     <div>
-                      <label style={fieldLabel}>优先级</label>
+                      <label className="form-field-label">优先级</label>
                       <select
                         value={form.newPriority}
                         onChange={(e) => setForm({ ...form, newPriority: e.target.value })}
-                        style={fieldInput}
+                        className="form-field-control"
                       >
                         {PRIORITIES.map((priority) => (
                           <option key={priority.value} value={priority.value}>
@@ -467,11 +467,11 @@ function NewLogForm() {
                       </select>
                     </div>
                     <div>
-                      <label style={fieldLabel}>状态</label>
+                      <label className="form-field-label">状态</label>
                       <select
                         value={form.newStatus}
                         onChange={(e) => setForm({ ...form, newStatus: e.target.value })}
-                        style={fieldInput}
+                        className="form-field-control"
                       >
                         {STATUSES.map((status) => (
                           <option key={status.value} value={status.value}>
@@ -484,34 +484,34 @@ function NewLogForm() {
 
                   <div className="field-grid-2">
                     <div>
-                      <label style={fieldLabel}>负责人</label>
+                      <label className="form-field-label">负责人</label>
                       <input
                         type="text"
                         value={form.newOwner}
                         onChange={(e) => setForm({ ...form, newOwner: e.target.value })}
                         placeholder="可选"
-                        style={fieldInput}
+                        className="form-field-control"
                       />
                     </div>
                     <div>
-                      <label style={fieldLabel}>截止日期</label>
+                      <label className="form-field-label">截止日期</label>
                       <input
                         type="date"
                         value={form.newDueDate}
                         onChange={(e) => setForm({ ...form, newDueDate: e.target.value })}
-                        style={fieldInput}
+                        className="form-field-control"
                       />
                     </div>
                   </div>
 
                   <div>
-                    <label style={fieldLabel}>下一步行动</label>
+                    <label className="form-field-label">下一步行动</label>
                     <textarea
                       value={form.newNextAction}
                       onChange={(e) => setForm({ ...form, newNextAction: e.target.value })}
                       rows={3}
                       placeholder="可选"
-                      style={{ ...fieldInput, resize: "vertical" as const }}
+                      className="form-field-control form-field-textarea"
                     />
                   </div>
                 </div>
@@ -525,19 +525,19 @@ function NewLogForm() {
               </div>
 
               <div>
-                <label style={fieldLabel}>标题 *</label>
+                <label className="form-field-label">标题 *</label>
                 <input
                   type="text"
                   value={form.title}
                   onChange={(e) => setForm({ ...form, title: e.target.value })}
                   placeholder="输入日志标题"
                   required
-                  style={fieldInput}
+                  className="form-field-control"
                 />
               </div>
 
               <div>
-                <label style={fieldLabel}>内容 *</label>
+                <label className="form-field-label">内容 *</label>
                 <textarea
                   value={form.content}
                   onChange={(e) => setForm({ ...form, content: e.target.value })}
@@ -557,11 +557,11 @@ function NewLogForm() {
 
               <div className="field-grid-3">
                 <div>
-                  <label style={fieldLabel}>类型</label>
+                  <label className="form-field-label">类型</label>
                   <select
                     value={form.type}
                     onChange={(e) => setForm({ ...form, type: e.target.value })}
-                    style={fieldInput}
+                    className="form-field-control"
                   >
                     {WORK_LOG_TYPES.map((type) => (
                       <option key={type.value} value={type.value}>
@@ -571,11 +571,11 @@ function NewLogForm() {
                   </select>
                 </div>
                 <div>
-                  <label style={fieldLabel}>来源</label>
+                  <label className="form-field-label">来源</label>
                   <select
                     value={form.source}
                     onChange={(e) => setForm({ ...form, source: e.target.value })}
-                    style={fieldInput}
+                    className="form-field-control"
                   >
                     {SOURCES.map((source) => (
                       <option key={source.value} value={source.value}>
@@ -585,11 +585,11 @@ function NewLogForm() {
                   </select>
                 </div>
                 <div>
-                  <label style={fieldLabel}>模块</label>
+                  <label className="form-field-label">模块</label>
                   <select
                     value={form.module}
                     onChange={(e) => setForm({ ...form, module: e.target.value })}
-                    style={fieldInput}
+                    className="form-field-control"
                   >
                     <option value="">选择模块</option>
                     {MODULES.map((module) => (
@@ -603,11 +603,11 @@ function NewLogForm() {
 
               <div className="field-grid-3">
                 <div>
-                  <label style={fieldLabel}>项目</label>
+                  <label className="form-field-label">项目</label>
                   <select
                     value={form.projectId}
                     onChange={(e) => handleProjectChange(e.target.value)}
-                    style={fieldInput}
+                    className="form-field-control"
                   >
                     <option value="">选择已有项目（可选）</option>
                     {projects.map((project) => (
@@ -619,23 +619,23 @@ function NewLogForm() {
                   </select>
                 </div>
                 <div>
-                  <label style={fieldLabel}>项目名称</label>
+                  <label className="form-field-label">项目名称</label>
                   <input
                     type="text"
                     value={form.project}
                     onChange={(e) => setForm({ ...form, project: e.target.value })}
                     placeholder="可手填或由项目选择同步"
-                    style={fieldInput}
+                    className="form-field-control"
                   />
                 </div>
                 <div>
-                  <label style={fieldLabel}>标签</label>
+                  <label className="form-field-label">标签</label>
                   <input
                     type="text"
                     value={form.tags}
                     onChange={(e) => setForm({ ...form, tags: e.target.value })}
                     placeholder="标签，用逗号分隔"
-                    style={fieldInput}
+                    className="form-field-control"
                   />
                 </div>
               </div>
@@ -650,13 +650,13 @@ function NewLogForm() {
                   可汇报
                 </label>
                 <div>
-                  <label style={fieldLabel}>来源链接</label>
+                  <label className="form-field-label">来源链接</label>
                   <input
                     type="url"
                     value={form.sourceUrl}
                     onChange={(e) => setForm({ ...form, sourceUrl: e.target.value })}
                     placeholder="https://..."
-                    style={fieldInput}
+                    className="form-field-control"
                   />
                 </div>
               </div>
@@ -691,26 +691,9 @@ function NewLogForm() {
 
 export default function NewLogPage() {
   return (
-    <Suspense fallback={<div style={{ textAlign: "center", padding: 40, color: "var(--text-tertiary)" }}>加载中...</div>}>
+    <Suspense fallback={<div className="command-form-message">加载中...</div>}>
       <NewLogForm />
     </Suspense>
   );
 }
 
-const fieldInput = {
-  width: "100%",
-  padding: "10px 12px",
-  borderRadius: 6,
-  border: "1px solid var(--border-primary)",
-  background: "var(--bg-secondary)",
-  color: "var(--text-primary)",
-  fontSize: 14,
-};
-
-const fieldLabel = {
-  display: "block" as const,
-  fontSize: 13,
-  fontWeight: 500,
-  color: "var(--text-primary)",
-  marginBottom: 6,
-};

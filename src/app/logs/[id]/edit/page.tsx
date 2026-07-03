@@ -104,7 +104,7 @@ export default function EditLogPage() {
   if (fetching) {
     return (
       <div className="page-shell command-form-page log-entry-page">
-        <div className="card form-card command-form-card" style={{ textAlign: "center", padding: 40, color: "var(--text-tertiary)" }}>
+        <div className="card form-card command-form-card command-form-message">
           加载中...
         </div>
       </div>
@@ -126,7 +126,7 @@ export default function EditLogPage() {
 
       <form onSubmit={handleSubmit}>
         <div className="card form-card command-form-card log-entry-card">
-          <div style={{ display: "grid", gap: 16 }}>
+          <div className="command-form-stack">
             <section className="command-form-section">
               <div className="command-form-section-header">
                 <h2>记录上下文</h2>
@@ -134,8 +134,8 @@ export default function EditLogPage() {
               </div>
 
               <div className="field-grid-2">
-                <div style={{ width: "min(260px, 100%)" }}>
-                  <label style={fieldLabel}>工作日期 *</label>
+                <div className="form-field-narrow">
+                  <label className="form-field-label">工作日期 *</label>
                   <input
                     type="date"
                     value={form.workDate}
@@ -148,11 +148,11 @@ export default function EditLogPage() {
               </div>
 
               <div>
-                <label style={fieldLabel}>关联事项</label>
+                <label className="form-field-label">关联事项</label>
                 <select
                   value={form.itemId}
                   onChange={(e) => setForm({ ...form, itemId: e.target.value })}
-                  style={fieldInput}
+                  className="form-field-control"
                 >
                   <option value="">不关联</option>
                   {items.map((item) => (
@@ -171,18 +171,18 @@ export default function EditLogPage() {
               </div>
 
               <div>
-                <label style={fieldLabel}>标题 *</label>
+                <label className="form-field-label">标题 *</label>
                 <input
                   type="text"
                   value={form.title}
                   onChange={(e) => setForm({ ...form, title: e.target.value })}
                   required
-                  style={fieldInput}
+                  className="form-field-control"
                 />
               </div>
 
               <div>
-                <label style={fieldLabel}>内容 *</label>
+                <label className="form-field-label">内容 *</label>
                 <textarea
                   value={form.content}
                   onChange={(e) => setForm({ ...form, content: e.target.value })}
@@ -201,11 +201,11 @@ export default function EditLogPage() {
 
               <div className="field-grid-3">
                 <div>
-                  <label style={fieldLabel}>类型</label>
+                  <label className="form-field-label">类型</label>
                   <select
                     value={form.type}
                     onChange={(e) => setForm({ ...form, type: e.target.value })}
-                    style={fieldInput}
+                    className="form-field-control"
                   >
                     {WORK_LOG_TYPES.map((t) => (
                       <option key={t.value} value={t.value}>{t.label}</option>
@@ -213,11 +213,11 @@ export default function EditLogPage() {
                   </select>
                 </div>
                 <div>
-                  <label style={fieldLabel}>来源</label>
+                  <label className="form-field-label">来源</label>
                   <select
                     value={form.source}
                     onChange={(e) => setForm({ ...form, source: e.target.value })}
-                    style={fieldInput}
+                    className="form-field-control"
                   >
                     {SOURCES.map((s) => (
                       <option key={s.value} value={s.value}>{s.label}</option>
@@ -225,11 +225,11 @@ export default function EditLogPage() {
                   </select>
                 </div>
                 <div>
-                  <label style={fieldLabel}>模块</label>
+                  <label className="form-field-label">模块</label>
                   <select
                     value={form.module}
                     onChange={(e) => setForm({ ...form, module: e.target.value })}
-                    style={fieldInput}
+                    className="form-field-control"
                   >
                     <option value="">选择模块</option>
                     {MODULES.map((module) => (
@@ -241,22 +241,22 @@ export default function EditLogPage() {
 
               <div className="field-grid-2">
                 <div>
-                  <label style={fieldLabel}>项目</label>
+                  <label className="form-field-label">项目</label>
                   <input
                     type="text"
                     value={form.project}
                     onChange={(e) => setForm({ ...form, project: e.target.value })}
-                    style={fieldInput}
+                    className="form-field-control"
                   />
                 </div>
                 <div>
-                  <label style={fieldLabel}>标签</label>
+                  <label className="form-field-label">标签</label>
                   <input
                     type="text"
                     value={form.tags}
                     onChange={(e) => setForm({ ...form, tags: e.target.value })}
                     placeholder="标签，用逗号分隔"
-                    style={fieldInput}
+                    className="form-field-control"
                   />
                 </div>
               </div>
@@ -271,13 +271,13 @@ export default function EditLogPage() {
                   可汇报
                 </label>
                 <div>
-                  <label style={fieldLabel}>来源链接</label>
+                  <label className="form-field-label">来源链接</label>
                   <input
                     type="url"
                     value={form.sourceUrl}
                     onChange={(e) => setForm({ ...form, sourceUrl: e.target.value })}
                     placeholder="https://..."
-                    style={fieldInput}
+                    className="form-field-control"
                   />
                 </div>
               </div>
@@ -301,20 +301,3 @@ export default function EditLogPage() {
   );
 }
 
-const fieldInput = {
-  width: "100%",
-  padding: "10px 12px",
-  borderRadius: 6,
-  border: "1px solid var(--border-primary)",
-  background: "var(--bg-secondary)",
-  color: "var(--text-primary)",
-  fontSize: 14,
-};
-
-const fieldLabel = {
-  display: "block" as const,
-  fontSize: 13,
-  fontWeight: 500,
-  color: "var(--text-primary)",
-  marginBottom: 6,
-};
