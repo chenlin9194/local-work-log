@@ -158,7 +158,7 @@ export default function LogsPage() {
           <p>回看会议、进展、风险与决策留下的事实记录。</p>
         </div>
         <div className="page-header-actions">
-          <button onClick={copyMarkdown} className="btn btn-secondary" style={{ fontSize: 13 }}><Icon name="copy" size={14} />复制 Markdown</button>
+          <button onClick={copyMarkdown} className="btn btn-secondary list-action-button"><Icon name="copy" size={14} />复制 Markdown</button>
           <Link href="/logs/new" className="btn btn-primary"><Icon name="plus" size={14} />新增日志</Link>
         </div>
       </div>
@@ -166,42 +166,42 @@ export default function LogsPage() {
       <div className="card filter-panel">
         <div className="filter-panel-label"><Icon name="search" size={14} />日志筛选</div>
         {filters.projectId && (
-          <div style={{ marginBottom: 12, fontSize: 12, color: "var(--text-tertiary)" }}>
+          <div className="filter-scope-note">
             当前项目筛选已启用
           </div>
         )}
         {filters.itemId && (
-          <div style={{ marginBottom: 12, fontSize: 12, color: "var(--text-tertiary)" }}>
+          <div className="filter-scope-note">
             当前事项筛选已启用
           </div>
         )}
         <div className="filter-grid">
-          <input type="date" value={filters.startDate} onChange={(e) => handleFilterChange("startDate", e.target.value)} style={{ padding: "8px 12px", borderRadius: 6, border: "1px solid var(--border-primary)", background: "var(--bg-secondary)", color: "var(--text-primary)", fontSize: 13 }} />
-          <input type="date" value={filters.endDate} onChange={(e) => handleFilterChange("endDate", e.target.value)} style={{ padding: "8px 12px", borderRadius: 6, border: "1px solid var(--border-primary)", background: "var(--bg-secondary)", color: "var(--text-primary)", fontSize: 13 }} />
-          <input type="text" placeholder="关键词搜索" value={filters.keyword} onChange={(e) => handleFilterChange("keyword", e.target.value)} style={{ padding: "8px 12px", borderRadius: 6, border: "1px solid var(--border-primary)", background: "var(--bg-secondary)", color: "var(--text-primary)", fontSize: 13 }} />
-          <select value={filters.type} onChange={(e) => handleFilterChange("type", e.target.value)} style={{ padding: "8px 12px", borderRadius: 6, border: "1px solid var(--border-primary)", background: "var(--bg-secondary)", color: "var(--text-primary)", fontSize: 13 }}>
+          <input type="date" value={filters.startDate} onChange={(e) => handleFilterChange("startDate", e.target.value)} />
+          <input type="date" value={filters.endDate} onChange={(e) => handleFilterChange("endDate", e.target.value)} />
+          <input type="text" placeholder="关键词搜索" value={filters.keyword} onChange={(e) => handleFilterChange("keyword", e.target.value)} />
+          <select value={filters.type} onChange={(e) => handleFilterChange("type", e.target.value)}>
             <option value="">全部类型</option>
             {WORK_LOG_TYPES.map((t) => (<option key={t.value} value={t.value}>{t.label}</option>))}
           </select>
-          <select value={filters.source} onChange={(e) => handleFilterChange("source", e.target.value)} style={{ padding: "8px 12px", borderRadius: 6, border: "1px solid var(--border-primary)", background: "var(--bg-secondary)", color: "var(--text-primary)", fontSize: 13 }}>
+          <select value={filters.source} onChange={(e) => handleFilterChange("source", e.target.value)}>
             <option value="">全部来源</option>
             {SOURCES.map((s) => (<option key={s.value} value={s.value}>{s.label}</option>))}
           </select>
-          <select value={filters.reportable} onChange={(e) => handleFilterChange("reportable", e.target.value)} style={{ padding: "8px 12px", borderRadius: 6, border: "1px solid var(--border-primary)", background: "var(--bg-secondary)", color: "var(--text-primary)", fontSize: 13 }}>
+          <select value={filters.reportable} onChange={(e) => handleFilterChange("reportable", e.target.value)}>
             <option value="">全部汇报状态</option>
             <option value="true">仅可汇报</option>
             <option value="false">仅不可汇报</option>
           </select>
-          <select value={filters.hasItem} onChange={(e) => handleFilterChange("hasItem", e.target.value)} style={{ padding: "8px 12px", borderRadius: 6, border: "1px solid var(--border-primary)", background: "var(--bg-secondary)", color: "var(--text-primary)", fontSize: 13 }}>
+          <select value={filters.hasItem} onChange={(e) => handleFilterChange("hasItem", e.target.value)}>
             <option value="">全部关联</option>
             <option value="true">已关联事项</option>
             <option value="false">未关联事项</option>
           </select>
-          <button onClick={clearFilters} className="btn btn-ghost" style={{ fontSize: 13 }}>清除筛选</button>
+          <button onClick={clearFilters} className="btn btn-ghost">清除筛选</button>
         </div>
       </div>
 
-      <div style={{ fontSize: 13, color: "var(--text-tertiary)" }}>共 {total} 条记录</div>
+      <div className="command-list-count">共 {total} 条记录</div>
 
       {loading ? (
         <PageLoadingState
@@ -223,10 +223,10 @@ export default function LogsPage() {
       )}
 
       {total > 20 && (
-        <div style={{ display: "flex", justifyContent: "center", gap: 8, marginTop: 16 }}>
-          <button onClick={() => setPage((p) => Math.max(1, p - 1))} disabled={page === 1} className="btn btn-secondary" style={{ fontSize: 13 }}>上一页</button>
-          <span style={{ display: "flex", alignItems: "center", fontSize: 13, color: "var(--text-tertiary)" }}>第 {page} 页 / 共 {Math.ceil(total / 20)} 页</span>
-          <button onClick={() => setPage((p) => p + 1)} disabled={page * 20 >= total} className="btn btn-secondary" style={{ fontSize: 13 }}>下一页</button>
+        <div className="pagination-row">
+          <button onClick={() => setPage((p) => Math.max(1, p - 1))} disabled={page === 1} className="btn btn-secondary">上一页</button>
+          <span className="pagination-status">第 {page} 页 / 共 {Math.ceil(total / 20)} 页</span>
+          <button onClick={() => setPage((p) => p + 1)} disabled={page * 20 >= total} className="btn btn-secondary">下一页</button>
         </div>
       )}
     </div>

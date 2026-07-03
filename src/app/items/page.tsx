@@ -184,7 +184,7 @@ export default function ItemsPage() {
           <p>跟踪风险、问题、待办与跨团队依赖的闭环状态。</p>
         </div>
         <div className="page-header-actions">
-          <button onClick={copyMarkdown} className="btn btn-secondary" style={{ fontSize: 13 }}>
+          <button onClick={copyMarkdown} className="btn btn-secondary list-action-button">
             <Icon name="copy" size={14} />复制 Markdown
           </button>
           <Link href="/items/new" className="btn btn-primary"><Icon name="plus" size={14} />新建跟踪事项</Link>
@@ -195,7 +195,7 @@ export default function ItemsPage() {
       <div className="card filter-panel">
         <div className="filter-panel-label"><Icon name="search" size={14} />事项筛选</div>
         {filters.projectId && (
-          <div style={{ marginBottom: 12, fontSize: 12, color: "var(--text-tertiary)" }}>
+          <div className="filter-scope-note">
             当前项目筛选已启用
           </div>
         )}
@@ -205,12 +205,10 @@ export default function ItemsPage() {
             placeholder="关键词搜索"
             value={filters.keyword}
             onChange={(e) => handleFilterChange("keyword", e.target.value)}
-            style={{ padding: "8px 12px", borderRadius: 6, border: "1px solid var(--border-primary)", background: "var(--bg-secondary)", color: "var(--text-primary)", fontSize: 13 }}
           />
           <select
             value={filters.visibility}
             onChange={(e) => handleFilterChange("visibility", e.target.value)}
-            style={{ padding: "8px 12px", borderRadius: 6, border: "1px solid var(--border-primary)", background: "var(--bg-secondary)", color: "var(--text-primary)", fontSize: 13 }}
           >
             <option value="open">默认未关闭</option>
             <option value="closed">仅已关闭</option>
@@ -219,7 +217,6 @@ export default function ItemsPage() {
           <select
             value={filters.type}
             onChange={(e) => handleFilterChange("type", e.target.value)}
-            style={{ padding: "8px 12px", borderRadius: 6, border: "1px solid var(--border-primary)", background: "var(--bg-secondary)", color: "var(--text-primary)", fontSize: 13 }}
           >
             <option value="">全部类型</option>
             {WORK_ITEM_TYPES.map((t) => (
@@ -229,7 +226,6 @@ export default function ItemsPage() {
           <select
             value={filters.priority}
             onChange={(e) => handleFilterChange("priority", e.target.value)}
-            style={{ padding: "8px 12px", borderRadius: 6, border: "1px solid var(--border-primary)", background: "var(--bg-secondary)", color: "var(--text-primary)", fontSize: 13 }}
           >
             <option value="">全部优先级</option>
             {PRIORITIES.map((p) => (
@@ -239,7 +235,6 @@ export default function ItemsPage() {
           <select
             value={filters.status}
             onChange={(e) => handleFilterChange("status", e.target.value)}
-            style={{ padding: "8px 12px", borderRadius: 6, border: "1px solid var(--border-primary)", background: "var(--bg-secondary)", color: "var(--text-primary)", fontSize: 13 }}
           >
             <option value="">全部状态</option>
             {STATUSES.map((s) => (
@@ -249,7 +244,6 @@ export default function ItemsPage() {
           <select
             value={filters.health}
             onChange={(e) => handleFilterChange("health", e.target.value)}
-            style={{ padding: "8px 12px", borderRadius: 6, border: "1px solid var(--border-primary)", background: "var(--bg-secondary)", color: "var(--text-primary)", fontSize: 13 }}
           >
             <option value="">全部健康度</option>
             {HEALTH_OPTIONS.map((option) => (
@@ -259,7 +253,6 @@ export default function ItemsPage() {
           <select
             value={filters.reportLevel}
             onChange={(e) => handleFilterChange("reportLevel", e.target.value)}
-            style={{ padding: "8px 12px", borderRadius: 6, border: "1px solid var(--border-primary)", background: "var(--bg-secondary)", color: "var(--text-primary)", fontSize: 13 }}
           >
             <option value="">全部汇报层级</option>
             {REPORT_LEVEL_OPTIONS.map((option) => (
@@ -269,7 +262,6 @@ export default function ItemsPage() {
           <select
             value={filters.sourceSystem}
             onChange={(e) => handleFilterChange("sourceSystem", e.target.value)}
-            style={{ padding: "8px 12px", borderRadius: 6, border: "1px solid var(--border-primary)", background: "var(--bg-secondary)", color: "var(--text-primary)", fontSize: 13 }}
           >
             <option value="">全部来源系统</option>
             {SOURCE_SYSTEM_OPTIONS.map((option) => (
@@ -279,7 +271,6 @@ export default function ItemsPage() {
           <select
             value={filters.module}
             onChange={(e) => handleFilterChange("module", e.target.value)}
-            style={{ padding: "8px 12px", borderRadius: 6, border: "1px solid var(--border-primary)", background: "var(--bg-secondary)", color: "var(--text-primary)", fontSize: 13 }}
           >
             <option value="">全部模块</option>
             {MODULES.map((m) => (
@@ -291,9 +282,8 @@ export default function ItemsPage() {
             placeholder="责任人"
             value={filters.owner}
             onChange={(e) => handleFilterChange("owner", e.target.value)}
-            style={{ padding: "8px 12px", borderRadius: 6, border: "1px solid var(--border-primary)", background: "var(--bg-secondary)", color: "var(--text-primary)", fontSize: 13 }}
           />
-          <label style={{ display: "flex", alignItems: "center", gap: 6, fontSize: 13, color: "var(--text-primary)" }}>
+          <label className="filter-checkbox">
             <input
               type="checkbox"
               checked={filters.overdue}
@@ -301,14 +291,14 @@ export default function ItemsPage() {
             />
             仅显示逾期
           </label>
-          <button onClick={clearFilters} className="btn btn-ghost" style={{ fontSize: 13 }}>
+          <button onClick={clearFilters} className="btn btn-ghost">
             清除筛选
           </button>
         </div>
       </div>
 
       {/* Results */}
-      <div style={{ fontSize: 13, color: "var(--text-tertiary)" }}>
+      <div className="command-list-count">
         共 {total} 条记录
       </div>
 
@@ -339,23 +329,21 @@ export default function ItemsPage() {
 
       {/* Pagination */}
       {total > 20 && (
-        <div style={{ display: "flex", justifyContent: "center", gap: 8, marginTop: 16 }}>
+        <div className="pagination-row">
           <button
             onClick={() => setPage((p) => Math.max(1, p - 1))}
             disabled={page === 1}
             className="btn btn-secondary"
-            style={{ fontSize: 13 }}
           >
             上一页
           </button>
-          <span style={{ display: "flex", alignItems: "center", fontSize: 13, color: "var(--text-tertiary)" }}>
+          <span className="pagination-status">
             第 {page} 页 / 共 {Math.ceil(total / 20)} 页
           </span>
           <button
             onClick={() => setPage((p) => p + 1)}
             disabled={page * 20 >= total}
             className="btn btn-secondary"
-            style={{ fontSize: 13 }}
           >
             下一页
           </button>

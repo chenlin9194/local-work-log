@@ -1198,11 +1198,19 @@ input.input[type="date"], input.input[type="url"], input.input[type="number"] { 
   border-radius: 9px !important;
   color: var(--text-primary) !important;
   background-color: var(--bg-secondary) !important;
+  font-size: 13px !important;
   outline: none;
   transition: border-color 0.16s ease, box-shadow 0.16s ease, background-color 0.16s ease;
 }
 .filter-grid > input:focus, .filter-grid > select:focus { border-color: var(--accent-blue) !important; box-shadow: 0 0 0 3px color-mix(in srgb, var(--accent-blue) 14%, transparent); }
-.filter-grid > .btn { min-height: 38px; justify-self: start; }
+.filter-grid > .btn { min-height: 38px; justify-self: start; font-size: 13px; }
+.filter-scope-note { margin: 0; color: var(--text-tertiary); font-size: 12px; }
+.filter-checkbox { display: flex; align-items: center; gap: 6px; color: var(--text-primary); font-size: 13px; }
+.list-action-button { font-size: 13px; }
+.command-list-count { color: var(--text-tertiary); font-size: 13px; }
+.pagination-row { display: flex; justify-content: center; gap: 8px; margin-top: 16px; }
+.pagination-row .btn { font-size: 13px; }
+.pagination-status { display: flex; align-items: center; color: var(--text-tertiary); font-size: 13px; }
 .command-list-page .content-card-grid { gap: 12px; }
 .compact-list-empty { min-height: 168px; padding: 20px 18px; gap: 8px; }
 .compact-list-empty strong { color: var(--text-primary); font-size: 14px; }
