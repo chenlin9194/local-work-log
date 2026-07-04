@@ -1402,6 +1402,25 @@ input.input[type="date"], input.input[type="url"], input.input[type="number"] { 
   grid-template-columns: repeat(4, minmax(0, 1fr));
   gap: 12px;
 }
+
+/* Log command forms keep the long narrative content as the primary workspace. */
+.log-command-form-card .command-form-stack {
+  display: grid;
+  grid-template-columns: minmax(0, 1.25fr) minmax(360px, 0.75fr);
+  align-items: start;
+  gap: 12px;
+}
+.log-command-form-card .log-form-section-content { grid-column: 1; grid-row: 1 / span 2; }
+.log-command-form-card .log-form-section-context { grid-column: 2; grid-row: 1; }
+.log-command-form-card .log-form-section-taxonomy { grid-column: 2; grid-row: 2; }
+.log-command-form-card .log-form-section-wide,
+.log-command-form-card .command-form-actions { grid-column: 1 / -1; }
+.log-command-form-card .log-content-input {
+  min-height: 260px;
+}
+.log-command-form-card textarea.form-field-control {
+  min-height: 92px;
+}
 .project-list-page .command-page-header {
   display: grid;
   grid-template-columns: minmax(0, 1fr) auto;

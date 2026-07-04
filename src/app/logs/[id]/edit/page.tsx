@@ -125,9 +125,9 @@ export default function EditLogPage() {
       </header>
 
       <form onSubmit={handleSubmit}>
-        <div className="card form-card command-form-card log-entry-card">
+        <div className="card form-card command-form-card log-entry-card log-command-form-card">
           <div className="command-form-stack">
-            <section className="command-form-section">
+            <section className="command-form-section log-form-section-context">
               <div className="command-form-section-header">
                 <h2>记录上下文</h2>
                 <p>工作日期和关联事项。</p>
@@ -164,7 +164,7 @@ export default function EditLogPage() {
               </div>
             </section>
 
-            <section className="command-form-section">
+            <section className="command-form-section log-form-section-content">
               <div className="command-form-section-header">
                 <h2>日志内容</h2>
                 <p>标题与正文。</p>
@@ -193,7 +193,7 @@ export default function EditLogPage() {
               </div>
             </section>
 
-            <section className="command-form-section">
+            <section className="command-form-section log-form-section-taxonomy">
               <div className="command-form-section-header">
                 <h2>分类与来源</h2>
                 <p>类型、来源、模块、项目、标签与外部链接。</p>

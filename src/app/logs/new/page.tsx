@@ -358,9 +358,9 @@ function NewLogForm() {
       </header>
 
       <form onSubmit={handleSubmit}>
-        <div className="card form-card log-entry-card command-form-card">
+        <div className="card form-card log-entry-card command-form-card log-command-form-card">
           <div className="command-form-stack">
-            <section className="command-form-section">
+            <section className="command-form-section log-form-section-context">
               <div className="command-form-section-header">
                 <h2>记录上下文</h2>
                 <p>日期和与事项的关联方式。</p>
@@ -518,7 +518,7 @@ function NewLogForm() {
               )}
             </section>
 
-            <section className="command-form-section">
+            <section className="command-form-section log-form-section-content">
               <div className="command-form-section-header">
                 <h2>日志内容</h2>
                 <p>标题与正文，记录今天的事实和进展。</p>
@@ -549,7 +549,7 @@ function NewLogForm() {
               </div>
             </section>
 
-            <section className="command-form-section">
+            <section className="command-form-section log-form-section-taxonomy">
               <div className="command-form-section-header">
                 <h2>分类与来源</h2>
                 <p>类型、来源、模块、项目、标签和外部链接。</p>
@@ -662,14 +662,16 @@ function NewLogForm() {
               </div>
             </section>
 
-            <ActionItemDraftSection
-              enabled={actionItemsEnabled}
-              drafts={actionItemDrafts}
-              onEnabledChange={setActionItemsEnabled}
-              onDraftsChange={setActionItemDrafts}
-              title="后续行动"
-              description="可选：保存日志后再补充需要跟进的行动项。"
-            />
+            <div className="log-form-section-wide">
+              <ActionItemDraftSection
+                enabled={actionItemsEnabled}
+                drafts={actionItemDrafts}
+                onEnabledChange={setActionItemsEnabled}
+                onDraftsChange={setActionItemDrafts}
+                title="后续行动"
+                description="可选：保存日志后再补充需要跟进的行动项。"
+              />
+            </div>
 
             <div className="command-form-actions">
               <span className="field-note">保存后会进入日志详情页。</span>
