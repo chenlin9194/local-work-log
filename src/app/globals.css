@@ -2862,6 +2862,51 @@ input.input[type="date"], input.input[type="url"], input.input[type="number"] { 
   }
 }
 
+@media (max-width: 980px) {
+  .project-command-form-card .command-form-stack,
+  .project-edit-card.project-command-form-card .command-form-stack,
+  .item-command-form-card .command-form-stack,
+  .log-command-form-card .command-form-stack,
+  .project-form-delivery-grid,
+  .item-form-signal-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .project-command-form-card .project-form-section-main,
+  .project-command-form-card .project-form-section-side,
+  .project-command-form-card .project-form-section-wide,
+  .project-command-form-card .command-form-actions,
+  .item-command-form-card .item-form-section-main,
+  .item-command-form-card .item-form-section-side,
+  .item-command-form-card .item-form-section-signal,
+  .item-command-form-card .item-form-section-status,
+  .item-command-form-card .item-form-section-wide,
+  .item-command-form-card .command-form-actions,
+  .log-command-form-card .log-form-section-content,
+  .log-command-form-card .log-form-section-context,
+  .log-command-form-card .log-form-section-taxonomy,
+  .log-command-form-card .log-form-section-wide,
+  .log-command-form-card .command-form-actions,
+  .project-edit-block-name,
+  .project-edit-block-description,
+  .project-edit-block-status,
+  .project-edit-block-owner,
+  .project-edit-block-dates,
+  .project-edit-block-summary,
+  .project-edit-block-delivery,
+  .project-edit-block-source,
+  .project-edit-block-tags,
+  .project-edit-block-actions {
+    grid-column: 1 / -1;
+    grid-row: auto;
+  }
+
+  .project-form-source-grid,
+  .item-form-source-grid {
+    grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+  }
+}
+
 @media (max-width: 780px) {
 .app-main:has(.dashboard-shell) {
   padding: 0;
