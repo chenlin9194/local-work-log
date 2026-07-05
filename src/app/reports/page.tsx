@@ -9,28 +9,24 @@ const reportEntrances = [
     icon: "calendar",
     title: "今日日报事实包",
     subtitle: "导出今天的日志、事项、风险、决策事实，适合直接复制给外部工具继续整理。",
-    tone: "btn-primary",
   },
   {
     href: "/export/range",
     icon: "download",
     title: "区间 / 周报事实包",
     subtitle: "按时间范围导出工作记录，适合周报、阶段汇总和回顾场景。",
-    tone: "btn-secondary",
   },
   {
     href: "/projects",
     icon: "clipboard-list",
     title: "项目快照事实包",
     subtitle: "先进入项目列表，再打开具体项目的快照页查看项目状态、风险和里程碑。",
-    tone: "btn-secondary",
   },
   {
     href: "/stats",
     icon: "chart",
     title: "统计概览",
     subtitle: "查看事项和日志的整体统计，快速判断当前交付健康度。",
-    tone: "btn-secondary",
   },
 ] as const;
 
@@ -73,7 +69,7 @@ export default function ReportsPage() {
         </div>
       </header>
 
-      <section style={{ marginBottom: 24 }}>
+      <section className="reports-section">
         <div className="dashboard-section-title">
           <div>
             <span className="section-eyebrow">ENTRANCES</span>
@@ -86,44 +82,20 @@ export default function ReportsPage() {
             <Link
               key={entry.href}
               href={entry.href}
-              className="card card-hover"
-              style={{
-                padding: 18,
-                textDecoration: "none",
-                color: "inherit",
-                display: "flex",
-                flexDirection: "column",
-                gap: 12,
-                minHeight: 188,
-              }}
+              className="card card-hover report-entry-card"
             >
-              <div style={{ display: "flex", alignItems: "flex-start", gap: 12 }}>
-                <span
-                  style={{
-                    width: 40,
-                    height: 40,
-                    borderRadius: 12,
-                    display: "grid",
-                    placeItems: "center",
-                    background: "var(--bg-secondary)",
-                    color: "var(--accent-blue)",
-                    flex: "0 0 auto",
-                  }}
-                >
+              <div className="report-entry-main">
+                <span className="report-entry-icon">
                   <Icon name={entry.icon} size={18} />
                 </span>
-                <div style={{ minWidth: 0 }}>
-                  <h3 style={{ margin: 0, color: "var(--text-primary)", fontSize: 16, lineHeight: 1.35, fontWeight: 700 }}>
-                    {entry.title}
-                  </h3>
-                  <p style={{ margin: "6px 0 0", color: "var(--text-tertiary)", fontSize: 13, lineHeight: 1.65 }}>
-                    {entry.subtitle}
-                  </p>
+                <div className="report-entry-copy">
+                  <h3>{entry.title}</h3>
+                  <p>{entry.subtitle}</p>
                 </div>
               </div>
 
-              <div style={{ marginTop: "auto" }}>
-              <span className={`btn ${entry.tone}`} style={{ pointerEvents: "none" }}>
+              <div className="report-entry-action">
+                <span className="btn btn-secondary report-entry-button">
                   <Icon name="chevron-right" size={14} />
                   打开入口
                 </span>
@@ -133,7 +105,7 @@ export default function ReportsPage() {
         </div>
       </section>
 
-      <section style={{ marginBottom: 24 }}>
+      <section className="reports-section">
         <div className="dashboard-section-title">
           <div>
             <span className="section-eyebrow">WORKFLOW</span>
@@ -141,8 +113,8 @@ export default function ReportsPage() {
           </div>
         </div>
 
-        <div className="card" style={{ padding: 18 }}>
-          <ol style={{ margin: 0, paddingLeft: 20, display: "grid", gap: 10, color: "var(--text-secondary)", lineHeight: 1.7 }}>
+        <div className="card reports-panel-card">
+          <ol className="reports-workflow-list">
             {workflowSteps.map((step) => (
               <li key={step}>{step}</li>
             ))}
@@ -150,7 +122,7 @@ export default function ReportsPage() {
         </div>
       </section>
 
-      <section style={{ marginBottom: 24 }}>
+      <section className="reports-section">
         <div className="dashboard-section-title">
           <div>
             <span className="section-eyebrow">BOUNDARY</span>
@@ -158,17 +130,17 @@ export default function ReportsPage() {
           </div>
         </div>
 
-        <div className="card" style={{ padding: 18, display: "grid", gap: 10 }}>
-          <p style={{ margin: 0, color: "var(--text-primary)", fontWeight: 650 }}>
+        <div className="card reports-boundary-card">
+          <p className="reports-boundary-title">
             WorkHub 只提供事实包入口，不在这里生成管理结论。事实包现在包含质量检查和待确认信息。
           </p>
-          <p style={{ margin: 0, color: "var(--text-secondary)", lineHeight: 1.7 }}>
+          <p className="reports-boundary-copy">
             复制后的 Markdown 可以交给外部工具继续整理成汇报，但外部工具不能补写事实。先看质量检查，再人工确认缺口，避免把不完整事实直接加工成结论。
           </p>
         </div>
       </section>
 
-      <section style={{ marginBottom: 8 }}>
+      <section className="reports-section reports-section-compact">
         <div className="dashboard-section-title">
           <div>
             <span className="section-eyebrow">SHORTCUTS</span>
@@ -176,8 +148,8 @@ export default function ReportsPage() {
           </div>
         </div>
 
-        <div className="card" style={{ padding: 16 }}>
-          <div style={{ display: "flex", flexWrap: "wrap", gap: 10 }}>
+        <div className="card reports-shortcuts-card">
+          <div className="reports-shortcuts-row">
             {quickLinks.map((link) => (
               <Link key={link.href} href={link.href} className="btn btn-secondary">
                 <Icon name={link.icon} size={14} />
@@ -185,7 +157,7 @@ export default function ReportsPage() {
               </Link>
             ))}
           </div>
-          <p style={{ margin: "12px 0 0", color: "var(--text-tertiary)", fontSize: 12, lineHeight: 1.6 }}>
+          <p className="reports-shortcuts-note">
             {quickLinks[0].note}
           </p>
         </div>
