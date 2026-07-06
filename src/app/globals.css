@@ -4319,6 +4319,1015 @@ body,
   background: #162033 !important;
 }
 
+/* ===== Phase F.2.4 Final UI Detail Polish ===== */
+:root {
+  --bg-primary: #f8fafc;
+  --bg-secondary: #ffffff;
+  --bg-tertiary: #f3f4f6;
+  --bg-hover: #f3f4f6;
+  --bg-elevated: #ffffff;
+  --border-primary: #e5e7eb;
+  --border-secondary: #d1d5db;
+  --text-primary: #1f2937;
+  --text-secondary: #4b5563;
+  --text-tertiary: #9ca3af;
+}
+
+/* P0: English eyebrow/title rhythm */
+.hero-kicker,
+.section-eyebrow,
+.cockpit-nav-label,
+.filter-panel-label,
+.detail-field-label,
+.project-meta-label,
+.monitor-section-heading > small,
+.today-section-header small,
+.cockpit-card-head .section-eyebrow,
+.today-situation-label small,
+.capture-status,
+.monitor-status,
+.stat-meta {
+  color: #9ca3af !important;
+  font-size: 11px !important;
+  font-weight: 500 !important;
+  line-height: 1.4 !important;
+  letter-spacing: 0.5px !important;
+  text-transform: uppercase !important;
+}
+
+.hero-kicker,
+.section-eyebrow,
+.cockpit-card-head .section-eyebrow {
+  margin-bottom: 8px !important;
+}
+
+.cockpit-nav-label {
+  margin: 24px 0 8px !important;
+  padding: 0 12px !important;
+}
+
+/* P0: global badge normalization */
+.badge,
+.entity-pill,
+.project-signal-chip,
+.project-health-badge,
+.cockpit-task-tags span,
+.attention-reason,
+.portfolio-code,
+.entity-card-meta > span,
+.work-card-meta > span,
+.project-card-signals span,
+.project-card-signals a,
+.project-card-meta > span,
+.work-card-badges > span,
+.log-card-badges > span {
+  min-height: 20px !important;
+  height: 20px !important;
+  display: inline-flex !important;
+  align-items: center !important;
+  gap: 4px !important;
+  padding: 0 6px !important;
+  border-radius: 4px !important;
+  border: 1px solid transparent !important;
+  font-size: 12px !important;
+  font-weight: 500 !important;
+  line-height: 1 !important;
+  letter-spacing: 0 !important;
+  white-space: nowrap;
+}
+
+.badge-p1,
+.badge-overdue,
+.badge-following,
+.badge-issue,
+.project-signal-chip--warning,
+.project-signal-chip--danger,
+.entity-pill--warning,
+.signal-warning .badge,
+.attention-reason {
+  color: #d97706 !important;
+  background: #fffbeb !important;
+  border-color: transparent !important;
+}
+
+.badge-p2,
+.badge-p3,
+.badge-other,
+.entity-pill--muted,
+.entity-card-meta > span,
+.work-card-meta > span,
+.project-card-meta > span,
+.cockpit-task-tags span {
+  color: #6b7280 !important;
+  background: #f3f4f6 !important;
+  border-color: transparent !important;
+}
+
+.badge-closed,
+.badge-reportable,
+.badge-decision,
+.entity-pill--success,
+.project-signal-chip--success,
+.project-health-badge,
+.badge-open {
+  color: #059669 !important;
+  background: #ecfdf5 !important;
+  border-color: transparent !important;
+}
+
+.badge-p0,
+.badge-blocked,
+.badge-risk,
+.badge-blocker,
+.project-signal-chip--critical,
+.entity-pill--danger,
+.entity-card-meta > .meta-overdue,
+.work-card-meta > .meta-overdue {
+  color: #dc2626 !important;
+  background: #fef2f2 !important;
+  border-color: transparent !important;
+}
+
+.badge-p2,
+.badge-note,
+.badge-update,
+.badge-meeting,
+.badge-feishu,
+.badge-source,
+.entity-pill--blue,
+.entity-pill--cyan,
+.project-signal-chip:not(.project-signal-chip--critical):not(.project-signal-chip--danger):not(.project-signal-chip--warning):not(.project-signal-chip--success) {
+  color: #6b7280 !important;
+  background: #f3f4f6 !important;
+  border-color: transparent !important;
+}
+
+/* P0: secondary button unification */
+.btn-secondary,
+.hero-btn-secondary,
+.hero-btn-ghost,
+.cockpit-icon-btn,
+.page-header-actions .btn:not(.btn-primary),
+.hero-actions .btn:not(.btn-primary),
+.reports-shortcuts-row .btn:not(.btn-primary) {
+  min-height: 32px !important;
+  height: 32px !important;
+  padding: 0 16px !important;
+  gap: 8px !important;
+  border: 1px solid #e5e7eb !important;
+  border-radius: 8px !important;
+  color: #4b5563 !important;
+  background: #ffffff !important;
+  box-shadow: none !important;
+  font-size: 14px !important;
+  font-weight: 500 !important;
+  line-height: 1 !important;
+  align-items: center !important;
+}
+
+.btn-secondary svg,
+.hero-btn-secondary svg,
+.hero-btn-ghost svg,
+.cockpit-icon-btn svg,
+.page-header-actions .btn svg,
+.hero-actions .btn svg {
+  width: 14px !important;
+  height: 14px !important;
+}
+
+.btn-secondary:hover,
+.hero-btn-secondary:hover,
+.hero-btn-ghost:hover,
+.cockpit-icon-btn:hover,
+.page-header-actions .btn:not(.btn-primary):hover,
+.hero-actions .btn:not(.btn-primary):hover {
+  color: #4b5563 !important;
+  background: #ffffff !important;
+  border-color: #d1d5db !important;
+  box-shadow: none !important;
+}
+
+.cockpit-icon-btn {
+  width: 32px !important;
+  padding: 0 !important;
+}
+
+/* P1: banner mini cards */
+.banner-summary-grid a,
+.dashboard-hero .hero-situation {
+  min-height: 64px !important;
+  padding: 12px !important;
+  border-radius: 8px !important;
+  border: 1px solid #e5e7eb !important;
+  background: #ffffff !important;
+  display: grid !important;
+  align-content: center !important;
+  box-shadow: none !important;
+}
+
+.banner-summary-grid span {
+  color: #9ca3af !important;
+  font-size: 12px !important;
+  font-weight: 500 !important;
+  line-height: 1.4 !important;
+}
+
+.banner-summary-grid strong {
+  color: #1f2937 !important;
+  font-size: 18px !important;
+  font-weight: 600 !important;
+  line-height: 1.1 !important;
+}
+
+/* P1: today queue rows */
+.cockpit-task-list {
+  gap: 0 !important;
+  padding: 0 12px 8px !important;
+}
+
+.cockpit-task-row {
+  min-height: 44px !important;
+  border-width: 0 0 1px 0 !important;
+  border-style: solid !important;
+  border-color: #e5e7eb !important;
+  border-radius: 0 !important;
+  background: transparent !important;
+  box-shadow: none !important;
+}
+
+.cockpit-task-row:last-child {
+  border-bottom-color: transparent !important;
+}
+
+.cockpit-task-row summary {
+  min-height: 44px !important;
+  padding: 0 12px !important;
+  align-items: center !important;
+}
+
+.cockpit-task-date {
+  color: #9ca3af !important;
+  font-size: 12px !important;
+  font-weight: 400 !important;
+}
+
+.cockpit-task-row:hover,
+.today-row:hover {
+  background: #f3f4f6 !important;
+  transform: none !important;
+  box-shadow: none !important;
+}
+
+/* P1: delivery status cards */
+.stat-card,
+.cockpit-metrics .stat-card {
+  min-height: 104px !important;
+  height: 100% !important;
+  padding: 16px !important;
+  border-radius: 10px !important;
+  border: 1px solid #e5e7eb !important;
+  background: #ffffff !important;
+  box-shadow: none !important;
+}
+
+.stat-icon,
+.cockpit-metrics .stat-icon,
+.stat-icon svg,
+.cockpit-metrics .stat-icon svg {
+  width: 16px !important;
+  height: 16px !important;
+}
+
+.stat-icon,
+.cockpit-metrics .stat-icon {
+  color: inherit !important;
+  background: transparent !important;
+}
+
+.stat-card .stat-value,
+.cockpit-metrics .stat-card .stat-value {
+  margin-top: 8px !important;
+  font-size: 18px !important;
+  font-weight: 600 !important;
+  line-height: 1.1 !important;
+}
+
+.stat-card .stat-label,
+.cockpit-metrics .stat-card .stat-label {
+  margin-top: 4px !important;
+  color: #9ca3af !important;
+  font-size: 12px !important;
+  font-weight: 500 !important;
+}
+
+.stat-card-neutral,
+.stat-card-cyan,
+.stat-card-purple,
+.stat-card-success {
+  color: #9ca3af !important;
+}
+
+.stat-card-neutral .stat-value,
+.stat-card-cyan .stat-value,
+.stat-card-purple .stat-value,
+.stat-card-success .stat-value,
+.stat-card-neutral .stat-label,
+.stat-card-cyan .stat-label,
+.stat-card-purple .stat-label,
+.stat-card-success .stat-label,
+.stat-card-neutral .stat-meta,
+.stat-card-cyan .stat-meta,
+.stat-card-purple .stat-meta,
+.stat-card-success .stat-meta {
+  color: #9ca3af !important;
+}
+
+.stat-card-blue .stat-value,
+.stat-card-danger .stat-value,
+.stat-card-critical .stat-value,
+.stat-card-warning .stat-value {
+  color: #1f2937 !important;
+}
+
+.stat-card-blue { color: #5b6ef0 !important; }
+.stat-card-warning { color: #d97706 !important; background: #fffbeb !important; border-color: #e5e7eb !important; }
+.stat-card-danger,
+.stat-card-critical { color: #dc2626 !important; background: #fef2f2 !important; border-color: #e5e7eb !important; }
+
+/* P1: right rail hierarchy */
+.cockpit-side-column .cockpit-card-head h2,
+.cockpit-side-column .section-header,
+.cockpit-side-column .today-section-header strong {
+  color: #1f2937 !important;
+  font-size: 14px !important;
+  font-weight: 600 !important;
+  line-height: 1.4 !important;
+}
+
+.cockpit-side-column .attention-row strong,
+.cockpit-side-column .portfolio-row strong,
+.cockpit-side-column .project-card-title,
+.cockpit-side-column .project-card-title-link {
+  color: #4b5563 !important;
+  font-size: 14px !important;
+  font-weight: 400 !important;
+  line-height: 1.5 !important;
+}
+
+.cockpit-side-column .attention-row > span:last-child,
+.cockpit-side-column .portfolio-row > span,
+.cockpit-side-column .portfolio-row small,
+.cockpit-side-column .project-card-summary,
+.cockpit-side-column .project-card-meta,
+.cockpit-side-column .section-live,
+.cockpit-side-column small {
+  color: #9ca3af !important;
+  font-size: 12px !important;
+  font-weight: 500 !important;
+  line-height: 1.4 !important;
+}
+
+/* P2: strict radii and weak banner atmosphere */
+.input,
+.form-field-control,
+.filter-grid > input,
+.filter-grid > select,
+.form-card input:not([type="checkbox"]):not([type="radio"]):not([type="range"]):not([type="file"]),
+.form-card select,
+.form-card textarea {
+  border-radius: 8px !important;
+}
+
+.card,
+.form-card,
+.command-form-card,
+.log-entry-card,
+.cockpit-card,
+.project-card,
+.work-item-card,
+.work-log-card,
+.tool-card,
+.report-entry-card,
+.filter-panel,
+.today-situation,
+.today-section,
+.project-overview-panel,
+.project-meta-item,
+.detail-insight-panel,
+.detail-meta-item,
+.relation-mode-card,
+.action-item-draft-row,
+.attention-row,
+.portfolio-row {
+  border-radius: 10px !important;
+}
+
+.command-banner.dashboard-hero,
+.dashboard-hero {
+  background:
+    radial-gradient(circle at 80% 18%, rgba(91, 110, 240, 0.06), transparent 15rem),
+    radial-gradient(circle at 94% 30%, rgba(139, 92, 246, 0.05), transparent 18rem),
+    linear-gradient(135deg, #ffffff 0%, #f8fafc 64%, rgba(238, 242, 255, 0.42) 100%) !important;
+}
+
+.dashboard-hero::before,
+.command-banner.dashboard-hero::before,
+.dashboard-hero::after,
+.command-banner.dashboard-hero::after {
+  opacity: 0.10 !important;
+}
+
+.card,
+.project-card,
+.report-entry-card,
+.work-item-card,
+.work-log-card,
+.tool-card,
+.relation-mode-card,
+.attention-row,
+.portfolio-row {
+  transition: border-color 150ms ease, box-shadow 150ms ease, transform 150ms ease, background-color 150ms ease !important;
+}
+
+/* Dark mode keeps the same hierarchy without white hover leaks. */
+[data-theme="dark"] .btn-secondary,
+[data-theme="dark"] .hero-btn-secondary,
+[data-theme="dark"] .hero-btn-ghost,
+[data-theme="dark"] .cockpit-icon-btn,
+[data-theme="dark"] .page-header-actions .btn:not(.btn-primary),
+[data-theme="dark"] .hero-actions .btn:not(.btn-primary) {
+  color: #b6c3d4 !important;
+  background: #0f172a !important;
+  border-color: #223047 !important;
+}
+
+[data-theme="dark"] .btn-secondary:hover,
+[data-theme="dark"] .hero-btn-secondary:hover,
+[data-theme="dark"] .hero-btn-ghost:hover,
+[data-theme="dark"] .cockpit-icon-btn:hover,
+[data-theme="dark"] .page-header-actions .btn:not(.btn-primary):hover,
+[data-theme="dark"] .hero-actions .btn:not(.btn-primary):hover {
+  background: #0f172a !important;
+  border-color: #35445f !important;
+}
+
+[data-theme="dark"] .command-banner.dashboard-hero,
+[data-theme="dark"] .dashboard-hero {
+  background:
+    radial-gradient(circle at 80% 18%, rgba(99, 102, 241, 0.08), transparent 15rem),
+    radial-gradient(circle at 94% 30%, rgba(139, 92, 246, 0.06), transparent 18rem),
+    linear-gradient(135deg, #0f172a 0%, #08111f 68%, rgba(30, 41, 59, 0.58) 100%) !important;
+}
+
+[data-theme="dark"] .badge-p1,
+[data-theme="dark"] .badge-overdue,
+[data-theme="dark"] .badge-following,
+[data-theme="dark"] .badge-issue,
+[data-theme="dark"] .project-signal-chip--warning,
+[data-theme="dark"] .project-signal-chip--danger,
+[data-theme="dark"] .entity-pill--warning,
+[data-theme="dark"] .attention-reason {
+  color: #fbbf24 !important;
+  background: rgba(77, 49, 10, 0.62) !important;
+}
+
+[data-theme="dark"] .badge-p2,
+[data-theme="dark"] .badge-p3,
+[data-theme="dark"] .badge-other,
+[data-theme="dark"] .entity-pill--muted,
+[data-theme="dark"] .entity-card-meta > span,
+[data-theme="dark"] .work-card-meta > span,
+[data-theme="dark"] .project-card-meta > span,
+[data-theme="dark"] .cockpit-task-tags span {
+  color: #7f8da3 !important;
+  background: #162033 !important;
+}
+
+[data-theme="dark"] .badge-closed,
+[data-theme="dark"] .badge-reportable,
+[data-theme="dark"] .badge-decision,
+[data-theme="dark"] .entity-pill--success,
+[data-theme="dark"] .project-signal-chip--success,
+[data-theme="dark"] .project-health-badge,
+[data-theme="dark"] .badge-open {
+  color: #34d399 !important;
+  background: rgba(8, 62, 52, 0.72) !important;
+}
+
+[data-theme="dark"] .badge-p0,
+[data-theme="dark"] .badge-blocked,
+[data-theme="dark"] .badge-risk,
+[data-theme="dark"] .badge-blocker,
+[data-theme="dark"] .project-signal-chip--critical,
+[data-theme="dark"] .entity-pill--danger,
+[data-theme="dark"] .entity-card-meta > .meta-overdue,
+[data-theme="dark"] .work-card-meta > .meta-overdue {
+  color: #fb7185 !important;
+  background: rgba(76, 23, 35, 0.72) !important;
+}
+
+/* ===== Phase F.2.5 P0 Delivery Card Hierarchy Closure ===== */
+.stat-card,
+.cockpit-metrics .stat-card {
+  min-height: 104px !important;
+  height: 100% !important;
+  padding: 16px !important;
+  border-radius: 10px !important;
+  border: 1px solid #e5e7eb !important;
+  background: #ffffff !important;
+  box-shadow: none !important;
+  overflow: hidden !important;
+}
+
+.stat-card .stat-value,
+.cockpit-metrics .stat-card .stat-value {
+  margin-top: 8px !important;
+  font-size: 18px !important;
+  font-weight: 600 !important;
+  line-height: 1.1 !important;
+}
+
+.stat-card .stat-label,
+.cockpit-metrics .stat-card .stat-label {
+  margin-top: 4px !important;
+  font-size: 12px !important;
+  font-weight: 500 !important;
+  line-height: 1.4 !important;
+}
+
+.stat-icon,
+.cockpit-metrics .stat-icon,
+.stat-icon svg,
+.cockpit-metrics .stat-icon svg {
+  width: 16px !important;
+  height: 16px !important;
+}
+
+.stat-icon,
+.cockpit-metrics .stat-icon {
+  color: inherit !important;
+  background: transparent !important;
+}
+
+.stat-card-neutral,
+.stat-card-cyan,
+.stat-card-purple,
+.stat-card-success {
+  color: #9ca3af !important;
+  background: #ffffff !important;
+  border-color: #e5e7eb !important;
+}
+
+.stat-card-neutral .stat-value,
+.stat-card-neutral .stat-label,
+.stat-card-neutral .stat-meta,
+.stat-card-cyan .stat-value,
+.stat-card-cyan .stat-label,
+.stat-card-cyan .stat-meta,
+.stat-card-purple .stat-value,
+.stat-card-purple .stat-label,
+.stat-card-purple .stat-meta,
+.stat-card-success .stat-value,
+.stat-card-success .stat-label,
+.stat-card-success .stat-meta {
+  color: #9ca3af !important;
+}
+
+.stat-card-blue {
+  color: #1f2937 !important;
+  background: #ffffff !important;
+  border-color: #d1d5db !important;
+}
+
+.stat-card-blue .stat-value,
+.stat-card-blue .stat-meta {
+  color: #1f2937 !important;
+}
+
+.stat-card-blue .stat-label {
+  color: #4b5563 !important;
+}
+
+.stat-card-warning,
+.stat-card-danger,
+.stat-card-critical {
+  position: relative;
+  border-color: #e5e7eb !important;
+}
+
+.stat-card-warning {
+  color: #1f2937 !important;
+  background: #fffbeb !important;
+}
+
+.stat-card-danger,
+.stat-card-critical {
+  color: #1f2937 !important;
+  background: #fef2f2 !important;
+}
+
+.stat-card-warning::before,
+.stat-card-danger::before,
+.stat-card-critical::before {
+  content: "" !important;
+  position: absolute !important;
+  inset: 0 auto 0 0 !important;
+  width: 3px !important;
+}
+
+.stat-card-warning::before { background: #f59e0b !important; }
+.stat-card-danger::before,
+.stat-card-critical::before { background: #ef4444 !important; }
+
+.stat-card-warning .stat-value,
+.stat-card-danger .stat-value,
+.stat-card-critical .stat-value,
+.stat-card-warning .stat-meta,
+.stat-card-danger .stat-meta,
+.stat-card-critical .stat-meta {
+  color: #1f2937 !important;
+}
+
+.stat-card-warning .stat-label,
+.stat-card-danger .stat-label,
+.stat-card-critical .stat-label {
+  color: #4b5563 !important;
+}
+
+/* ===== Phase F.2.6 Screenshot Regression Fix ===== */
+.dashboard-hero .hero-actions .hero-btn-primary,
+.hero-actions .hero-btn-primary {
+  height: 32px !important;
+  min-height: 32px !important;
+  padding: 0 16px !important;
+  border: 1px solid #5b6ef0 !important;
+  border-radius: 8px !important;
+  color: #ffffff !important;
+  background: #5b6ef0 !important;
+  box-shadow: none !important;
+  font-size: 14px !important;
+  font-weight: 500 !important;
+  line-height: 1 !important;
+  gap: 8px !important;
+}
+
+.dashboard-hero .hero-actions .hero-btn-primary:hover,
+.hero-actions .hero-btn-primary:hover {
+  color: #ffffff !important;
+  background: #5b6ef0 !important;
+  border-color: #5b6ef0 !important;
+  box-shadow: none !important;
+}
+
+.dashboard-hero .hero-actions .hero-btn-primary svg,
+.hero-actions .hero-btn-primary svg {
+  width: 14px !important;
+  height: 14px !important;
+}
+
+.stat-card-cyan,
+.stat-card-purple,
+.stat-card-success,
+.stat-card-blue {
+  color: #1f2937 !important;
+  background: #ffffff !important;
+  border-color: #d1d5db !important;
+}
+
+.stat-card-cyan .stat-value,
+.stat-card-purple .stat-value,
+.stat-card-success .stat-value,
+.stat-card-blue .stat-value,
+.stat-card-cyan .stat-meta,
+.stat-card-purple .stat-meta,
+.stat-card-success .stat-meta,
+.stat-card-blue .stat-meta {
+  color: #1f2937 !important;
+}
+
+.stat-card-cyan .stat-label,
+.stat-card-purple .stat-label,
+.stat-card-success .stat-label,
+.stat-card-blue .stat-label {
+  color: #4b5563 !important;
+}
+
+.stat-card-neutral,
+.stat-card-neutral .stat-value,
+.stat-card-neutral .stat-label,
+.stat-card-neutral .stat-meta {
+  color: #9ca3af !important;
+}
+
+/* ===== Phase F.2.7 Final Spec Lock ===== */
+.hero-kicker,
+.section-eyebrow,
+.cockpit-card-head .section-eyebrow,
+.cockpit-nav-label {
+  color: var(--text-tertiary) !important;
+  font-size: 11px !important;
+  font-weight: 500 !important;
+  line-height: 1.4 !important;
+  letter-spacing: 0.5px !important;
+  text-transform: uppercase !important;
+}
+
+.hero-kicker,
+.section-eyebrow,
+.cockpit-card-head .section-eyebrow {
+  margin-bottom: 8px !important;
+}
+
+.cockpit-nav-label {
+  margin: 24px 0 8px !important;
+  padding: 0 12px !important;
+}
+
+.portfolio-code,
+.cockpit-side-column .portfolio-code {
+  height: 20px !important;
+  min-height: 20px !important;
+  padding: 0 6px !important;
+  border: 1px solid transparent !important;
+  border-radius: 4px !important;
+  color: var(--text-secondary) !important;
+  background: var(--bg-tertiary) !important;
+  font-size: 12px !important;
+  font-weight: 500 !important;
+  line-height: 1 !important;
+}
+
+.project-health-badge,
+.cockpit-side-column .project-health-badge,
+.cockpit-side-column .badge-open,
+.cockpit-side-column .badge-following {
+  height: 20px !important;
+  min-height: 20px !important;
+  padding: 0 6px !important;
+  border: 1px solid transparent !important;
+  border-radius: 4px !important;
+  color: var(--accent-green) !important;
+  background: var(--accent-green-light) !important;
+  font-size: 12px !important;
+  font-weight: 500 !important;
+  line-height: 1 !important;
+}
+
+.cockpit-side-column .badge-other,
+.cockpit-side-column .badge-p2,
+.cockpit-side-column .badge-p3 {
+  color: var(--text-secondary) !important;
+  background: var(--bg-tertiary) !important;
+}
+
+.cockpit-task-list {
+  gap: 0 !important;
+  padding: 0 12px 8px !important;
+}
+
+.cockpit-task-row {
+  min-height: 44px !important;
+  border-width: 0 0 1px 0 !important;
+  border-style: solid !important;
+  border-color: var(--border-primary) !important;
+  border-radius: 0 !important;
+  background: transparent !important;
+  box-shadow: none !important;
+}
+
+.cockpit-task-row:last-child {
+  border-bottom-color: transparent !important;
+}
+
+.cockpit-task-row summary {
+  min-height: 44px !important;
+  padding: 0 12px !important;
+  align-items: center !important;
+}
+
+.cockpit-task-date {
+  color: var(--text-tertiary) !important;
+  font-size: 12px !important;
+  font-weight: 400 !important;
+}
+
+.cockpit-task-row:hover {
+  background: var(--bg-hover) !important;
+  border-color: var(--border-primary) !important;
+  box-shadow: none !important;
+  transform: none !important;
+}
+
+.banner-summary-grid a,
+.dashboard-hero .hero-situation {
+  min-height: 64px !important;
+  padding: 12px !important;
+  border: 1px solid var(--border-primary) !important;
+  border-radius: 8px !important;
+  background: var(--bg-secondary) !important;
+  display: grid !important;
+  align-content: center !important;
+}
+
+.banner-summary-grid span {
+  color: var(--text-tertiary) !important;
+  font-size: 12px !important;
+  font-weight: 500 !important;
+}
+
+.banner-summary-grid strong {
+  color: var(--text-primary) !important;
+  font-size: 18px !important;
+  font-weight: 600 !important;
+}
+
+.cockpit-nav-item {
+  min-height: 36px !important;
+  padding: 0 12px !important;
+  color: var(--text-secondary) !important;
+  font-size: 14px !important;
+}
+
+.cockpit-nav-item.is-active {
+  color: var(--text-primary) !important;
+  background: var(--accent-blue-light) !important;
+  border-color: transparent !important;
+}
+
+.cockpit-nav-item.is-active::before {
+  left: 0 !important;
+  width: 2px !important;
+  background: var(--accent-blue) !important;
+}
+
+.stat-card,
+.cockpit-metrics .stat-card {
+  min-height: 104px !important;
+  height: 100% !important;
+  padding: 16px !important;
+  border-radius: 10px !important;
+}
+
+.stat-icon,
+.stat-icon svg,
+.cockpit-metrics .stat-icon,
+.cockpit-metrics .stat-icon svg {
+  width: 16px !important;
+  height: 16px !important;
+}
+
+.stat-card-warning {
+  background: var(--accent-orange-light) !important;
+}
+
+.badge,
+.entity-pill,
+.project-signal-chip,
+.project-health-badge,
+.portfolio-code,
+.cockpit-task-tags span,
+.attention-reason,
+.entity-card-meta > span,
+.work-card-meta > span {
+  border-radius: 4px !important;
+}
+
+.btn,
+.input,
+.form-field-control,
+.filter-grid > input,
+.filter-grid > select,
+.form-card input:not([type="checkbox"]):not([type="radio"]):not([type="range"]):not([type="file"]),
+.form-card select,
+.form-card textarea {
+  border-radius: 8px !important;
+}
+
+.card,
+.form-card,
+.command-form-card,
+.log-entry-card,
+.cockpit-card,
+.project-card,
+.work-item-card,
+.work-log-card,
+.tool-card,
+.report-entry-card,
+.filter-panel,
+.today-situation,
+.today-section,
+.project-overview-panel,
+.project-meta-item,
+.detail-insight-panel,
+.detail-meta-item,
+.relation-mode-card,
+.action-item-draft-row,
+.attention-row,
+.portfolio-row {
+  border-radius: 10px !important;
+  transition: border-color 150ms ease, box-shadow 150ms ease, background-color 150ms ease, transform 150ms ease !important;
+}
+
+.card:hover,
+.project-card:hover,
+.report-entry-card:hover,
+.work-item-card:hover,
+.work-log-card:hover,
+.tool-card:hover,
+.relation-mode-card:hover,
+.attention-row:hover,
+.portfolio-row:hover {
+  border-color: var(--border-secondary) !important;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.04) !important;
+}
+
+/* ===== Phase F.2.8 Final Selector Lock ===== */
+.dashboard-hero .hero-kicker,
+.dashboard-hero .section-eyebrow,
+.cockpit-card > .cockpit-card-head .section-eyebrow,
+.cockpit-side-column .cockpit-card > .cockpit-card-head .section-eyebrow,
+.cockpit-sidebar .cockpit-nav-label {
+  color: var(--text-tertiary) !important;
+  font-size: 11px !important;
+  font-weight: 500 !important;
+  line-height: 1.4 !important;
+  letter-spacing: 0.5px !important;
+  text-transform: uppercase !important;
+  font-family: inherit !important;
+}
+
+.dashboard-hero .hero-kicker,
+.dashboard-hero .section-eyebrow,
+.cockpit-card > .cockpit-card-head .section-eyebrow,
+.cockpit-side-column .cockpit-card > .cockpit-card-head .section-eyebrow {
+  margin-bottom: 8px !important;
+}
+
+.cockpit-sidebar .cockpit-nav-label {
+  margin: 24px 0 8px !important;
+  padding: 0 12px !important;
+}
+
+.cockpit-side-column .portfolio-list .portfolio-row .portfolio-code,
+.cockpit-side-column .portfolio-row > .portfolio-code {
+  height: 20px !important;
+  min-height: 20px !important;
+  padding: 0 6px !important;
+  border: 1px solid transparent !important;
+  border-radius: 4px !important;
+  color: var(--text-secondary) !important;
+  background: var(--bg-tertiary) !important;
+  font-size: 12px !important;
+  font-weight: 500 !important;
+  line-height: 1 !important;
+  letter-spacing: 0 !important;
+}
+
+.cockpit-side-column .portfolio-list .portfolio-row .entity-pill,
+.cockpit-side-column .portfolio-row > .entity-pill,
+.cockpit-side-column .portfolio-row > .entity-pill--muted {
+  height: 20px !important;
+  min-height: 20px !important;
+  padding: 0 6px !important;
+  border: 1px solid transparent !important;
+  border-radius: 4px !important;
+  color: var(--text-secondary) !important;
+  background: var(--bg-tertiary) !important;
+  font-size: 12px !important;
+  font-weight: 500 !important;
+  line-height: 1 !important;
+  letter-spacing: 0 !important;
+}
+
+.dashboard-hero .banner-summary-grid > a:nth-child(1) strong,
+.dashboard-hero .banner-summary-grid > a:nth-child(2) strong {
+  color: var(--text-tertiary) !important;
+  font-size: 18px !important;
+  font-weight: 600 !important;
+}
+
+.dashboard-hero .banner-summary-grid > a:nth-child(3) strong,
+.dashboard-hero .banner-summary-grid > a:nth-child(4) strong {
+  color: var(--text-primary) !important;
+  font-size: 18px !important;
+  font-weight: 600 !important;
+}
+
+.dashboard-hero .banner-summary-grid > a span {
+  color: var(--text-tertiary) !important;
+  font-size: 12px !important;
+  font-weight: 500 !important;
+}
+
+.cockpit-metrics .stat-card-warning {
+  background: var(--accent-orange-light) !important;
+  border-color: var(--border-primary) !important;
+}
+
+.cockpit-metrics .stat-card-warning::before {
+  background: var(--accent-orange) !important;
+}
+
 @media (prefers-reduced-motion: reduce) {
   *, *::before, *::after { scroll-behavior: auto !important; animation-duration: 0.01ms !important; animation-iteration-count: 1 !important; transition-duration: 0.01ms !important; }
 }
