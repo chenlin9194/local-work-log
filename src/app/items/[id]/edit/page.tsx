@@ -174,7 +174,7 @@ export default function EditItemPage() {
   }
 
   return (
-    <div className="page-shell command-form-page">
+    <div className="page-shell command-form-page item-edit-page">
       <header className="command-form-header">
         <Link href={`/items/${id}`} className="detail-back-link">
           ← 返回事项详情
@@ -182,16 +182,16 @@ export default function EditItemPage() {
         <div>
           <span className="section-eyebrow">COMMAND FORM / ITEM</span>
           <h1>编辑事项</h1>
-          <p>调整事项的状态、责任、来源和交付信号，保持和详情页一致的扫读方式。</p>
+          <p>优先更新状态、责任、截止日期和下一步行动；完整属性可在下方继续维护。</p>
         </div>
       </header>
 
       <form onSubmit={handleSubmit}>
         <div className="card form-card command-form-card item-command-form-card">
           <div className="command-form-stack">
-            <section className="command-form-section item-form-section-main">
+            <section className="command-form-section item-form-section-main item-form-section-metadata">
               <div className="command-form-section-header">
-                <h2>基础信息</h2>
+                <h2>基础属性</h2>
                 <p>标题、描述和基础归属。</p>
               </div>
 
@@ -217,7 +217,7 @@ export default function EditItemPage() {
               </div>
             </section>
 
-            <section className="command-form-section item-form-section-side">
+            <section className="command-form-section item-form-section-side item-form-section-metadata-side">
               <div className="command-form-section-header">
                 <h2>关联与分类</h2>
                 <p>项目、模块和标签。</p>
@@ -281,10 +281,10 @@ export default function EditItemPage() {
               </div>
             </section>
 
-            <section className="command-form-section item-form-section-status">
+            <section className="command-form-section item-form-section-status item-form-section-operational">
               <div className="command-form-section-header">
-                <h2>状态与责任</h2>
-                <p>类型、优先级、状态、负责人和截止日期。</p>
+                <h2>运营更新</h2>
+                <p>高频维护：状态、优先级、负责人和截止日期。</p>
               </div>
 
               <div className="field-grid-3">
@@ -354,10 +354,10 @@ export default function EditItemPage() {
               </div>
             </section>
 
-            <section className="command-form-section item-form-section-signal">
+            <section className="command-form-section item-form-section-signal item-form-section-operational-signal">
               <div className="command-form-section-header">
-                <h2>交付信号</h2>
-                <p>下一步动作、健康度、汇报层级和来源信息。</p>
+                <h2>执行信号</h2>
+                <p>下一步动作、当前摘要、健康度、汇报层级和来源信息。</p>
               </div>
 
               <div>

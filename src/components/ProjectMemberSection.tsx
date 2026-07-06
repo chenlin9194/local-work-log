@@ -1,6 +1,7 @@
 "use client";
 
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
+import type { Dispatch, SetStateAction } from "react";
 import Icon from "@/components/Icon";
 import type { ProjectMember } from "@/lib/types";
 
@@ -24,19 +25,177 @@ const EMPTY_MEMBER_FORM: MemberFormState = {
   sortOrder: "0",
 };
 
+const INPUT_STYLE = {
+  width: "100%",
+  padding: "7px 9px",
+  borderRadius: 8,
+  border: "1px solid var(--border-primary)",
+  background: "var(--bg-secondary)",
+  color: "var(--text-primary)",
+  fontSize: 13,
+};
+
+const TABLE_CELL_STYLE = {
+  padding: "8px 10px",
+  borderBottom: "1px solid var(--border-secondary)",
+  verticalAlign: "middle" as const,
+};
+
+const TABLE_HEAD_CELL_STYLE = {
+  padding: "8px 10px",
+  borderBottom: "1px solid var(--border-primary)",
+  color: "var(--text-tertiary)",
+  fontSize: 12,
+  fontWeight: 600,
+  textAlign: "left" as const,
+  whiteSpace: "nowrap" as const,
+};
+
+const ACTION_CELL_STYLE = {
+  ...TABLE_CELL_STYLE,
+  width: 132,
+  whiteSpace: "nowrap" as const,
+};
+
 type ProjectMemberSectionProps = {
   projectId: string;
 };
+
+function getMemberSearchText(member: ProjectMember) {
+  return [member.name, member.role, member.team, member.responsibility, member.contact]
+    .filter(Boolean)
+    .join(" ")
+    .toLowerCase();
+}
+
+function sortMembers(members: ProjectMember[]) {
+  return [...members].sort((a, b) => {
+    if (a.isCore !== b.isCore) return a.isCore ? -1 : 1;
+
+    const sortOrderDiff = a.sortOrder - b.sortOrder;
+    if (sortOrderDiff !== 0) return sortOrderDiff;
+
+    return a.name.localeCompare(b.name, "zh-CN");
+  });
+}
+
+function MemberInput({
+  value,
+  onChange,
+  placeholder,
+  type = "text",
+}: {
+  value: string;
+  onChange: (value: string) => void;
+  placeholder?: string;
+  type?: string;
+}) {
+  return (
+    <input
+      type={type}
+      value={value}
+      onChange={(e) => onChange(e.target.value)}
+      placeholder={placeholder}
+      style={INPUT_STYLE}
+    />
+  );
+}
+
+function MemberFormCells({
+  form,
+  setForm,
+  saving,
+  error,
+  onSave,
+  onCancel,
+}: {
+  form: MemberFormState;
+  setForm: Dispatch<SetStateAction<MemberFormState>>;
+  saving: boolean;
+  error: string;
+  onSave: () => void;
+  onCancel: () => void;
+}) {
+  return (
+    <>
+      <td style={{ ...TABLE_CELL_STYLE, width: 52, textAlign: "center" }}>
+        <input
+          type="checkbox"
+          checked={form.isCore}
+          onChange={(e) => setForm((prev) => ({ ...prev, isCore: e.target.checked }))}
+          aria-label="核心成员"
+        />
+      </td>
+      <td style={{ ...TABLE_CELL_STYLE, minWidth: 120 }}>
+        <MemberInput
+          value={form.name}
+          onChange={(value) => setForm((prev) => ({ ...prev, name: value }))}
+          placeholder="姓名 *"
+        />
+      </td>
+      <td style={{ ...TABLE_CELL_STYLE, minWidth: 130 }}>
+        <MemberInput
+          value={form.role}
+          onChange={(value) => setForm((prev) => ({ ...prev, role: value }))}
+          placeholder="SE / 产品 / 测试"
+        />
+      </td>
+      <td style={{ ...TABLE_CELL_STYLE, minWidth: 130 }}>
+        <MemberInput
+          value={form.team}
+          onChange={(value) => setForm((prev) => ({ ...prev, team: value }))}
+          placeholder="领域 / 团队"
+        />
+      </td>
+      <td style={{ ...TABLE_CELL_STYLE, minWidth: 240 }}>
+        <MemberInput
+          value={form.responsibility}
+          onChange={(value) => setForm((prev) => ({ ...prev, responsibility: value }))}
+          placeholder={error || "职责边界"}
+        />
+        {error && <div style={{ marginTop: 4, color: "var(--accent-red)", fontSize: 12 }}>{error}</div>}
+      </td>
+      <td style={{ ...TABLE_CELL_STYLE, minWidth: 150 }}>
+        <MemberInput
+          value={form.contact}
+          onChange={(value) => setForm((prev) => ({ ...prev, contact: value }))}
+          placeholder="联系方式"
+        />
+      </td>
+      <td style={{ ...TABLE_CELL_STYLE, width: 88 }}>
+        <MemberInput
+          type="number"
+          value={form.sortOrder}
+          onChange={(value) => setForm((prev) => ({ ...prev, sortOrder: value }))}
+          placeholder="排序"
+        />
+      </td>
+      <td style={ACTION_CELL_STYLE}>
+        <div style={{ display: "flex", gap: 6 }}>
+          <button type="button" onClick={onSave} className="btn btn-primary" disabled={saving} style={{ padding: "6px 9px" }}>
+            {saving ? "保存中" : "保存"}
+          </button>
+          <button type="button" onClick={onCancel} className="btn btn-secondary" disabled={saving} style={{ padding: "6px 9px" }}>
+            取消
+          </button>
+        </div>
+      </td>
+    </>
+  );
+}
 
 export default function ProjectMemberSection({ projectId }: ProjectMemberSectionProps) {
   const [members, setMembers] = useState<ProjectMember[]>([]);
   const [membersLoading, setMembersLoading] = useState(true);
   const [membersError, setMembersError] = useState(false);
   const [memberActionError, setMemberActionError] = useState("");
+  const [keyword, setKeyword] = useState("");
+
   const [showCreateForm, setShowCreateForm] = useState(false);
   const [createSaving, setCreateSaving] = useState(false);
   const [createError, setCreateError] = useState("");
   const [createForm, setCreateForm] = useState<MemberFormState>(EMPTY_MEMBER_FORM);
+
   const [editingMemberId, setEditingMemberId] = useState<string | null>(null);
   const [editSaving, setEditSaving] = useState(false);
   const [editError, setEditError] = useState("");
@@ -44,10 +203,7 @@ export default function ProjectMemberSection({ projectId }: ProjectMemberSection
   const [deletingMemberId, setDeletingMemberId] = useState<string | null>(null);
 
   const validateMemberForm = useCallback((form: MemberFormState) => {
-    if (!form.name.trim()) {
-      return "成员姓名不能为空";
-    }
-
+    if (!form.name.trim()) return "成员姓名不能为空";
     return "";
   }, []);
 
@@ -80,20 +236,35 @@ export default function ProjectMemberSection({ projectId }: ProjectMemberSection
       setMembersLoading(true);
       setMembersError(false);
 
-      const res = await fetch(`/api/projects/${projectId}/members`);
-      if (res.ok) {
-        const data = await res.json();
-        setMembers(data);
-      } else {
-        setMembers([]);
-        setMembersError(true);
-      }
+      const res = await fetch(`/api/projects/${projectId}/members`, { cache: "no-store" });
+      if (!res.ok) throw new Error(`Failed to fetch project members: ${res.status}`);
+
+      const data = await res.json();
+      if (!Array.isArray(data)) throw new Error("Project members response must be an array");
+
+      setMembers(data);
     } catch (error) {
       console.error("Error fetching project members:", error);
-      setMembers([]);
       setMembersError(true);
     } finally {
       setMembersLoading(false);
+    }
+  }, [projectId]);
+
+  const refreshMembersAfterSave = useCallback(async () => {
+    try {
+      const res = await fetch(`/api/projects/${projectId}/members`, { cache: "no-store" });
+      if (!res.ok) return false;
+
+      const data = await res.json();
+      if (!Array.isArray(data)) return false;
+
+      setMembers(data);
+      setMembersError(false);
+      return true;
+    } catch (error) {
+      console.error("Error refreshing project members after save:", error);
+      return false;
     }
   }, [projectId]);
 
@@ -135,8 +306,7 @@ export default function ProjectMemberSection({ projectId }: ProjectMemberSection
     setEditingMemberId(null);
   };
 
-  const handleCreateSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
+  const handleCreateSubmit = async () => {
     if (createSaving) return;
 
     const validationError = validateMemberForm(createForm);
@@ -161,8 +331,11 @@ export default function ProjectMemberSection({ projectId }: ProjectMemberSection
         return;
       }
 
+      const createdMember = await res.json();
+      setMembers((prev) => sortMembers([createdMember, ...prev]));
+      setMembersError(false);
       closeCreateForm();
-      await fetchMembers();
+      await refreshMembersAfterSave();
     } catch (error) {
       console.error("Error creating project member:", error);
       setCreateError("保存项目成员失败");
@@ -171,8 +344,7 @@ export default function ProjectMemberSection({ projectId }: ProjectMemberSection
     }
   };
 
-  const handleEditSubmit = async (e: React.FormEvent, memberId: string) => {
-    e.preventDefault();
+  const handleEditSubmit = async (memberId: string) => {
     if (editSaving) return;
 
     const validationError = validateMemberForm(editForm);
@@ -197,8 +369,11 @@ export default function ProjectMemberSection({ projectId }: ProjectMemberSection
         return;
       }
 
+      const updatedMember = await res.json();
+      setMembers((prev) => sortMembers(prev.map((member) => (member.id === memberId ? updatedMember : member))));
+      setMembersError(false);
       closeEditForm();
-      await fetchMembers();
+      await refreshMembersAfterSave();
     } catch (error) {
       console.error("Error updating project member:", error);
       setEditError("更新项目成员失败");
@@ -224,11 +399,9 @@ export default function ProjectMemberSection({ projectId }: ProjectMemberSection
         return;
       }
 
-      if (editingMemberId === memberId) {
-        closeEditForm();
-      }
-
-      await fetchMembers();
+      setMembers((prev) => prev.filter((member) => member.id !== memberId));
+      if (editingMemberId === memberId) closeEditForm();
+      await refreshMembersAfterSave();
     } catch (error) {
       console.error("Error deleting project member:", error);
       setMemberActionError("删除项目成员失败");
@@ -237,114 +410,16 @@ export default function ProjectMemberSection({ projectId }: ProjectMemberSection
     }
   };
 
-  const renderMemberForm = (
-    form: MemberFormState,
-    setForm: React.Dispatch<React.SetStateAction<MemberFormState>>,
-    error: string,
-    saving: boolean,
-    onCancel: () => void
-  ) => (
-    <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
-      <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(220px, 1fr))", gap: 12 }}>
-        <div>
-          <label style={{ display: "block", fontSize: 13, fontWeight: 500, color: "var(--text-primary)", marginBottom: 6 }}>
-            姓名 *
-          </label>
-          <input
-            type="text"
-            value={form.name}
-            onChange={(e) => setForm((prev) => ({ ...prev, name: e.target.value }))}
-            style={{ width: "100%", padding: "10px 12px", borderRadius: 6, border: "1px solid var(--border-primary)", background: "var(--bg-secondary)", color: "var(--text-primary)", fontSize: 14 }}
-          />
-        </div>
-        <div>
-          <label style={{ display: "block", fontSize: 13, fontWeight: 500, color: "var(--text-primary)", marginBottom: 6 }}>
-            角色
-          </label>
-          <input
-            type="text"
-            value={form.role}
-            onChange={(e) => setForm((prev) => ({ ...prev, role: e.target.value }))}
-            placeholder="例如：项目经理 / 测试负责人 / 开发负责人"
-            style={{ width: "100%", padding: "10px 12px", borderRadius: 6, border: "1px solid var(--border-primary)", background: "var(--bg-secondary)", color: "var(--text-primary)", fontSize: 14 }}
-          />
-        </div>
-        <div>
-          <label style={{ display: "block", fontSize: 13, fontWeight: 500, color: "var(--text-primary)", marginBottom: 6 }}>
-            团队
-          </label>
-          <input
-            type="text"
-            value={form.team}
-            onChange={(e) => setForm((prev) => ({ ...prev, team: e.target.value }))}
-            style={{ width: "100%", padding: "10px 12px", borderRadius: 6, border: "1px solid var(--border-primary)", background: "var(--bg-secondary)", color: "var(--text-primary)", fontSize: 14 }}
-          />
-        </div>
-      </div>
+  const sortedMembers = useMemo(() => sortMembers(members), [members]);
+  const normalizedKeyword = keyword.trim().toLowerCase();
+  const displayedMembers = useMemo(() => {
+    if (!normalizedKeyword) return sortedMembers;
+    return sortedMembers.filter((member) => getMemberSearchText(member).includes(normalizedKeyword));
+  }, [normalizedKeyword, sortedMembers]);
 
-      <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(220px, 1fr))", gap: 12 }}>
-        <div>
-          <label style={{ display: "block", fontSize: 13, fontWeight: 500, color: "var(--text-primary)", marginBottom: 6 }}>
-            联系方式
-          </label>
-          <input
-            type="text"
-            value={form.contact}
-            onChange={(e) => setForm((prev) => ({ ...prev, contact: e.target.value }))}
-            style={{ width: "100%", padding: "10px 12px", borderRadius: 6, border: "1px solid var(--border-primary)", background: "var(--bg-secondary)", color: "var(--text-primary)", fontSize: 14 }}
-          />
-        </div>
-        <div>
-          <label style={{ display: "block", fontSize: 13, fontWeight: 500, color: "var(--text-primary)", marginBottom: 6 }}>
-            排序
-          </label>
-          <input
-            type="number"
-            value={form.sortOrder}
-            onChange={(e) => setForm((prev) => ({ ...prev, sortOrder: e.target.value }))}
-            style={{ width: "100%", padding: "10px 12px", borderRadius: 6, border: "1px solid var(--border-primary)", background: "var(--bg-secondary)", color: "var(--text-primary)", fontSize: 14 }}
-          />
-        </div>
-      </div>
-
-      <div>
-        <label style={{ display: "block", fontSize: 13, fontWeight: 500, color: "var(--text-primary)", marginBottom: 6 }}>
-          职责
-        </label>
-        <textarea
-          value={form.responsibility}
-          onChange={(e) => setForm((prev) => ({ ...prev, responsibility: e.target.value }))}
-          rows={3}
-          style={{ width: "100%", padding: "10px 12px", borderRadius: 6, border: "1px solid var(--border-primary)", background: "var(--bg-secondary)", color: "var(--text-primary)", fontSize: 14, resize: "vertical" }}
-        />
-      </div>
-
-      <label style={{ display: "flex", alignItems: "center", gap: 8, fontSize: 13, color: "var(--text-primary)" }}>
-        <input
-          type="checkbox"
-          checked={form.isCore}
-          onChange={(e) => setForm((prev) => ({ ...prev, isCore: e.target.checked }))}
-        />
-        核心成员
-      </label>
-
-      {error && (
-        <p style={{ margin: 0, color: "var(--accent-red)", fontSize: 13 }}>{error}</p>
-      )}
-
-      <div style={{ display: "flex", gap: 12, justifyContent: "flex-end" }}>
-        <button type="button" onClick={onCancel} className="btn btn-secondary" disabled={saving}>
-          取消
-        </button>
-        <button type="submit" className="btn btn-primary" disabled={saving}>
-          {saving ? "保存中..." : "保存"}
-        </button>
-      </div>
-    </div>
-  );
-  const coreMembers = members.filter((member) => member.isCore);
-  const normalMembers = members.filter((member) => !member.isCore);
-  const displayedMembers = [...coreMembers, ...normalMembers];
+  const coreMemberCount = members.filter((member) => member.isCore).length;
+  const missingResponsibilityCount = members.filter((member) => !member.responsibility?.trim()).length;
+  const missingContactCount = members.filter((member) => !member.contact?.trim()).length;
 
   return (
     <section className="cockpit-section">
@@ -363,45 +438,38 @@ export default function ProjectMemberSection({ projectId }: ProjectMemberSection
             className="btn btn-secondary"
           >
             <Icon name="plus" size={14} />
-            新增项目成员
+            新增成员
           </button>
         )}
       </div>
 
-      {showCreateForm && (
-        <form onSubmit={handleCreateSubmit} className="card" style={{ padding: 16, marginBottom: 12 }}>
-          {renderMemberForm(createForm, setCreateForm, createError, createSaving, closeCreateForm)}
-        </form>
-      )}
+      <div
+        className="card entity-card entity-card--compact"
+        style={{ padding: 12, marginBottom: 12, display: "grid", gap: 10 }}
+      >
+        <div style={{ display: "flex", justifyContent: "space-between", gap: 12, flexWrap: "wrap", alignItems: "center" }}>
+          <div style={{ display: "flex", gap: 8, flexWrap: "wrap", alignItems: "center", color: "var(--text-secondary)", fontSize: 13 }}>
+            <span className="entity-pill entity-pill--muted">总数 {members.length}</span>
+            <span className="entity-pill entity-pill--success">核心 {coreMemberCount}</span>
+            {missingResponsibilityCount > 0 && <span className="entity-pill entity-pill--muted">职责未填 {missingResponsibilityCount}</span>}
+            {missingContactCount > 0 && <span className="entity-pill entity-pill--muted">联系方式未填 {missingContactCount}</span>}
+          </div>
+          <div style={{ minWidth: 240, maxWidth: 360, flex: "1 1 260px", position: "relative" }}>
+            <Icon name="search" size={14} />
+            <input
+              type="search"
+              value={keyword}
+              onChange={(e) => setKeyword(e.target.value)}
+              placeholder="查询姓名、角色、团队、职责、联系方式"
+              style={{ ...INPUT_STYLE, paddingLeft: 30 }}
+            />
+          </div>
+        </div>
+      </div>
 
       {memberActionError && (
         <div className="feedback-note feedback-note--error" style={{ marginBottom: 12 }}>
           {memberActionError}
-        </div>
-      )}
-
-      {!membersLoading && !membersError && members.length > 0 && (
-        <div
-          className="card entity-card entity-card--compact project-support-summary"
-          style={{
-            border: coreMembers.length === 0
-              ? "1px solid color-mix(in srgb, var(--accent-orange) 20%, var(--border-primary))"
-              : "1px solid color-mix(in srgb, var(--accent-green) 18%, var(--border-primary))",
-          }}
-        >
-          <div className="project-support-summary__title">
-            <div className="project-support-summary__headline">
-              {coreMembers.length > 0 ? `核心成员 ${coreMembers.length} 人` : "尚未标记核心成员"}
-            </div>
-            <div className="project-support-summary__hint">
-              成员总数 {members.length}，优先确认核心角色和职责是否清晰。
-            </div>
-          </div>
-          {coreMembers.length === 0 && (
-            <span className="project-support-summary__chip" style={{ background: "var(--accent-orange-light)", color: "var(--accent-orange)", border: "1px solid color-mix(in srgb, var(--accent-orange) 18%, transparent)" }}>
-              建议补充核心成员
-            </span>
-          )}
         </div>
       )}
 
@@ -411,7 +479,7 @@ export default function ProjectMemberSection({ projectId }: ProjectMemberSection
           <strong>正在读取项目成员</strong>
           <p>成员信息会用于快速判断协作关系和责任边界。</p>
         </div>
-      ) : membersError ? (
+      ) : membersError && members.length === 0 ? (
         <div className="card empty-state empty-state--error">
           <div className="empty-icon">!</div>
           <strong>项目成员暂时加载失败</strong>
@@ -422,82 +490,132 @@ export default function ProjectMemberSection({ projectId }: ProjectMemberSection
             </button>
           </div>
         </div>
-      ) : members.length === 0 ? (
+      ) : members.length === 0 && !showCreateForm ? (
         <div className="card empty-state">
           <div className="empty-icon">👥</div>
           <strong>还没有项目成员</strong>
-          <p>可补充核心成员，便于明确协作关系。</p>
+          <p>可补充 SE、产品、项目、测试、开发等关键角色。</p>
         </div>
       ) : (
-        <div style={{ display: "grid", gap: 12 }}>
-          {displayedMembers.map((member) => {
-            const isEditing = editingMemberId === member.id;
-            const isDeleting = deletingMemberId === member.id;
+        <div className="card" style={{ padding: 0, overflowX: "auto" }}>
+          <table style={{ width: "100%", borderCollapse: "collapse", minWidth: 920, fontSize: 13 }}>
+            <thead>
+              <tr>
+                <th style={{ ...TABLE_HEAD_CELL_STYLE, width: 52, textAlign: "center" }}>核心</th>
+                <th style={TABLE_HEAD_CELL_STYLE}>姓名</th>
+                <th style={TABLE_HEAD_CELL_STYLE}>角色</th>
+                <th style={TABLE_HEAD_CELL_STYLE}>团队/领域</th>
+                <th style={TABLE_HEAD_CELL_STYLE}>职责</th>
+                <th style={TABLE_HEAD_CELL_STYLE}>联系方式</th>
+                <th style={{ ...TABLE_HEAD_CELL_STYLE, width: 88 }}>排序</th>
+                <th style={{ ...TABLE_HEAD_CELL_STYLE, width: 132 }}>操作</th>
+              </tr>
+            </thead>
+            <tbody>
+              {showCreateForm && (
+                <tr>
+                  <MemberFormCells
+                    form={createForm}
+                    setForm={setCreateForm}
+                    saving={createSaving}
+                    error={createError}
+                    onSave={() => void handleCreateSubmit()}
+                    onCancel={closeCreateForm}
+                  />
+                </tr>
+              )}
 
-            if (isEditing) {
-              return (
-                <form key={member.id} onSubmit={(e) => handleEditSubmit(e, member.id)} className="card" style={{ padding: 16 }}>
-                  {renderMemberForm(editForm, setEditForm, editError, editSaving, closeEditForm)}
-                </form>
-              );
-            }
+              {displayedMembers.length === 0 && !showCreateForm ? (
+                <tr>
+                  <td colSpan={8} style={{ padding: 22, textAlign: "center", color: "var(--text-secondary)" }}>
+                    当前查询条件下没有成员
+                  </td>
+                </tr>
+              ) : (
+                displayedMembers.map((member) => {
+                  const isEditing = editingMemberId === member.id;
+                  const isDeleting = deletingMemberId === member.id;
 
-            return (
-              <div
-                key={member.id}
-                className={`card project-support-card ${member.isCore ? "project-support-card--accent" : ""}`}
-              >
-                <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", gap: 12, flexWrap: "wrap" }}>
-                  <div style={{ display: "flex", flexDirection: "column", gap: 8, minWidth: 0, flex: 1 }}>
-                    <div className="project-support-card__title-row">
-                      <strong className="project-support-card__title">{member.name}</strong>
-                      {member.isCore && (
-                        <span className="entity-pill entity-pill--success">核心成员</span>
-                      )}
-                      {member.role && (
-                        <span className="entity-pill entity-pill--muted">
-                          {member.role}
-                        </span>
-                      )}
-                    </div>
+                  if (isEditing) {
+                    return (
+                      <tr key={member.id} style={{ background: "var(--bg-secondary)" }}>
+                        <MemberFormCells
+                          form={editForm}
+                          setForm={setEditForm}
+                          saving={editSaving}
+                          error={editError}
+                          onSave={() => void handleEditSubmit(member.id)}
+                          onCancel={closeEditForm}
+                        />
+                      </tr>
+                    );
+                  }
 
-                    {member.responsibility && (
-                      <p className="project-support-card__description" style={{ margin: 0 }}>
-                        {member.responsibility}
-                      </p>
-                    )}
-
-                    <div className="project-support-card__meta">
-                      <span>团队：{member.team || "-"}</span>
-                      <span>联系方式：{member.contact || "-"}</span>
-                    </div>
-                  </div>
-
-                  <div style={{ display: "flex", gap: 8, flexWrap: "wrap", minWidth: 0 }}>
-                    <button
-                      type="button"
-                      onClick={() => openEditForm(member)}
-                      className="btn btn-secondary"
-                      disabled={isDeleting}
-                    >
-                      <Icon name="edit" size={14} />
-                      编辑
-                    </button>
-                    <button
-                      type="button"
-                      onClick={() => handleDelete(member.id)}
-                      className="btn btn-secondary"
-                      disabled={isDeleting}
-                      style={{ color: "var(--accent-red)" }}
-                    >
-                      <Icon name="trash-2" size={14} />
-                      {isDeleting ? "删除中..." : "删除"}
-                    </button>
-                  </div>
-                </div>
-              </div>
-            );
-          })}
+                  return (
+                    <tr key={member.id}>
+                      <td style={{ ...TABLE_CELL_STYLE, textAlign: "center" }}>
+                        {member.isCore ? (
+                          <span title="核心成员" style={{ color: "var(--accent-green)", fontWeight: 700 }}>★</span>
+                        ) : (
+                          <span style={{ color: "var(--text-tertiary)" }}>-</span>
+                        )}
+                      </td>
+                      <td style={{ ...TABLE_CELL_STYLE, fontWeight: 650, color: "var(--text-primary)", whiteSpace: "nowrap" }}>
+                        {member.name}
+                      </td>
+                      <td style={{ ...TABLE_CELL_STYLE, color: "var(--text-secondary)", whiteSpace: "nowrap" }}>
+                        {member.role || "-"}
+                      </td>
+                      <td style={{ ...TABLE_CELL_STYLE, color: "var(--text-secondary)", whiteSpace: "nowrap" }}>
+                        {member.team || "-"}
+                      </td>
+                      <td
+                        style={{
+                          ...TABLE_CELL_STYLE,
+                          color: member.responsibility ? "var(--text-secondary)" : "var(--text-tertiary)",
+                          maxWidth: 360,
+                          overflow: "hidden",
+                          textOverflow: "ellipsis",
+                          whiteSpace: "nowrap",
+                        }}
+                        title={member.responsibility || ""}
+                      >
+                        {member.responsibility || "-"}
+                      </td>
+                      <td style={{ ...TABLE_CELL_STYLE, color: "var(--text-secondary)", whiteSpace: "nowrap" }}>
+                        {member.contact || "-"}
+                      </td>
+                      <td style={{ ...TABLE_CELL_STYLE, color: "var(--text-tertiary)", whiteSpace: "nowrap" }}>
+                        {member.sortOrder}
+                      </td>
+                      <td style={ACTION_CELL_STYLE}>
+                        <div style={{ display: "flex", gap: 6 }}>
+                          <button
+                            type="button"
+                            onClick={() => openEditForm(member)}
+                            className="btn btn-secondary"
+                            disabled={isDeleting || editSaving}
+                            style={{ padding: "6px 9px" }}
+                          >
+                            编辑
+                          </button>
+                          <button
+                            type="button"
+                            onClick={() => handleDelete(member.id)}
+                            className="btn btn-secondary"
+                            disabled={isDeleting}
+                            style={{ padding: "6px 9px", color: "var(--accent-red)" }}
+                          >
+                            {isDeleting ? "删除中" : "删除"}
+                          </button>
+                        </div>
+                      </td>
+                    </tr>
+                  );
+                })
+              )}
+            </tbody>
+          </table>
         </div>
       )}
     </section>

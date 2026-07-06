@@ -176,7 +176,7 @@ function NewItemForm() {
   };
 
   return (
-    <div className="page-shell command-form-page">
+    <div className="page-shell command-form-page item-create-page">
       <header className="command-form-header">
         <Link href="/items" className="detail-back-link">
           ← 返回事项列表
@@ -191,10 +191,10 @@ function NewItemForm() {
       <form onSubmit={handleSubmit}>
         <div className="card form-card command-form-card item-command-form-card">
           <div className="command-form-stack">
-            <section className="command-form-section item-form-section-main">
+            <section className="command-form-section item-form-section-main item-form-section-intake">
               <div className="command-form-section-header">
-                <h2>基础信息</h2>
-                <p>标题、描述和基础归属。</p>
+                <h2>快速录入</h2>
+                <p>先把标题和问题背景记下来，后续可继续补齐。</p>
               </div>
 
               <div>
@@ -221,10 +221,10 @@ function NewItemForm() {
               </div>
             </section>
 
-            <section className="command-form-section item-form-section-side">
+            <section className="command-form-section item-form-section-side item-form-section-context">
               <div className="command-form-section-header">
-                <h2>关联与分类</h2>
-                <p>项目、模块、标签。</p>
+                <h2>归属信息</h2>
+                <p>项目、模块和标签，用于后续检索。</p>
               </div>
 
               <div className="field-grid-2">
@@ -282,10 +282,10 @@ function NewItemForm() {
               </div>
             </section>
 
-            <section className="command-form-section item-form-section-status">
+            <section className="command-form-section item-form-section-status item-form-section-critical">
               <div className="command-form-section-header">
-                <h2>状态与责任</h2>
-                <p>类型、优先级、状态、owner 和截止日期。</p>
+                <h2>处理优先级</h2>
+                <p>优先级、状态、负责人和截止日期决定后续处理节奏。</p>
               </div>
 
               <div className="field-grid-3">
@@ -350,9 +350,9 @@ function NewItemForm() {
               </div>
             </section>
 
-            <section className="command-form-section item-form-section-signal">
+            <section className="command-form-section item-form-section-signal item-form-section-supplement">
               <div className="command-form-section-header">
-                <h2>交付信号</h2>
+                <h2>补充信号</h2>
                 <p>下一步动作、健康度、汇报层级和来源信息。</p>
               </div>
 

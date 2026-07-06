@@ -41,18 +41,25 @@ export default async function TodayPage() {
   ];
 
   const sections = [
-    { title: "今日新增日志", subtitle: "TODAY SIGNALS", items: todayLogs, type: "log", count: todayLogs.length, tone: "blue", icon: "file-text", href: signalToLogsHref("todayLogs", undefined, today) },
-    { title: "今日关闭事项", subtitle: "DELIVERED", items: todayClosedItems, type: "item", count: todayClosedItems.length, tone: "success", icon: "check-circle" },
-    { title: "今日更新事项", subtitle: "IN MOTION", items: todayUpdatedItems, type: "item", count: todayUpdatedItems.length, tone: "cyan", icon: "refresh" },
-    { title: "P0/P1 未关闭事项", subtitle: "HIGH PRIORITY", items: p0p1Items, type: "item", count: p0p1Items.length, tone: "warning", icon: "zap" },
-    { title: "今日到期事项", subtitle: "DUE TODAY", items: todayDueItems, type: "item", count: todayDueItems.length, tone: "purple", icon: "calendar" },
-    { title: "逾期未关闭事项", subtitle: "OVERDUE", items: overdueItems, type: "item", count: overdueItems.length, tone: "danger", icon: "clock", href: signalToItemsHref("overdue") },
-    { title: "今日风险/阻塞日志", subtitle: "RISK SIGNALS", items: riskBlockerLogs, type: "log", count: riskBlockerLogs.length, tone: "danger", icon: "alert-triangle" },
-    { title: "今日决策日志", subtitle: "DECISIONS", items: decisionLogs, type: "log", count: decisionLogs.length, tone: "success", icon: "lightbulb", href: signalToLogsHref("decision", undefined, today) },
+    { title: "P0/P1 未关闭事项", subtitle: "HIGH PRIORITY", items: p0p1Items, type: "item", count: p0p1Items.length, tone: "warning", icon: "zap", emptyText: "当前无高优未关闭事项，优先级压力可控。" },
+    { title: "今日到期事项", subtitle: "DUE TODAY", items: todayDueItems, type: "item", count: todayDueItems.length, tone: "purple", icon: "calendar", emptyText: "今日无到期事项，交付窗口暂时稳定。" },
+    { title: "逾期未关闭事项", subtitle: "OVERDUE", items: overdueItems, type: "item", count: overdueItems.length, tone: "danger", icon: "clock", href: signalToItemsHref("overdue"), emptyText: "今日无逾期事项，交付节奏正常。" },
+    { title: "今日新增日志", subtitle: "TODAY SIGNALS", items: todayLogs, type: "log", count: todayLogs.length, tone: "blue", icon: "file-text", href: signalToLogsHref("todayLogs", undefined, today), emptyText: "今天还没有新增日志，可先记录关键事实。" },
+    { title: "今日更新事项", subtitle: "IN MOTION", items: todayUpdatedItems, type: "item", count: todayUpdatedItems.length, tone: "cyan", icon: "refresh", emptyText: "今日暂无事项更新，当前变更压力较低。" },
+    { title: "今日关闭事项", subtitle: "DELIVERED", items: todayClosedItems, type: "item", count: todayClosedItems.length, tone: "success", icon: "check-circle", emptyText: "今日暂无关闭事项，后续闭环后会在这里呈现。" },
+    { title: "今日风险/阻塞日志", subtitle: "RISK SIGNALS", items: riskBlockerLogs, type: "log", count: riskBlockerLogs.length, tone: "danger", icon: "alert-triangle", emptyText: "今日无风险/阻塞日志，风险记录暂时稳定。" },
+    { title: "今日决策日志", subtitle: "DECISIONS", items: decisionLogs, type: "log", count: decisionLogs.length, tone: "success", icon: "lightbulb", href: signalToLogsHref("decision", undefined, today), emptyText: "今日无决策日志，关键结论可在形成后补记。" },
+  ];
+
+  const todayGroups = [
+    { title: "需要处理", eyebrow: "ACTION", hint: "优先扫 P0/P1、今日到期与逾期。", sections: sections.slice(0, 3) },
+    { title: "今日事实", eyebrow: "FACTS", hint: "今天新增和变动的事实记录。", sections: sections.slice(3, 5) },
+    { title: "今日闭环", eyebrow: "DELIVERY", hint: "已经关闭的事项会支撑日报表达。", sections: sections.slice(5, 6) },
+    { title: "风险决策", eyebrow: "RISK & DECISION", hint: "用于汇报保留的风险、阻塞和决策依据。", sections: sections.slice(6) },
   ];
 
   return (
-    <div className="page-shell auxiliary-page today-page">
+    <div className="page-shell auxiliary-page today-page today-cockpit-page">
       <header className="command-page-header">
         <div>
           <span className="section-eyebrow">DAILY DELIVERY PULSE</span>
@@ -64,50 +71,70 @@ export default async function TodayPage() {
         </div>
       </header>
 
-      <section className="today-situation card" aria-label="今日态势">
-        <div className="today-situation-label">
-          <span className="hero-status-dot" />
-          <div><strong>今日态势</strong><small>TODAY STATUS</small></div>
+      <section className="card cockpit-card today-situation today-cockpit-situation" aria-label="今日态势">
+        <div className="cockpit-card-head">
+          <div>
+            <span className="section-eyebrow">TODAY STATUS</span>
+            <h2>今日态势</h2>
+          </div>
+          <span className="section-live"><i />实时</span>
         </div>
-        <div className="today-situation-grid">
+        <div className="today-situation-grid cockpit-metrics">
           {situation.map((item) => (
-            <div key={item.label} className={`today-metric metric-${item.tone}`}>
-              <span><Icon name={item.icon} size={15} /></span>
-              <div><strong>{item.value}</strong><small>{item.label}</small></div>
+            <div key={item.label} className={`stat-card today-metric metric-${item.tone}`}>
+              <div className="stat-topline">
+                <span className="stat-icon"><Icon name={item.icon} size={15} /></span>
+                <span className="stat-meta">TODAY</span>
+              </div>
+              <strong className="stat-value">{item.value}</strong>
+              <span className="stat-label">{item.label}</span>
             </div>
           ))}
         </div>
       </section>
 
       <div className="today-sections">
-        {sections.map((section) => (
-          <section key={section.title} className={`card today-section section-tone-${section.tone}`}>
-            <div className="today-section-header">
-              <span className="today-section-icon"><Icon name={section.icon} size={16} /></span>
-              <div><strong>{section.title}</strong><small>{section.subtitle}</small></div>
-              {section.href ? (
-                <Link href={section.href} className="section-link">
-                  查看全部 <Icon name="chevron-right" size={14} />
-                </Link>
-              ) : (
-                <span className="section-count">{section.count} 条</span>
-              )}
-            </div>
-            {section.items.length === 0 ? (
-              <div className="today-compact-empty"><span />当前无相关数据</div>
-            ) : (
-              <div className="today-section-content">
-                {section.type === "log" ? (
-                  <div className="content-card-grid">
-                    {(section.items as { id: string; workDate: string; title: string; content: string; type: string; source: string; project?: string | null; module?: string | null; itemId?: string | null; createdAt: Date; updatedAt: Date }[]).map((log) => <WorkLogCard key={log.id} log={log} />)}
-                  </div>
-                ) : (
-                  <div className="content-card-grid">
-                    {(section.items as { id: string; title: string; description?: string | null; project?: string | null; module?: string | null; type: string; priority: string; status: string; owner?: string | null; dueDate?: string | null; nextAction?: string | null; createdAt: Date; updatedAt: Date; closedAt?: Date | null }[]).map((item) => <WorkItemCard key={item.id} item={item} />)}
-                  </div>
-                )}
+        {todayGroups.map((group) => (
+          <section key={group.title} className="card cockpit-card today-group-card">
+            <div className="cockpit-card-head">
+              <div>
+                <span className="section-eyebrow">{group.eyebrow}</span>
+                <h2>{group.title}</h2>
               </div>
-            )}
+              <span className="section-count">{group.hint}</span>
+            </div>
+            <div className="today-group-sections">
+              {group.sections.map((section) => (
+                <section key={section.title} className={`today-section section-tone-${section.tone}`}>
+                  <div className="today-section-header">
+                    <span className="today-section-icon"><Icon name={section.icon} size={16} /></span>
+                    <div><strong>{section.title}</strong><small>{section.subtitle}</small></div>
+                    {section.href ? (
+                      <Link href={section.href} className="section-link">
+                        查看全部 <Icon name="chevron-right" size={14} />
+                      </Link>
+                    ) : (
+                      <span className="section-count">{section.count} 条</span>
+                    )}
+                  </div>
+                  {section.items.length === 0 ? (
+                    <div className="today-compact-empty"><span />{section.emptyText}</div>
+                  ) : (
+                    <div className="today-section-content">
+                      {section.type === "log" ? (
+                        <div className="content-card-grid">
+                          {(section.items as { id: string; workDate: string; title: string; content: string; type: string; source: string; project?: string | null; module?: string | null; itemId?: string | null; createdAt: Date; updatedAt: Date }[]).map((log) => <WorkLogCard key={log.id} log={log} />)}
+                        </div>
+                      ) : (
+                        <div className="content-card-grid">
+                          {(section.items as { id: string; title: string; description?: string | null; project?: string | null; module?: string | null; type: string; priority: string; status: string; owner?: string | null; dueDate?: string | null; nextAction?: string | null; createdAt: Date; updatedAt: Date; closedAt?: Date | null }[]).map((item) => <WorkItemCard key={item.id} item={item} />)}
+                        </div>
+                      )}
+                    </div>
+                  )}
+                </section>
+              ))}
+            </div>
           </section>
         ))}
       </div>

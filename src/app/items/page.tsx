@@ -160,6 +160,11 @@ export default function ItemsPage() {
     setPage(1);
   };
 
+  const applyQuickView = (nextFilters: Partial<ItemFilters>) => {
+    setFilters({ ...DEFAULT_FILTERS, ...nextFilters });
+    setPage(1);
+  };
+
   const copyMarkdown = () => {
     let md = "# 工作事项列表\n\n";
     items.forEach((item) => {
@@ -175,7 +180,7 @@ export default function ItemsPage() {
   };
 
   return (
-    <div className="command-list-page">
+    <div className="command-list-page item-list-page">
       {/* Header */}
       <div className="command-page-header">
         <div>
@@ -191,9 +196,24 @@ export default function ItemsPage() {
         </div>
       </div>
 
+      <div className="card item-quick-view-panel">
+        <div className="item-quick-view-head">
+          <span>快速视图</span>
+          <strong>先看需要处理的事项</strong>
+        </div>
+        <div className="item-quick-view-actions">
+          <button type="button" onClick={() => applyQuickView({ visibility: "open" })} className="btn btn-secondary">未关闭</button>
+          <button type="button" onClick={() => applyQuickView({ visibility: "open", priority: "P0" })} className="btn btn-secondary">P0 高优</button>
+          <button type="button" onClick={() => applyQuickView({ visibility: "open", status: "blocked" })} className="btn btn-secondary">阻塞</button>
+          <button type="button" onClick={() => applyQuickView({ visibility: "open", health: "red" })} className="btn btn-secondary">风险红</button>
+          <button type="button" onClick={() => applyQuickView({ visibility: "open", overdue: true })} className="btn btn-secondary">逾期</button>
+          <button type="button" onClick={() => applyQuickView({ visibility: "open", reportLevel: "daily" })} className="btn btn-secondary">进入日报</button>
+        </div>
+      </div>
+
       {/* Filters */}
-      <div className="card filter-panel">
-        <div className="filter-panel-label"><Icon name="search" size={14} />事项筛选</div>
+      <div className="card filter-panel item-filter-panel">
+        <div className="filter-panel-label"><Icon name="search" size={14} />高级筛选</div>
         {filters.projectId && (
           <div className="filter-scope-note">
             当前项目筛选已启用

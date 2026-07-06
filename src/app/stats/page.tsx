@@ -73,9 +73,16 @@ export default function StatsPage() {
     { label: "阻塞事项", value: stats.items.blocked, note: stats.items.blocked > 0 ? "需要解除依赖" : "当前无阻塞", icon: "shield-off", tone: stats.items.blocked > 0 ? "danger" : "success" },
     { label: "今日到期", value: stats.items.todayDue, note: "关注今日交付窗口", icon: "calendar", tone: "purple" },
   ];
+  const situationMetrics = [
+    { label: "闭环率", value: `${completionRate}%`, meta: "CLOSED", icon: "check-circle", tone: completionRate >= 60 ? "success" : "warning" },
+    { label: "活跃事项", value: activeItems, meta: "ACTIVE", icon: "activity", tone: activeItems > 0 ? "blue" : "success" },
+    { label: "P0/P1", value: stats.items.p0 + stats.items.p1, meta: "HIGH", icon: "zap", tone: stats.items.p0 + stats.items.p1 > 0 ? "warning" : "success" },
+    { label: "逾期", value: stats.items.overdue, meta: "OVERDUE", icon: "clock", tone: stats.items.overdue > 0 ? "danger" : "success" },
+    { label: "今日日志", value: stats.logs.today, meta: "LOGS", icon: "file-text", tone: "purple" },
+  ];
 
   return (
-    <div className="page-shell auxiliary-page stats-page">
+    <div className="page-shell auxiliary-page stats-page stats-cockpit-page">
       <header className="command-page-header">
         <div>
           <span className="section-eyebrow">DELIVERY HEALTH MONITOR</span>
@@ -84,6 +91,28 @@ export default function StatsPage() {
         </div>
         <span className="monitor-status"><i />MONITORING</span>
       </header>
+
+      <section className="card cockpit-card stats-situation-card">
+        <div className="cockpit-card-head">
+          <div>
+            <span className="section-eyebrow">SITUATION</span>
+            <h2>交付态势</h2>
+          </div>
+          <span className="section-count">保留当前统计口径</span>
+        </div>
+        <div className="cockpit-metrics stats-situation-grid">
+          {situationMetrics.map((metric) => (
+            <div key={metric.label} className={`stat-card metric-${metric.tone}`}>
+              <div className="stat-topline">
+                <span className="stat-icon"><Icon name={metric.icon} size={15} /></span>
+                <span className="stat-meta">{metric.meta}</span>
+              </div>
+              <strong className="stat-value">{metric.value}</strong>
+              <span className="stat-label">{metric.label}</span>
+            </div>
+          ))}
+        </div>
+      </section>
 
       <section className="monitor-section">
         <div className="monitor-section-heading">

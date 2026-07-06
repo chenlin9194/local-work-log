@@ -1,6 +1,7 @@
 "use client";
 
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
+import type { Dispatch, SetStateAction } from "react";
 import Icon from "@/components/Icon";
 import {
   PROJECT_MILESTONE_STATUSES,
@@ -37,6 +38,38 @@ const EMPTY_MILESTONE_FORM: MilestoneFormState = {
 
 const CLOSED_MILESTONE_STATUSES = new Set(["done", "cancelled"]);
 
+const INPUT_STYLE = {
+  width: "100%",
+  padding: "7px 9px",
+  borderRadius: 8,
+  border: "1px solid var(--border-primary)",
+  background: "var(--bg-secondary)",
+  color: "var(--text-primary)",
+  fontSize: 13,
+};
+
+const TABLE_CELL_STYLE = {
+  padding: "8px 10px",
+  borderBottom: "1px solid var(--border-secondary)",
+  verticalAlign: "middle" as const,
+};
+
+const TABLE_HEAD_CELL_STYLE = {
+  padding: "8px 10px",
+  borderBottom: "1px solid var(--border-primary)",
+  color: "var(--text-tertiary)",
+  fontSize: 12,
+  fontWeight: 600,
+  textAlign: "left" as const,
+  whiteSpace: "nowrap" as const,
+};
+
+const ACTION_CELL_STYLE = {
+  ...TABLE_CELL_STYLE,
+  width: 132,
+  whiteSpace: "nowrap" as const,
+};
+
 function toDateInputValue(value?: string | Date | null) {
   if (!value) return "";
   return formatDate(value, "iso");
@@ -65,15 +98,206 @@ function getMilestonePriority(milestone: ProjectMilestone, today: string) {
   return 2;
 }
 
+function getMilestoneSearchText(milestone: ProjectMilestone) {
+  return [
+    milestone.title,
+    PROJECT_PLAN_TYPE_LABELS[milestone.planType || "milestone"] || milestone.planType,
+    PROJECT_MILESTONE_STATUS_LABELS[milestone.status] || milestone.status,
+    milestone.owner,
+    milestone.description,
+    milestone.sourceUrl,
+  ]
+    .filter(Boolean)
+    .join(" ")
+    .toLowerCase();
+}
+
+function sortMilestones(milestones: ProjectMilestone[], today: string) {
+  return [...milestones].sort((a, b) => {
+    const priorityDiff = getMilestonePriority(a, today) - getMilestonePriority(b, today);
+    if (priorityDiff !== 0) return priorityDiff;
+
+    const aTargetDate = getMilestoneDateKey(a.targetDate);
+    const bTargetDate = getMilestoneDateKey(b.targetDate);
+    if (aTargetDate && bTargetDate && aTargetDate !== bTargetDate) return aTargetDate.localeCompare(bTargetDate);
+    if (aTargetDate && !bTargetDate) return -1;
+    if (!aTargetDate && bTargetDate) return 1;
+
+    const sortOrderDiff = a.sortOrder - b.sortOrder;
+    if (sortOrderDiff !== 0) return sortOrderDiff;
+
+    return a.title.localeCompare(b.title, "zh-CN");
+  });
+}
+
 type ProjectMilestoneSectionProps = {
   projectId: string;
 };
+
+function MilestoneInput({
+  value,
+  onChange,
+  placeholder,
+  type = "text",
+}: {
+  value: string;
+  onChange: (value: string) => void;
+  placeholder?: string;
+  type?: string;
+}) {
+  return (
+    <input
+      type={type}
+      value={value}
+      onChange={(e) => onChange(e.target.value)}
+      placeholder={placeholder}
+      style={INPUT_STYLE}
+    />
+  );
+}
+
+function MilestoneSelect({
+  value,
+  onChange,
+  options,
+}: {
+  value: string;
+  onChange: (value: string) => void;
+  options: readonly { value: string; label: string }[];
+}) {
+  return (
+    <select value={value} onChange={(e) => onChange(e.target.value)} style={INPUT_STYLE}>
+      {options.map((option) => (
+        <option key={option.value} value={option.value}>
+          {option.label}
+        </option>
+      ))}
+    </select>
+  );
+}
+
+function MilestoneFormCells({
+  form,
+  setForm,
+  saving,
+  error,
+  onSave,
+  onCancel,
+}: {
+  form: MilestoneFormState;
+  setForm: Dispatch<SetStateAction<MilestoneFormState>>;
+  saving: boolean;
+  error: string;
+  onSave: () => void;
+  onCancel: () => void;
+}) {
+  return (
+    <>
+      <td style={{ ...TABLE_CELL_STYLE, minWidth: 126 }}>
+        <MilestoneSelect
+          value={form.status}
+          onChange={(value) => setForm((prev) => ({ ...prev, status: value }))}
+          options={PROJECT_MILESTONE_STATUSES}
+        />
+      </td>
+      <td style={{ ...TABLE_CELL_STYLE, minWidth: 150 }}>
+        <MilestoneInput
+          value={form.title}
+          onChange={(value) => setForm((prev) => ({ ...prev, title: value }))}
+          placeholder="节点名称 *"
+        />
+        {error && <div style={{ marginTop: 4, color: "var(--accent-red)", fontSize: 12 }}>{error}</div>}
+      </td>
+      <td style={{ ...TABLE_CELL_STYLE, minWidth: 130 }}>
+        <MilestoneSelect
+          value={form.planType}
+          onChange={(value) => setForm((prev) => ({ ...prev, planType: value }))}
+          options={PROJECT_PLAN_TYPES}
+        />
+      </td>
+      <td style={{ ...TABLE_CELL_STYLE, minWidth: 136 }}>
+        <MilestoneInput
+          type="date"
+          value={form.targetDate}
+          onChange={(value) => setForm((prev) => ({ ...prev, targetDate: value }))}
+        />
+      </td>
+      <td style={{ ...TABLE_CELL_STYLE, minWidth: 136 }}>
+        <MilestoneInput
+          type="date"
+          value={form.actualDate}
+          onChange={(value) => setForm((prev) => ({ ...prev, actualDate: value }))}
+        />
+      </td>
+      <td style={{ ...TABLE_CELL_STYLE, minWidth: 110 }}>
+        <MilestoneInput
+          value={form.owner}
+          onChange={(value) => setForm((prev) => ({ ...prev, owner: value }))}
+          placeholder="负责人"
+        />
+      </td>
+      <td style={{ ...TABLE_CELL_STYLE, minWidth: 220 }}>
+        <MilestoneInput
+          value={form.description}
+          onChange={(value) => setForm((prev) => ({ ...prev, description: value }))}
+          placeholder="说明"
+        />
+      </td>
+      <td style={{ ...TABLE_CELL_STYLE, minWidth: 180 }}>
+        <MilestoneInput
+          type="url"
+          value={form.sourceUrl}
+          onChange={(value) => setForm((prev) => ({ ...prev, sourceUrl: value }))}
+          placeholder="关联链接"
+        />
+      </td>
+      <td style={{ ...TABLE_CELL_STYLE, width: 82 }}>
+        <MilestoneInput
+          type="number"
+          value={form.sortOrder}
+          onChange={(value) => setForm((prev) => ({ ...prev, sortOrder: value }))}
+          placeholder="排序"
+        />
+      </td>
+      <td style={ACTION_CELL_STYLE}>
+        <div style={{ display: "flex", gap: 6 }}>
+          <button type="button" onClick={onSave} className="btn btn-primary" disabled={saving} style={{ padding: "6px 9px" }}>
+            {saving ? "保存中" : "保存"}
+          </button>
+          <button type="button" onClick={onCancel} className="btn btn-secondary" disabled={saving} style={{ padding: "6px 9px" }}>
+            取消
+          </button>
+        </div>
+      </td>
+    </>
+  );
+}
+
+function MilestoneStatusMark({ milestone, today }: { milestone: ProjectMilestone; today: string }) {
+  const isRisk = isMilestoneRisk(milestone, today);
+  const isClosed = isMilestoneClosed(milestone);
+
+  if (isRisk) {
+    return <span title="延期/风险" style={{ color: "var(--accent-red)", fontWeight: 800 }}>!</span>;
+  }
+
+  if (milestone.status === "done") {
+    return <span title="已完成" style={{ color: "var(--accent-green)", fontWeight: 800 }}>✓</span>;
+  }
+
+  if (milestone.status === "cancelled") {
+    return <span title="已取消" style={{ color: "var(--text-tertiary)", fontWeight: 800 }}>×</span>;
+  }
+
+  return <span title={isClosed ? "已结束" : "未关闭"} style={{ color: "var(--text-tertiary)", fontWeight: 800 }}>○</span>;
+}
 
 export default function ProjectMilestoneSection({ projectId }: ProjectMilestoneSectionProps) {
   const [milestones, setMilestones] = useState<ProjectMilestone[]>([]);
   const [milestonesLoading, setMilestonesLoading] = useState(true);
   const [milestonesError, setMilestonesError] = useState(false);
   const [milestoneActionError, setMilestoneActionError] = useState("");
+  const [keyword, setKeyword] = useState("");
   const [showMilestoneCreateForm, setShowMilestoneCreateForm] = useState(false);
   const [milestoneCreateSaving, setMilestoneCreateSaving] = useState(false);
   const [milestoneCreateError, setMilestoneCreateError] = useState("");
@@ -85,11 +309,10 @@ export default function ProjectMilestoneSection({ projectId }: ProjectMilestoneS
   const [deletingMilestoneId, setDeletingMilestoneId] = useState<string | null>(null);
   const [selectedPlanType, setSelectedPlanType] = useState("all");
 
-  const validateMilestoneForm = useCallback((form: MilestoneFormState) => {
-    if (!form.title.trim()) {
-      return "里程碑名称不能为空";
-    }
+  const today = getLocalDateString();
 
+  const validateMilestoneForm = useCallback((form: MilestoneFormState) => {
+    if (!form.title.trim()) return "里程碑名称不能为空";
     return "";
   }, []);
 
@@ -124,20 +347,35 @@ export default function ProjectMilestoneSection({ projectId }: ProjectMilestoneS
       setMilestonesLoading(true);
       setMilestonesError(false);
 
-      const res = await fetch(`/api/projects/${projectId}/milestones`);
-      if (res.ok) {
-        const data = await res.json();
-        setMilestones(data);
-      } else {
-        setMilestones([]);
-        setMilestonesError(true);
-      }
+      const res = await fetch(`/api/projects/${projectId}/milestones`, { cache: "no-store" });
+      if (!res.ok) throw new Error(`Failed to fetch project milestones: ${res.status}`);
+
+      const data = await res.json();
+      if (!Array.isArray(data)) throw new Error("Project milestones response must be an array");
+
+      setMilestones(data);
     } catch (error) {
       console.error("Error fetching project milestones:", error);
-      setMilestones([]);
       setMilestonesError(true);
     } finally {
       setMilestonesLoading(false);
+    }
+  }, [projectId]);
+
+  const refreshMilestonesAfterSave = useCallback(async () => {
+    try {
+      const res = await fetch(`/api/projects/${projectId}/milestones`, { cache: "no-store" });
+      if (!res.ok) return false;
+
+      const data = await res.json();
+      if (!Array.isArray(data)) return false;
+
+      setMilestones(data);
+      setMilestonesError(false);
+      return true;
+    } catch (error) {
+      console.error("Error refreshing project milestones after save:", error);
+      return false;
     }
   }, [projectId]);
 
@@ -181,8 +419,7 @@ export default function ProjectMilestoneSection({ projectId }: ProjectMilestoneS
     setEditingMilestoneId(null);
   };
 
-  const handleMilestoneCreateSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
+  const handleMilestoneCreateSubmit = async () => {
     if (milestoneCreateSaving) return;
 
     const validationError = validateMilestoneForm(milestoneCreateForm);
@@ -207,8 +444,11 @@ export default function ProjectMilestoneSection({ projectId }: ProjectMilestoneS
         return;
       }
 
+      const createdMilestone = await res.json();
+      setMilestones((prev) => sortMilestones([createdMilestone, ...prev], today));
+      setMilestonesError(false);
       closeMilestoneCreateForm();
-      await fetchMilestones();
+      await refreshMilestonesAfterSave();
     } catch (error) {
       console.error("Error creating project milestone:", error);
       setMilestoneCreateError("保存项目里程碑失败");
@@ -217,8 +457,7 @@ export default function ProjectMilestoneSection({ projectId }: ProjectMilestoneS
     }
   };
 
-  const handleMilestoneEditSubmit = async (e: React.FormEvent, milestoneId: string) => {
-    e.preventDefault();
+  const handleMilestoneEditSubmit = async (milestoneId: string) => {
     if (milestoneEditSaving) return;
 
     const validationError = validateMilestoneForm(milestoneEditForm);
@@ -243,8 +482,11 @@ export default function ProjectMilestoneSection({ projectId }: ProjectMilestoneS
         return;
       }
 
+      const updatedMilestone = await res.json();
+      setMilestones((prev) => sortMilestones(prev.map((milestone) => (milestone.id === milestoneId ? updatedMilestone : milestone)), today));
+      setMilestonesError(false);
       closeMilestoneEditForm();
-      await fetchMilestones();
+      await refreshMilestonesAfterSave();
     } catch (error) {
       console.error("Error updating project milestone:", error);
       setMilestoneEditError("更新项目里程碑失败");
@@ -270,11 +512,9 @@ export default function ProjectMilestoneSection({ projectId }: ProjectMilestoneS
         return;
       }
 
-      if (editingMilestoneId === milestoneId) {
-        closeMilestoneEditForm();
-      }
-
-      await fetchMilestones();
+      setMilestones((prev) => prev.filter((milestone) => milestone.id !== milestoneId));
+      if (editingMilestoneId === milestoneId) closeMilestoneEditForm();
+      await refreshMilestonesAfterSave();
     } catch (error) {
       console.error("Error deleting project milestone:", error);
       setMilestoneActionError("删除项目里程碑失败");
@@ -283,33 +523,26 @@ export default function ProjectMilestoneSection({ projectId }: ProjectMilestoneS
     }
   };
 
-  const filteredMilestones =
-    selectedPlanType === "all"
-      ? milestones
-      : milestones.filter((milestone) => (milestone.planType || "milestone") === selectedPlanType);
-  const today = getLocalDateString();
-  const displayedMilestones = filteredMilestones
-    .map((milestone, index) => ({ milestone, index }))
-    .sort((a, b) => {
-      const priorityDiff = getMilestonePriority(a.milestone, today) - getMilestonePriority(b.milestone, today);
-      if (priorityDiff !== 0) return priorityDiff;
+  const filteredByPlanType = useMemo(() => {
+    if (selectedPlanType === "all") return milestones;
+    return milestones.filter((milestone) => (milestone.planType || "milestone") === selectedPlanType);
+  }, [milestones, selectedPlanType]);
 
-      const aTargetDate = getMilestoneDateKey(a.milestone.targetDate);
-      const bTargetDate = getMilestoneDateKey(b.milestone.targetDate);
-      if (aTargetDate && bTargetDate && aTargetDate !== bTargetDate) return aTargetDate.localeCompare(bTargetDate);
-      if (aTargetDate && !bTargetDate) return -1;
-      if (!aTargetDate && bTargetDate) return 1;
+  const normalizedKeyword = keyword.trim().toLowerCase();
+  const displayedMilestones = useMemo(() => {
+    const filteredByKeyword = normalizedKeyword
+      ? filteredByPlanType.filter((milestone) => getMilestoneSearchText(milestone).includes(normalizedKeyword))
+      : filteredByPlanType;
 
-      const sortOrderDiff = a.milestone.sortOrder - b.milestone.sortOrder;
-      if (sortOrderDiff !== 0) return sortOrderDiff;
+    return sortMilestones(filteredByKeyword, today);
+  }, [filteredByPlanType, normalizedKeyword, today]);
 
-      return a.index - b.index;
-    })
-    .map(({ milestone }) => milestone);
-  const riskMilestoneCount = filteredMilestones.filter((milestone) => isMilestoneRisk(milestone, today)).length;
-  const openMilestoneCount = filteredMilestones.filter((milestone) => !isMilestoneClosed(milestone)).length;
-  const closedMilestoneCount = filteredMilestones.length - openMilestoneCount;
-  const nextKeyMilestone = displayedMilestones.find((milestone) => !isMilestoneClosed(milestone)) ?? null;
+  const sortedAllMilestones = useMemo(() => sortMilestones(milestones, today), [milestones, today]);
+  const riskMilestoneCount = milestones.filter((milestone) => isMilestoneRisk(milestone, today)).length;
+  const openMilestoneCount = milestones.filter((milestone) => !isMilestoneClosed(milestone)).length;
+  const closedMilestoneCount = milestones.length - openMilestoneCount;
+  const missingOwnerCount = milestones.filter((milestone) => !milestone.owner?.trim()).length;
+  const nextKeyMilestone = sortedAllMilestones.find((milestone) => !isMilestoneClosed(milestone)) ?? null;
 
   return (
     <section className="cockpit-section">
@@ -328,213 +561,72 @@ export default function ProjectMilestoneSection({ projectId }: ProjectMilestoneS
             className="btn btn-secondary"
           >
             <Icon name="plus" size={14} />
-            新增项目里程碑
+            新增里程碑
           </button>
         )}
       </div>
 
-      <div style={{ display: "flex", flexWrap: "wrap", gap: 8, marginBottom: 12 }}>
-        <button
-          type="button"
-          onClick={() => setSelectedPlanType("all")}
-          className={`btn ${selectedPlanType === "all" ? "btn-primary" : "btn-secondary"}`}
-        >
-          全部
-        </button>
-        {PROJECT_PLAN_TYPES.map((planType) => (
-          <button
-            key={planType.value}
-            type="button"
-            onClick={() => setSelectedPlanType(planType.value)}
-            className={`btn ${selectedPlanType === planType.value ? "btn-primary" : "btn-secondary"}`}
-          >
-            {PROJECT_PLAN_TYPE_LABELS[planType.value] || planType.label}
-          </button>
-        ))}
-      </div>
-
-      {milestones.length > 0 && (
-        <div
-          className="card entity-card entity-card--compact project-milestone-summary"
-          style={{
-            border: riskMilestoneCount > 0
-              ? "1px solid color-mix(in srgb, var(--accent-red) 22%, var(--border-primary))"
-              : "1px solid color-mix(in srgb, var(--accent-green) 18%, var(--border-primary))",
-          }}
-        >
-          <div className="project-milestone-summary__title">
-            <div className="project-milestone-summary__headline">
-              下一关键节点
-            </div>
-            <div style={{ color: nextKeyMilestone ? "var(--text-primary)" : "var(--text-tertiary)", lineHeight: 1.55, wordBreak: "break-word" }}>
-              {nextKeyMilestone ? nextKeyMilestone.title : "暂无未关闭节点"}
-            </div>
-            {nextKeyMilestone?.targetDate && (
-              <div className="project-milestone-summary__hint">
-                目标 {formatDate(nextKeyMilestone.targetDate)}
+      <div className="card entity-card entity-card--compact" style={{ padding: 12, marginBottom: 12, display: "grid", gap: 10 }}>
+        <div style={{ display: "flex", justifyContent: "space-between", gap: 12, flexWrap: "wrap", alignItems: "center" }}>
+          <div style={{ minWidth: 260, flex: "2 1 360px", color: "var(--text-secondary)", fontSize: 13, lineHeight: 1.6 }}>
+            <strong style={{ color: "var(--text-primary)" }}>下一节点：</strong>
+            {nextKeyMilestone ? (
+              <>
+                {nextKeyMilestone.title}
+                {nextKeyMilestone.targetDate ? ` · 目标 ${formatDate(nextKeyMilestone.targetDate)}` : ""}
                 {nextKeyMilestone.owner ? ` · ${nextKeyMilestone.owner}` : ""}
-              </div>
+              </>
+            ) : (
+              "暂无未关闭节点"
             )}
           </div>
-          <div className="project-milestone-summary__chips">
-            <span
-              style={{
-                fontSize: 12,
-                padding: "2px 8px",
-                borderRadius: 999,
-                background: riskMilestoneCount > 0 ? "var(--accent-red-light)" : "var(--accent-green-light)",
-                color: riskMilestoneCount > 0 ? "var(--accent-red)" : "var(--accent-green)",
-                border: riskMilestoneCount > 0 ? "1px solid color-mix(in srgb, var(--accent-red) 24%, transparent)" : "1px solid color-mix(in srgb, var(--accent-green) 24%, transparent)",
-              }}
-            >
-              延期/风险 {riskMilestoneCount}
-            </span>
-            <span style={{ fontSize: 12, padding: "2px 8px", borderRadius: 999, background: "var(--bg-secondary)", color: "var(--text-secondary)" }}>未关闭 {openMilestoneCount}</span>
-            <span style={{ fontSize: 12, padding: "2px 8px", borderRadius: 999, background: "var(--bg-secondary)", color: "var(--text-secondary)" }}>已结束 {closedMilestoneCount}</span>
+          <div style={{ display: "flex", gap: 8, flexWrap: "wrap", alignItems: "center", color: "var(--text-secondary)", fontSize: 13 }}>
+            <span className="entity-pill entity-pill--muted">总数 {milestones.length}</span>
+            <span className={riskMilestoneCount > 0 ? "entity-pill entity-pill--danger" : "entity-pill entity-pill--success"}>风险 {riskMilestoneCount}</span>
+            <span className="entity-pill entity-pill--muted">未关闭 {openMilestoneCount}</span>
+            <span className="entity-pill entity-pill--muted">已结束 {closedMilestoneCount}</span>
+            {missingOwnerCount > 0 && <span className="entity-pill entity-pill--muted">负责人未填 {missingOwnerCount}</span>}
           </div>
         </div>
-      )}
 
-      {showMilestoneCreateForm && (
-        <form onSubmit={handleMilestoneCreateSubmit} className="card" style={{ padding: 16, marginBottom: 12 }}>
-          <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
-            <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(220px, 1fr))", gap: 12 }}>
-              <div>
-                <label style={{ display: "block", fontSize: 13, fontWeight: 500, color: "var(--text-primary)", marginBottom: 6 }}>
-                  名称 *
-                </label>
-                <input
-                  type="text"
-                  value={milestoneCreateForm.title}
-                  onChange={(e) => setMilestoneCreateForm((prev) => ({ ...prev, title: e.target.value }))}
-                  placeholder="例如：需求冻结 / 提测 / 发布"
-                  style={{ width: "100%", padding: "10px 12px", borderRadius: 6, border: "1px solid var(--border-primary)", background: "var(--bg-secondary)", color: "var(--text-primary)", fontSize: 14 }}
-                />
-              </div>
-              <div>
-                <label style={{ display: "block", fontSize: 13, fontWeight: 500, color: "var(--text-primary)", marginBottom: 6 }}>
-                  状态
-                </label>
-                <select
-                  value={milestoneCreateForm.status}
-                  onChange={(e) => setMilestoneCreateForm((prev) => ({ ...prev, status: e.target.value }))}
-                  style={{ width: "100%", padding: "10px 12px", borderRadius: 6, border: "1px solid var(--border-primary)", background: "var(--bg-secondary)", color: "var(--text-primary)", fontSize: 14 }}
-                >
-                  {PROJECT_MILESTONE_STATUSES.map((status) => (
-                    <option key={status.value} value={status.value}>
-                      {status.label}
-                    </option>
-                  ))}
-                </select>
-              </div>
-              <div>
-                <label style={{ display: "block", fontSize: 13, fontWeight: 500, color: "var(--text-primary)", marginBottom: 6 }}>
-                  计划类型
-                </label>
-                <select
-                  value={milestoneCreateForm.planType}
-                  onChange={(e) => setMilestoneCreateForm((prev) => ({ ...prev, planType: e.target.value }))}
-                  style={{ width: "100%", padding: "10px 12px", borderRadius: 6, border: "1px solid var(--border-primary)", background: "var(--bg-secondary)", color: "var(--text-primary)", fontSize: 14 }}
-                >
-                  {PROJECT_PLAN_TYPES.map((planType) => (
-                    <option key={planType.value} value={planType.value}>
-                      {planType.label}
-                    </option>
-                  ))}
-                </select>
-              </div>
-            </div>
-
-            <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(180px, 1fr))", gap: 12 }}>
-              <div>
-                <label style={{ display: "block", fontSize: 13, fontWeight: 500, color: "var(--text-primary)", marginBottom: 6 }}>
-                  目标日期
-                </label>
-                <input
-                  type="date"
-                  value={milestoneCreateForm.targetDate}
-                  onChange={(e) => setMilestoneCreateForm((prev) => ({ ...prev, targetDate: e.target.value }))}
-                  style={{ width: "100%", padding: "10px 12px", borderRadius: 6, border: "1px solid var(--border-primary)", background: "var(--bg-secondary)", color: "var(--text-primary)", fontSize: 14 }}
-                />
-              </div>
-              <div>
-                <label style={{ display: "block", fontSize: 13, fontWeight: 500, color: "var(--text-primary)", marginBottom: 6 }}>
-                  实际日期
-                </label>
-                <input
-                  type="date"
-                  value={milestoneCreateForm.actualDate}
-                  onChange={(e) => setMilestoneCreateForm((prev) => ({ ...prev, actualDate: e.target.value }))}
-                  style={{ width: "100%", padding: "10px 12px", borderRadius: 6, border: "1px solid var(--border-primary)", background: "var(--bg-secondary)", color: "var(--text-primary)", fontSize: 14 }}
-                />
-              </div>
-              <div>
-                <label style={{ display: "block", fontSize: 13, fontWeight: 500, color: "var(--text-primary)", marginBottom: 6 }}>
-                  负责人
-                </label>
-                <input
-                  type="text"
-                  value={milestoneCreateForm.owner}
-                  onChange={(e) => setMilestoneCreateForm((prev) => ({ ...prev, owner: e.target.value }))}
-                  style={{ width: "100%", padding: "10px 12px", borderRadius: 6, border: "1px solid var(--border-primary)", background: "var(--bg-secondary)", color: "var(--text-primary)", fontSize: 14 }}
-                />
-              </div>
-              <div>
-                <label style={{ display: "block", fontSize: 13, fontWeight: 500, color: "var(--text-primary)", marginBottom: 6 }}>
-                  排序
-                </label>
-                <input
-                  type="number"
-                  value={milestoneCreateForm.sortOrder}
-                  onChange={(e) => setMilestoneCreateForm((prev) => ({ ...prev, sortOrder: e.target.value }))}
-                  style={{ width: "100%", padding: "10px 12px", borderRadius: 6, border: "1px solid var(--border-primary)", background: "var(--bg-secondary)", color: "var(--text-primary)", fontSize: 14 }}
-                />
-              </div>
-            </div>
-
-            <div>
-              <label style={{ display: "block", fontSize: 13, fontWeight: 500, color: "var(--text-primary)", marginBottom: 6 }}>
-                关联链接
-              </label>
-              <input
-                type="url"
-                value={milestoneCreateForm.sourceUrl}
-                onChange={(e) => setMilestoneCreateForm((prev) => ({ ...prev, sourceUrl: e.target.value }))}
-                style={{ width: "100%", padding: "10px 12px", borderRadius: 6, border: "1px solid var(--border-primary)", background: "var(--bg-secondary)", color: "var(--text-primary)", fontSize: 14 }}
-              />
-            </div>
-
-            <div>
-              <label style={{ display: "block", fontSize: 13, fontWeight: 500, color: "var(--text-primary)", marginBottom: 6 }}>
-                说明
-              </label>
-              <textarea
-                value={milestoneCreateForm.description}
-                onChange={(e) => setMilestoneCreateForm((prev) => ({ ...prev, description: e.target.value }))}
-                rows={3}
-                style={{ width: "100%", padding: "10px 12px", borderRadius: 6, border: "1px solid var(--border-primary)", background: "var(--bg-secondary)", color: "var(--text-primary)", fontSize: 14, resize: "vertical" }}
-              />
-            </div>
-
-            {milestoneCreateError && (
-              <p style={{ margin: 0, color: "var(--accent-red)", fontSize: 13 }}>{milestoneCreateError}</p>
-            )}
-
-            <div style={{ display: "flex", gap: 12, justifyContent: "flex-end" }}>
-              <button type="button" onClick={closeMilestoneCreateForm} className="btn btn-secondary" disabled={milestoneCreateSaving}>
-                取消
+        <div style={{ display: "flex", justifyContent: "space-between", gap: 12, flexWrap: "wrap", alignItems: "center" }}>
+          <div style={{ display: "flex", flexWrap: "wrap", gap: 8 }}>
+            <button
+              type="button"
+              onClick={() => setSelectedPlanType("all")}
+              className={`btn ${selectedPlanType === "all" ? "btn-primary" : "btn-secondary"}`}
+              style={{ padding: "6px 10px" }}
+            >
+              全部
+            </button>
+            {PROJECT_PLAN_TYPES.map((planType) => (
+              <button
+                key={planType.value}
+                type="button"
+                onClick={() => setSelectedPlanType(planType.value)}
+                className={`btn ${selectedPlanType === planType.value ? "btn-primary" : "btn-secondary"}`}
+                style={{ padding: "6px 10px" }}
+              >
+                {PROJECT_PLAN_TYPE_LABELS[planType.value] || planType.label}
               </button>
-              <button type="submit" className="btn btn-primary" disabled={milestoneCreateSaving}>
-                {milestoneCreateSaving ? "保存中..." : "保存"}
-              </button>
-            </div>
+            ))}
           </div>
-        </form>
-      )}
+          <div style={{ minWidth: 240, maxWidth: 360, flex: "1 1 260px", position: "relative" }}>
+            <Icon name="search" size={14} />
+            <input
+              type="search"
+              value={keyword}
+              onChange={(e) => setKeyword(e.target.value)}
+              placeholder="查询节点、类型、状态、负责人、说明、链接"
+              style={{ ...INPUT_STYLE, paddingLeft: 30 }}
+            />
+          </div>
+        </div>
+      </div>
 
       {milestoneActionError && (
-        <div className="card" style={{ padding: 12, marginBottom: 12 }}>
-          <p style={{ margin: 0, fontSize: 13, color: "var(--accent-red)" }}>{milestoneActionError}</p>
+        <div className="feedback-note feedback-note--error" style={{ marginBottom: 12 }}>
+          {milestoneActionError}
         </div>
       )}
 
@@ -542,247 +634,159 @@ export default function ProjectMilestoneSection({ projectId }: ProjectMilestoneS
         <div className="card empty-state">
           <p>加载中...</p>
         </div>
-      ) : milestonesError ? (
+      ) : milestonesError && milestones.length === 0 ? (
         <div className="card empty-state">
           <p>项目里程碑加载失败</p>
+          <div className="empty-actions">
+            <button type="button" className="btn btn-secondary" onClick={() => void fetchMilestones()}>
+              重试
+            </button>
+          </div>
         </div>
-      ) : milestones.length === 0 ? (
+      ) : milestones.length === 0 && !showMilestoneCreateForm ? (
         <div className="card empty-state">
           <p>可补充下一关键节点、目标日期和负责人，便于判断项目节奏。</p>
         </div>
-      ) : filteredMilestones.length === 0 ? (
-        <div className="card empty-state">
-          <p>当前筛选条件下暂无项目里程碑</p>
-        </div>
       ) : (
-        <div style={{ display: "grid", gap: 12 }}>
-          {displayedMilestones.map((milestone) => {
-            const isEditingMilestone = editingMilestoneId === milestone.id;
-            const isDeletingMilestone = deletingMilestoneId === milestone.id;
-            const isClosedMilestone = isMilestoneClosed(milestone);
-            const isRiskMilestone = isMilestoneRisk(milestone, today);
+        <div className="card" style={{ padding: 0, overflowX: "auto" }}>
+          <table style={{ width: "100%", borderCollapse: "collapse", minWidth: 1180, fontSize: 13 }}>
+            <thead>
+              <tr>
+                <th style={{ ...TABLE_HEAD_CELL_STYLE, width: 52, textAlign: "center" }}>风险</th>
+                <th style={TABLE_HEAD_CELL_STYLE}>节点名称</th>
+                <th style={TABLE_HEAD_CELL_STYLE}>计划类型</th>
+                <th style={TABLE_HEAD_CELL_STYLE}>状态</th>
+                <th style={TABLE_HEAD_CELL_STYLE}>目标日期</th>
+                <th style={TABLE_HEAD_CELL_STYLE}>实际日期</th>
+                <th style={TABLE_HEAD_CELL_STYLE}>负责人</th>
+                <th style={TABLE_HEAD_CELL_STYLE}>说明</th>
+                <th style={TABLE_HEAD_CELL_STYLE}>链接</th>
+                <th style={{ ...TABLE_HEAD_CELL_STYLE, width: 82 }}>排序</th>
+                <th style={{ ...TABLE_HEAD_CELL_STYLE, width: 132 }}>操作</th>
+              </tr>
+            </thead>
+            <tbody>
+              {showMilestoneCreateForm && (
+                <tr>
+                  <td style={{ ...TABLE_CELL_STYLE, textAlign: "center", color: "var(--text-tertiary)" }}>新</td>
+                  <MilestoneFormCells
+                    form={milestoneCreateForm}
+                    setForm={setMilestoneCreateForm}
+                    saving={milestoneCreateSaving}
+                    error={milestoneCreateError}
+                    onSave={() => void handleMilestoneCreateSubmit()}
+                    onCancel={closeMilestoneCreateForm}
+                  />
+                </tr>
+              )}
 
-            if (isEditingMilestone) {
-              return (
-                <form key={milestone.id} onSubmit={(e) => handleMilestoneEditSubmit(e, milestone.id)} className="card" style={{ padding: 16 }}>
-                  <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
-                    <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(220px, 1fr))", gap: 12 }}>
-                      <div>
-                        <label style={{ display: "block", fontSize: 13, fontWeight: 500, color: "var(--text-primary)", marginBottom: 6 }}>
-                          名称 *
-                        </label>
-                        <input
-                          type="text"
-                          value={milestoneEditForm.title}
-                          onChange={(e) => setMilestoneEditForm((prev) => ({ ...prev, title: e.target.value }))}
-                          style={{ width: "100%", padding: "10px 12px", borderRadius: 6, border: "1px solid var(--border-primary)", background: "var(--bg-secondary)", color: "var(--text-primary)", fontSize: 14 }}
+              {displayedMilestones.length === 0 && !showMilestoneCreateForm ? (
+                <tr>
+                  <td colSpan={11} style={{ padding: 22, textAlign: "center", color: "var(--text-secondary)" }}>
+                    当前筛选/查询条件下暂无项目里程碑
+                  </td>
+                </tr>
+              ) : (
+                displayedMilestones.map((milestone) => {
+                  const isEditingMilestone = editingMilestoneId === milestone.id;
+                  const isDeletingMilestone = deletingMilestoneId === milestone.id;
+                  const isRiskMilestone = isMilestoneRisk(milestone, today);
+
+                  if (isEditingMilestone) {
+                    return (
+                      <tr key={milestone.id} style={{ background: "var(--bg-secondary)" }}>
+                        <td style={{ ...TABLE_CELL_STYLE, textAlign: "center" }}>
+                          <MilestoneStatusMark milestone={milestone} today={today} />
+                        </td>
+                        <MilestoneFormCells
+                          form={milestoneEditForm}
+                          setForm={setMilestoneEditForm}
+                          saving={milestoneEditSaving}
+                          error={milestoneEditError}
+                          onSave={() => void handleMilestoneEditSubmit(milestone.id)}
+                          onCancel={closeMilestoneEditForm}
                         />
-                      </div>
-                      <div>
-                        <label style={{ display: "block", fontSize: 13, fontWeight: 500, color: "var(--text-primary)", marginBottom: 6 }}>
-                          状态
-                        </label>
-                        <select
-                          value={milestoneEditForm.status}
-                          onChange={(e) => setMilestoneEditForm((prev) => ({ ...prev, status: e.target.value }))}
-                          style={{ width: "100%", padding: "10px 12px", borderRadius: 6, border: "1px solid var(--border-primary)", background: "var(--bg-secondary)", color: "var(--text-primary)", fontSize: 14 }}
-                        >
-                          {PROJECT_MILESTONE_STATUSES.map((status) => (
-                            <option key={status.value} value={status.value}>
-                              {status.label}
-                            </option>
-                          ))}
-                        </select>
-                      </div>
-                      <div>
-                        <label style={{ display: "block", fontSize: 13, fontWeight: 500, color: "var(--text-primary)", marginBottom: 6 }}>
-                          计划类型
-                        </label>
-                        <select
-                          value={milestoneEditForm.planType}
-                          onChange={(e) => setMilestoneEditForm((prev) => ({ ...prev, planType: e.target.value }))}
-                          style={{ width: "100%", padding: "10px 12px", borderRadius: 6, border: "1px solid var(--border-primary)", background: "var(--bg-secondary)", color: "var(--text-primary)", fontSize: 14 }}
-                        >
-                          {PROJECT_PLAN_TYPES.map((planType) => (
-                            <option key={planType.value} value={planType.value}>
-                              {planType.label}
-                            </option>
-                          ))}
-                        </select>
-                      </div>
-                    </div>
+                      </tr>
+                    );
+                  }
 
-                    <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(180px, 1fr))", gap: 12 }}>
-                      <div>
-                        <label style={{ display: "block", fontSize: 13, fontWeight: 500, color: "var(--text-primary)", marginBottom: 6 }}>
-                          目标日期
-                        </label>
-                        <input
-                          type="date"
-                          value={milestoneEditForm.targetDate}
-                          onChange={(e) => setMilestoneEditForm((prev) => ({ ...prev, targetDate: e.target.value }))}
-                          style={{ width: "100%", padding: "10px 12px", borderRadius: 6, border: "1px solid var(--border-primary)", background: "var(--bg-secondary)", color: "var(--text-primary)", fontSize: 14 }}
-                        />
-                      </div>
-                      <div>
-                        <label style={{ display: "block", fontSize: 13, fontWeight: 500, color: "var(--text-primary)", marginBottom: 6 }}>
-                          实际日期
-                        </label>
-                        <input
-                          type="date"
-                          value={milestoneEditForm.actualDate}
-                          onChange={(e) => setMilestoneEditForm((prev) => ({ ...prev, actualDate: e.target.value }))}
-                          style={{ width: "100%", padding: "10px 12px", borderRadius: 6, border: "1px solid var(--border-primary)", background: "var(--bg-secondary)", color: "var(--text-primary)", fontSize: 14 }}
-                        />
-                      </div>
-                      <div>
-                        <label style={{ display: "block", fontSize: 13, fontWeight: 500, color: "var(--text-primary)", marginBottom: 6 }}>
-                          负责人
-                        </label>
-                        <input
-                          type="text"
-                          value={milestoneEditForm.owner}
-                          onChange={(e) => setMilestoneEditForm((prev) => ({ ...prev, owner: e.target.value }))}
-                          style={{ width: "100%", padding: "10px 12px", borderRadius: 6, border: "1px solid var(--border-primary)", background: "var(--bg-secondary)", color: "var(--text-primary)", fontSize: 14 }}
-                        />
-                      </div>
-                      <div>
-                        <label style={{ display: "block", fontSize: 13, fontWeight: 500, color: "var(--text-primary)", marginBottom: 6 }}>
-                          排序
-                        </label>
-                        <input
-                          type="number"
-                          value={milestoneEditForm.sortOrder}
-                          onChange={(e) => setMilestoneEditForm((prev) => ({ ...prev, sortOrder: e.target.value }))}
-                          style={{ width: "100%", padding: "10px 12px", borderRadius: 6, border: "1px solid var(--border-primary)", background: "var(--bg-secondary)", color: "var(--text-primary)", fontSize: 14 }}
-                        />
-                      </div>
-                    </div>
-
-                    <div>
-                      <label style={{ display: "block", fontSize: 13, fontWeight: 500, color: "var(--text-primary)", marginBottom: 6 }}>
-                        关联链接
-                      </label>
-                      <input
-                        type="url"
-                        value={milestoneEditForm.sourceUrl}
-                        onChange={(e) => setMilestoneEditForm((prev) => ({ ...prev, sourceUrl: e.target.value }))}
-                        style={{ width: "100%", padding: "10px 12px", borderRadius: 6, border: "1px solid var(--border-primary)", background: "var(--bg-secondary)", color: "var(--text-primary)", fontSize: 14 }}
-                      />
-                    </div>
-
-                    <div>
-                      <label style={{ display: "block", fontSize: 13, fontWeight: 500, color: "var(--text-primary)", marginBottom: 6 }}>
-                        说明
-                      </label>
-                      <textarea
-                        value={milestoneEditForm.description}
-                        onChange={(e) => setMilestoneEditForm((prev) => ({ ...prev, description: e.target.value }))}
-                        rows={3}
-                        style={{ width: "100%", padding: "10px 12px", borderRadius: 6, border: "1px solid var(--border-primary)", background: "var(--bg-secondary)", color: "var(--text-primary)", fontSize: 14, resize: "vertical" }}
-                      />
-                    </div>
-
-                    {milestoneEditError && (
-                      <p style={{ margin: 0, color: "var(--accent-red)", fontSize: 13 }}>
-                        {milestoneEditError}
-                      </p>
-                    )}
-
-                    <div style={{ display: "flex", gap: 12, justifyContent: "flex-end" }}>
-                      <button
-                        type="button"
-                        onClick={closeMilestoneEditForm}
-                        className="btn btn-secondary"
-                        disabled={milestoneEditSaving}
+                  return (
+                    <tr key={milestone.id}>
+                      <td style={{ ...TABLE_CELL_STYLE, textAlign: "center" }}>
+                        <MilestoneStatusMark milestone={milestone} today={today} />
+                      </td>
+                      <td style={{ ...TABLE_CELL_STYLE, fontWeight: 650, color: "var(--text-primary)", whiteSpace: "nowrap" }}>
+                        {milestone.title}
+                        {isRiskMilestone && <span style={{ marginLeft: 6, color: "var(--accent-red)", fontSize: 12 }}>需关注</span>}
+                      </td>
+                      <td style={{ ...TABLE_CELL_STYLE, color: "var(--text-secondary)", whiteSpace: "nowrap" }}>
+                        {PROJECT_PLAN_TYPE_LABELS[milestone.planType || "milestone"] || PROJECT_PLAN_TYPE_LABELS.milestone}
+                      </td>
+                      <td style={{ ...TABLE_CELL_STYLE, color: "var(--text-secondary)", whiteSpace: "nowrap" }}>
+                        {PROJECT_MILESTONE_STATUS_LABELS[milestone.status] || milestone.status}
+                      </td>
+                      <td style={{ ...TABLE_CELL_STYLE, color: isRiskMilestone ? "var(--accent-red)" : "var(--text-secondary)", whiteSpace: "nowrap" }}>
+                        {milestone.targetDate ? formatDate(milestone.targetDate) : "-"}
+                      </td>
+                      <td style={{ ...TABLE_CELL_STYLE, color: "var(--text-secondary)", whiteSpace: "nowrap" }}>
+                        {milestone.actualDate ? formatDate(milestone.actualDate) : "-"}
+                      </td>
+                      <td style={{ ...TABLE_CELL_STYLE, color: "var(--text-secondary)", whiteSpace: "nowrap" }}>
+                        {milestone.owner || "-"}
+                      </td>
+                      <td
+                        style={{
+                          ...TABLE_CELL_STYLE,
+                          color: milestone.description ? "var(--text-secondary)" : "var(--text-tertiary)",
+                          maxWidth: 320,
+                          overflow: "hidden",
+                          textOverflow: "ellipsis",
+                          whiteSpace: "nowrap",
+                        }}
+                        title={milestone.description || ""}
                       >
-                        取消
-                      </button>
-                      <button type="submit" className="btn btn-primary" disabled={milestoneEditSaving}>
-                        {milestoneEditSaving ? "保存中..." : "保存"}
-                      </button>
-                    </div>
-                  </div>
-                </form>
-              );
-            }
-
-              return (
-                <div
-                  key={milestone.id}
-                  className={`card project-milestone-card ${isRiskMilestone ? "project-milestone-card--risk" : ""} ${isClosedMilestone ? "project-milestone-card--closed" : ""}`}
-                >
-                  <div className="project-milestone-card__header">
-                    <div style={{ display: "flex", flexDirection: "column", gap: 8, minWidth: 0, flex: 1 }}>
-                      <div className="project-milestone-card__title-row">
-                        <strong className="project-milestone-card__title">{milestone.title}</strong>
-                        {isRiskMilestone && (
-                          <span className="entity-pill entity-pill--danger">需要关注</span>
+                        {milestone.description || "-"}
+                      </td>
+                      <td style={{ ...TABLE_CELL_STYLE, whiteSpace: "nowrap" }}>
+                        {milestone.sourceUrl ? (
+                          <a href={milestone.sourceUrl} target="_blank" rel="noopener noreferrer" className="project-milestone-card__link">
+                            打开
+                          </a>
+                        ) : (
+                          <span style={{ color: "var(--text-tertiary)" }}>-</span>
                         )}
-                        <span className="entity-pill entity-pill--muted">
-                          {PROJECT_MILESTONE_STATUS_LABELS[milestone.status] || milestone.status}
-                        </span>
-                        <span className="entity-pill entity-pill--muted">
-                          {PROJECT_PLAN_TYPE_LABELS[milestone.planType || "milestone"] || PROJECT_PLAN_TYPE_LABELS.milestone}
-                        </span>
-                      </div>
-
-                      <div className="project-milestone-card__meta">
-                        <span>目标日期：{milestone.targetDate ? formatDate(milestone.targetDate) : "-"}</span>
-                        <span>实际日期：{milestone.actualDate ? formatDate(milestone.actualDate) : "-"}</span>
-                        <span>负责人：{milestone.owner || "-"}</span>
-                      </div>
-
-                      {milestone.description && (
-                        <p style={{ margin: 0, color: "var(--text-secondary)", fontSize: 13, lineHeight: 1.65, whiteSpace: "pre-wrap", wordBreak: "break-word" }}>
-                          {milestone.description}
-                        </p>
-                      )}
-                    </div>
-
-                    <div style={{ display: "flex", gap: 8, flexWrap: "wrap", minWidth: 0 }}>
-                      <button
-                        type="button"
-                        onClick={() => openMilestoneEditForm(milestone)}
-                        className="btn btn-secondary"
-                        disabled={isDeletingMilestone}
-                      >
-                        <Icon name="edit" size={14} />
-                        编辑
-                      </button>
-                      <button
-                        type="button"
-                        onClick={() => handleMilestoneDelete(milestone.id)}
-                        className="btn btn-secondary"
-                        disabled={isDeletingMilestone}
-                        style={{ color: "var(--accent-red)" }}
-                      >
-                        <Icon name="trash-2" size={14} />
-                        {isDeletingMilestone ? "删除中..." : "删除"}
-                      </button>
-                    </div>
-                  </div>
-
-                  {milestone.sourceUrl ? (
-                    <div style={{ display: "flex", flexDirection: "column", gap: 6, minWidth: 0 }}>
-                      <a
-                        href={milestone.sourceUrl}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        className="project-milestone-card__link"
-                      >
-                        打开关联链接
-                      </a>
-                      <div style={{ minWidth: 0, color: "var(--text-secondary)", fontSize: 13, wordBreak: "break-word", overflowWrap: "anywhere" }}>
-                        {milestone.sourceUrl}
-                      </div>
-                    </div>
-                  ) : (
-                    <div style={{ fontSize: 13, color: "var(--text-secondary)" }}>关联链接：-</div>
-                  )}
-                </div>
-              );
-            })}
+                      </td>
+                      <td style={{ ...TABLE_CELL_STYLE, color: "var(--text-tertiary)", whiteSpace: "nowrap" }}>
+                        {milestone.sortOrder}
+                      </td>
+                      <td style={ACTION_CELL_STYLE}>
+                        <div style={{ display: "flex", gap: 6 }}>
+                          <button
+                            type="button"
+                            onClick={() => openMilestoneEditForm(milestone)}
+                            className="btn btn-secondary"
+                            disabled={isDeletingMilestone || milestoneEditSaving}
+                            style={{ padding: "6px 9px" }}
+                          >
+                            编辑
+                          </button>
+                          <button
+                            type="button"
+                            onClick={() => handleMilestoneDelete(milestone.id)}
+                            className="btn btn-secondary"
+                            disabled={isDeletingMilestone}
+                            style={{ padding: "6px 9px", color: "var(--accent-red)" }}
+                          >
+                            {isDeletingMilestone ? "删除中" : "删除"}
+                          </button>
+                        </div>
+                      </td>
+                    </tr>
+                  );
+                })
+              )}
+            </tbody>
+          </table>
         </div>
       )}
     </section>

@@ -8,6 +8,7 @@ import Icon from "@/components/Icon";
 import PageLoadingState from "@/components/PageLoadingState";
 import { WORK_LOG_TYPES, SOURCES } from "@/lib/constants";
 import { buildLogsQueryString } from "@/lib/filterLinks";
+import { getLocalDateString } from "@/lib/utils";
 
 type LogFilters = {
   startDate: string;
@@ -72,6 +73,7 @@ function readLogFilters(searchParams: URLSearchParams): LogFilters {
 export default function LogsPage() {
   const pathname = usePathname();
   const router = useRouter();
+  const today = getLocalDateString();
   const [logs, setLogs] = useState<WorkLog[]>([]);
   const [total, setTotal] = useState(0);
   const [page, setPage] = useState(1);
@@ -137,6 +139,11 @@ export default function LogsPage() {
     setPage(1);
   };
 
+  const applyQuickView = (nextFilters: Partial<LogFilters>) => {
+    setFilters({ ...DEFAULT_FILTERS, ...nextFilters });
+    setPage(1);
+  };
+
   const copyMarkdown = () => {
     let md = "# 工作日志列表\n\n";
     logs.forEach((log) => {
@@ -150,7 +157,7 @@ export default function LogsPage() {
   };
 
   return (
-    <div className="command-list-page">
+    <div className="command-list-page log-list-page">
       <div className="command-page-header">
         <div>
           <span className="section-eyebrow">SIGNAL ARCHIVE</span>
@@ -163,8 +170,45 @@ export default function LogsPage() {
         </div>
       </div>
 
-      <div className="card filter-panel">
-        <div className="filter-panel-label"><Icon name="search" size={14} />日志筛选</div>
+      <div className="card log-quick-view-panel">
+        <div className="log-quick-view-head">
+          <span>快速视图</span>
+          <strong>先回看需要支撑汇报和闭环的事实</strong>
+        </div>
+        <div className="log-quick-view-actions">
+          <button type="button" onClick={() => applyQuickView({ startDate: today, endDate: today })} className="btn btn-secondary">
+            今日日志
+          </button>
+          <button type="button" onClick={() => applyQuickView({ type: "risk" })} className="btn btn-secondary">
+            风险阻塞
+          </button>
+          <button type="button" onClick={() => applyQuickView({ startDate: today, endDate: today, type: "decision" })} className="btn btn-secondary">
+            决策
+          </button>
+          <button type="button" onClick={() => applyQuickView({ reportable: "true" })} className="btn btn-secondary">
+            可汇报
+          </button>
+          <button type="button" onClick={() => applyQuickView({ hasItem: "false" })} className="btn btn-secondary">
+            未关联事项
+          </button>
+          {filters.projectId || filters.project ? (
+            <button
+              type="button"
+              onClick={() => applyQuickView({ projectId: filters.projectId, project: filters.project })}
+              className="btn btn-secondary"
+            >
+              项目日志
+            </button>
+          ) : (
+            <Link href="/projects" className="btn btn-secondary">
+              项目日志
+            </Link>
+          )}
+        </div>
+      </div>
+
+      <div className="card filter-panel log-filter-panel">
+        <div className="filter-panel-label"><Icon name="search" size={14} />高级筛选</div>
         {filters.projectId && (
           <div className="filter-scope-note">
             当前项目筛选已启用

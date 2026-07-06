@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react";
 import Link from "next/link";
+import Icon from "@/components/Icon";
 
 interface ToolLink {
   id: string;
@@ -235,8 +236,11 @@ export default function ToolSettingsPage() {
     }
   };
 
+  const enabledTools = toolLinks.filter((tool) => tool.enabled).sort((a, b) => a.sortOrder - b.sortOrder);
+  const disabledToolCount = toolLinks.length - enabledTools.length;
+
   return (
-    <div className="page-shell auxiliary-page tool-settings-page">
+    <div className="page-shell auxiliary-page tool-settings-page tool-console-page">
       <div className="command-page-header tool-settings-header">
         <div>
           <span className="section-eyebrow">TOOLS / SETUP</span>
@@ -249,6 +253,41 @@ export default function ToolSettingsPage() {
           <Link href="/" className="btn btn-secondary btn-sm">
             返回工作台
           </Link>
+        </div>
+      </div>
+
+      <div className="card cockpit-card tool-console-summary">
+        <div className="cockpit-card-head">
+          <div>
+            <span className="section-eyebrow">TOOL CONSOLE</span>
+            <h2>工具入口管理台</h2>
+          </div>
+          <span className="section-count">只维护跳转链接</span>
+        </div>
+        <div className="tool-console-grid">
+          <div className="tool-console-metrics">
+            <span className="entity-pill entity-pill--success">启用 {enabledTools.length}</span>
+            <span className="entity-pill entity-pill--muted">停用 {disabledToolCount}</span>
+            <span className="entity-pill entity-pill--muted">排序越小越靠前</span>
+          </div>
+          <div className="tool-menu-preview">
+            <div className="tool-menu-preview-head">
+              <Icon name="settings" size={15} />
+              <span>右上角菜单预览</span>
+            </div>
+            <div className="tool-menu-preview-list">
+              {enabledTools.length === 0 ? (
+                <span className="tool-menu-preview-empty">启用工具后会出现在这里</span>
+              ) : (
+                enabledTools.slice(0, 5).map((tool) => (
+                  <a key={tool.id} href={tool.url} target="_blank" rel="noopener noreferrer">
+                    <span>{tool.name}</span>
+                    <small>{tool.sortOrder}</small>
+                  </a>
+                ))
+              )}
+            </div>
+          </div>
         </div>
       </div>
 

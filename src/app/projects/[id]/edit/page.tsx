@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, useCallback, useRef } from "react";
+import { useState, useEffect, useCallback, useMemo, useRef } from "react";
 import { useParams } from "next/navigation";
 import Link from "next/link";
 import Icon from "@/components/Icon";
@@ -11,6 +11,33 @@ import {
   HEALTH_OPTIONS,
 } from "@/lib/constants";
 
+const EMPTY_PROJECT_FORM = {
+  name: "",
+  code: "",
+  description: "",
+  type: "project",
+  status: "active",
+  stage: "",
+  health: "unknown",
+  owner: "",
+  pm: "",
+  startDate: "",
+  targetDate: "",
+  releaseDate: "",
+  currentSummary: "",
+  nextMilestone: "",
+  nextAction: "",
+  sourceSystem: "",
+  sourceId: "",
+  sourceUrl: "",
+  tags: "",
+};
+
+type ProjectFormState = typeof EMPTY_PROJECT_FORM;
+type ProjectFormField = keyof ProjectFormState;
+
+const PROJECT_FORM_FIELDS = Object.keys(EMPTY_PROJECT_FORM) as ProjectFormField[];
+
 export default function EditProjectPage() {
   const params = useParams();
   const id = params.id as string;
@@ -18,34 +45,15 @@ export default function EditProjectPage() {
   const submitButtonRef = useRef<HTMLButtonElement>(null);
   const [loading, setLoading] = useState(false);
   const [fetching, setFetching] = useState(true);
-  const [form, setForm] = useState({
-    name: "",
-    code: "",
-    description: "",
-    type: "project",
-    status: "active",
-    stage: "",
-    health: "unknown",
-    owner: "",
-    pm: "",
-    startDate: "",
-    targetDate: "",
-    releaseDate: "",
-    currentSummary: "",
-    nextMilestone: "",
-    nextAction: "",
-    sourceSystem: "",
-    sourceId: "",
-    sourceUrl: "",
-    tags: "",
-  });
+  const [form, setForm] = useState<ProjectFormState>(EMPTY_PROJECT_FORM);
+  const [initialForm, setInitialForm] = useState<ProjectFormState>(EMPTY_PROJECT_FORM);
 
   const fetchProject = useCallback(async () => {
     try {
       const res = await fetch(`/api/projects/${id}`);
       if (res.ok) {
         const data = await res.json();
-        setForm({
+        const nextForm = {
           name: data.name || "",
           code: data.code || "",
           description: data.description || "",
@@ -65,7 +73,9 @@ export default function EditProjectPage() {
           sourceId: data.sourceId || "",
           sourceUrl: data.sourceUrl || "",
           tags: data.tags || "",
-        });
+        };
+        setForm(nextForm);
+        setInitialForm(nextForm);
       }
     } catch (error) {
       console.error("Error fetching project:", error);
@@ -77,6 +87,14 @@ export default function EditProjectPage() {
   useEffect(() => {
     fetchProject();
   }, [fetchProject]);
+
+  const changedFields = useMemo(
+    () => PROJECT_FORM_FIELDS.filter((field) => form[field] !== initialForm[field]),
+    [form, initialForm]
+  );
+  const hasUnsavedChanges = changedFields.length > 0;
+  const getFieldClassName = (field: ProjectFormField) =>
+    `form-field-control${form[field] !== initialForm[field] ? " project-edit-dirty-control" : ""}`;
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -101,6 +119,7 @@ export default function EditProjectPage() {
       });
 
       if (res.ok) {
+        setInitialForm(form);
         window.location.assign(`/projects/${id}`);
         return;
       }
@@ -110,7 +129,7 @@ export default function EditProjectPage() {
       submittingRef.current = false;
       if (submitButtonRef.current) {
         submitButtonRef.current.disabled = false;
-        submitButtonRef.current.textContent = "保存修改";
+        submitButtonRef.current.textContent = hasUnsavedChanges ? "保存未保存修改" : "保存修改";
       }
       setLoading(false);
     } catch (error) {
@@ -119,7 +138,7 @@ export default function EditProjectPage() {
       submittingRef.current = false;
       if (submitButtonRef.current) {
         submitButtonRef.current.disabled = false;
-        submitButtonRef.current.textContent = "保存修改";
+        submitButtonRef.current.textContent = hasUnsavedChanges ? "保存未保存修改" : "保存修改";
       }
       setLoading(false);
     }
@@ -141,12 +160,16 @@ export default function EditProjectPage() {
         </Link>
       </div>
 
-      <h1 className="project-edit-title">编辑项目</h1>
+      <div className="project-edit-title-row">
+        <h1 className="project-edit-title">编辑项目</h1>
+        <span className={`project-edit-state-chip ${hasUnsavedChanges ? "project-edit-state-chip--dirty" : ""}`}>
+          {hasUnsavedChanges ? `有 ${changedFields.length} 项未保存` : "无未保存修改"}
+        </span>
+      </div>
 
       <form onSubmit={handleSubmit} noValidate>
         <div className="card form-card project-edit-card project-command-form-card">
           <div className="command-form-stack">
-            {/* Name & Code */}
             <div className="project-form-grid-name project-edit-block project-edit-block-name">
               <div>
                 <label className="form-field-label">项目名称 *</label>
@@ -155,7 +178,7 @@ export default function EditProjectPage() {
                   value={form.name}
                   onChange={(e) => setForm({ ...form, name: e.target.value })}
                   required
-                  className="form-field-control"
+                  className={getFieldClassName("name")}
                 />
               </div>
               <div>
@@ -164,27 +187,25 @@ export default function EditProjectPage() {
                   type="text"
                   value={form.code}
                   onChange={(e) => setForm({ ...form, code: e.target.value })}
-                  className="form-field-control"
+                  className={getFieldClassName("code")}
                 />
               </div>
             </div>
 
-            {/* Description */}
             <div className="project-edit-block project-edit-block-description">
               <label className="form-field-label">描述</label>
               <textarea
                 value={form.description}
                 onChange={(e) => setForm({ ...form, description: e.target.value })}
                 rows={3}
-                className="form-field-control form-field-textarea"
+                className={`${getFieldClassName("description")} form-field-textarea`}
               />
             </div>
 
-            {/* Type, Status, Stage */}
             <div className="project-form-grid-3 project-edit-block project-edit-block-status">
               <div>
                 <label className="form-field-label">类型</label>
-                <select value={form.type} onChange={(e) => setForm({ ...form, type: e.target.value })} className="form-field-control">
+                <select value={form.type} onChange={(e) => setForm({ ...form, type: e.target.value })} className={getFieldClassName("type")}>
                   {PROJECT_TYPES.map((t) => (
                     <option key={t.value} value={t.value}>{t.label}</option>
                   ))}
@@ -192,7 +213,7 @@ export default function EditProjectPage() {
               </div>
               <div>
                 <label className="form-field-label">状态</label>
-                <select value={form.status} onChange={(e) => setForm({ ...form, status: e.target.value })} className="form-field-control">
+                <select value={form.status} onChange={(e) => setForm({ ...form, status: e.target.value })} className={getFieldClassName("status")}>
                   {PROJECT_STATUSES.map((s) => (
                     <option key={s.value} value={s.value}>{s.label}</option>
                   ))}
@@ -200,7 +221,7 @@ export default function EditProjectPage() {
               </div>
               <div>
                 <label className="form-field-label">阶段</label>
-                <select value={form.stage} onChange={(e) => setForm({ ...form, stage: e.target.value })} className="form-field-control">
+                <select value={form.stage} onChange={(e) => setForm({ ...form, stage: e.target.value })} className={getFieldClassName("stage")}>
                   <option value="">选择阶段</option>
                   {PROJECT_STAGES.map((s) => (
                     <option key={s.value} value={s.value}>{s.label}</option>
@@ -209,11 +230,10 @@ export default function EditProjectPage() {
               </div>
             </div>
 
-            {/* Health, Owner, PM */}
             <div className="project-form-grid-3 project-edit-block project-edit-block-owner">
               <div>
                 <label className="form-field-label">健康度</label>
-                <select value={form.health} onChange={(e) => setForm({ ...form, health: e.target.value })} className="form-field-control">
+                <select value={form.health} onChange={(e) => setForm({ ...form, health: e.target.value })} className={getFieldClassName("health")}>
                   {HEALTH_OPTIONS.map((h) => (
                     <option key={h.value} value={h.value}>{h.label}</option>
                   ))}
@@ -225,7 +245,7 @@ export default function EditProjectPage() {
                   type="text"
                   value={form.owner}
                   onChange={(e) => setForm({ ...form, owner: e.target.value })}
-                  className="form-field-control"
+                  className={getFieldClassName("owner")}
                 />
               </div>
               <div>
@@ -234,35 +254,33 @@ export default function EditProjectPage() {
                   type="text"
                   value={form.pm}
                   onChange={(e) => setForm({ ...form, pm: e.target.value })}
-                  className="form-field-control"
+                  className={getFieldClassName("pm")}
                 />
               </div>
             </div>
 
-            {/* Dates */}
             <div className="project-form-grid-3 project-edit-block project-edit-block-dates">
               <div>
                 <label className="form-field-label">开始日期</label>
-                <input type="date" value={form.startDate} onChange={(e) => setForm({ ...form, startDate: e.target.value })} className="form-field-control" />
+                <input type="date" value={form.startDate} onChange={(e) => setForm({ ...form, startDate: e.target.value })} className={getFieldClassName("startDate")} />
               </div>
               <div>
                 <label className="form-field-label">目标日期</label>
-                <input type="date" value={form.targetDate} onChange={(e) => setForm({ ...form, targetDate: e.target.value })} className="form-field-control" />
+                <input type="date" value={form.targetDate} onChange={(e) => setForm({ ...form, targetDate: e.target.value })} className={getFieldClassName("targetDate")} />
               </div>
               <div>
                 <label className="form-field-label">发布日期</label>
-                <input type="date" value={form.releaseDate} onChange={(e) => setForm({ ...form, releaseDate: e.target.value })} className="form-field-control" />
+                <input type="date" value={form.releaseDate} onChange={(e) => setForm({ ...form, releaseDate: e.target.value })} className={getFieldClassName("releaseDate")} />
               </div>
             </div>
 
-            {/* Summary & Milestone */}
             <div className="project-edit-block project-edit-block-summary">
               <label className="form-field-label">当前摘要</label>
               <textarea
                 value={form.currentSummary}
                 onChange={(e) => setForm({ ...form, currentSummary: e.target.value })}
                 rows={3}
-                className="form-field-control form-field-textarea"
+                className={`${getFieldClassName("currentSummary")} form-field-textarea`}
               />
             </div>
 
@@ -273,7 +291,7 @@ export default function EditProjectPage() {
                   type="text"
                   value={form.nextMilestone}
                   onChange={(e) => setForm({ ...form, nextMilestone: e.target.value })}
-                  className="form-field-control"
+                  className={getFieldClassName("nextMilestone")}
                 />
               </div>
               <div>
@@ -282,12 +300,11 @@ export default function EditProjectPage() {
                   type="text"
                   value={form.nextAction}
                   onChange={(e) => setForm({ ...form, nextAction: e.target.value })}
-                  className="form-field-control"
+                  className={getFieldClassName("nextAction")}
                 />
               </div>
             </div>
 
-            {/* Source */}
             <div className="project-form-grid-3 project-edit-block project-edit-block-source">
               <div>
                 <label className="form-field-label">来源系统</label>
@@ -295,7 +312,7 @@ export default function EditProjectPage() {
                   type="text"
                   value={form.sourceSystem}
                   onChange={(e) => setForm({ ...form, sourceSystem: e.target.value })}
-                  className="form-field-control"
+                  className={getFieldClassName("sourceSystem")}
                 />
               </div>
               <div>
@@ -304,7 +321,7 @@ export default function EditProjectPage() {
                   type="text"
                   value={form.sourceId}
                   onChange={(e) => setForm({ ...form, sourceId: e.target.value })}
-                  className="form-field-control"
+                  className={getFieldClassName("sourceId")}
                 />
               </div>
               <div>
@@ -313,30 +330,33 @@ export default function EditProjectPage() {
                   type="text"
                   value={form.sourceUrl}
                   onChange={(e) => setForm({ ...form, sourceUrl: e.target.value })}
-                  className="form-field-control"
+                  className={getFieldClassName("sourceUrl")}
                 />
               </div>
             </div>
 
-            {/* Tags */}
             <div className="project-edit-block project-edit-block-tags">
               <label className="form-field-label">标签</label>
               <input
                 type="text"
                 value={form.tags}
                 onChange={(e) => setForm({ ...form, tags: e.target.value })}
-                className="form-field-control"
+                className={getFieldClassName("tags")}
               />
             </div>
 
-            {/* Buttons */}
-            <div className="field-actions form-footer project-edit-block project-edit-block-actions">
-              <Link href={`/projects/${id}`} className="btn btn-secondary">
-                取消
-              </Link>
-              <button ref={submitButtonRef} type="submit" disabled={loading} className="btn btn-primary">
-                {loading ? "保存中..." : "保存修改"}
-              </button>
+            <div className={`field-actions form-footer project-edit-block project-edit-block-actions ${hasUnsavedChanges ? "project-edit-actions--dirty" : ""}`}>
+              <span className="project-edit-save-hint">
+                {hasUnsavedChanges ? `检测到 ${changedFields.length} 项修改，保存后返回项目详情。` : "当前没有未保存修改。"}
+              </span>
+              <div className="command-form-actions-main">
+                <Link href={`/projects/${id}`} className="btn btn-secondary">
+                  取消
+                </Link>
+                <button ref={submitButtonRef} type="submit" disabled={loading} className={`btn btn-primary ${hasUnsavedChanges ? "project-edit-save-button--dirty" : ""}`}>
+                  {loading ? "保存中..." : hasUnsavedChanges ? "保存未保存修改" : "保存修改"}
+                </button>
+              </div>
             </div>
           </div>
         </div>

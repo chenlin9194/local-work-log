@@ -2,6 +2,7 @@ import { prisma } from "@/lib/prisma";
 import { getLocalDateString, formatTodayStr, getTodayRange } from "@/lib/utils";
 import { generateTodayMarkdown } from "@/lib/export";
 import CopyButton from "@/components/CopyButton";
+import Icon from "@/components/Icon";
 
 export const dynamic = "force-dynamic";
 
@@ -68,6 +69,25 @@ export default async function ExportTodayPage() {
     decisionLogs,
   });
 
+  const trackedItemMap = new Map(
+    [...closedItems, ...updatedItems, ...openHighPriorityItems, ...dueTodayItems, ...overdueItems].map((item) => [item.id, item])
+  );
+  const trackedItems = Array.from(trackedItemMap.values());
+  const factsCount = workLogs.length + trackedItems.length;
+  const riskSignalCount = riskAndBlockerLogs.length + overdueItems.length + openHighPriorityItems.length;
+  const missingOwnerCount = trackedItems.filter((item) => !item.owner?.trim()).length;
+  const missingNextActionCount = trackedItems.filter((item) => !item.nextAction?.trim()).length;
+  const logsWithTraceCount = workLogs.filter((log) => log.item || log.sourceUrl || log.project || log.module).length;
+  const traceRate = workLogs.length > 0 ? Math.round((logsWithTraceCount / workLogs.length) * 100) : 100;
+  const pendingCheckCount = missingOwnerCount + missingNextActionCount;
+
+  const exportChecks = [
+    { label: "事实规模", value: factsCount, note: `日志 ${workLogs.length} 条 / 事项 ${trackedItems.length} 项`, icon: "file-text", tone: "blue" },
+    { label: "风险信号", value: riskSignalCount, note: riskSignalCount > 0 ? "复制前优先确认风险表达" : "今日风险压力较低", icon: "alert-triangle", tone: riskSignalCount > 0 ? "danger" : "success" },
+    { label: "待确认缺口", value: pendingCheckCount, note: `责任人 ${missingOwnerCount} / 下一步 ${missingNextActionCount}`, icon: "flag", tone: pendingCheckCount > 0 ? "warning" : "success" },
+    { label: "可追溯性", value: `${traceRate}%`, note: "日志关联事项/链接/项目/模块覆盖", icon: "target", tone: traceRate < 60 ? "warning" : "success" },
+  ];
+
   return (
     <div className="page-shell auxiliary-page export-page">
       <div className="export-header command-page-header">
@@ -76,7 +96,30 @@ export default async function ExportTodayPage() {
           <h1>今日日报事实包</h1>
           <p>{formatTodayStr()}</p>
         </div>
-        <div className="page-header-actions">
+      </div>
+
+      <div className="card cockpit-card export-inspection-card">
+        <div className="cockpit-card-head">
+          <div>
+            <span className="section-eyebrow">PRE-COPY CHECK</span>
+            <h2>导出前检查</h2>
+          </div>
+          <span className="section-count">先判断事实够不够，再复制</span>
+        </div>
+        <div className="export-check-grid">
+          {exportChecks.map((check) => (
+            <div key={check.label} className={`export-check-item metric-${check.tone}`}>
+              <span className="export-check-icon"><Icon name={check.icon} size={16} /></span>
+              <div>
+                <strong>{check.value}</strong>
+                <span>{check.label}</span>
+                <small>{check.note}</small>
+              </div>
+            </div>
+          ))}
+        </div>
+        <div className="export-copy-row">
+          <span>Markdown 只承载已记录事实，外部工具只能整理表达。</span>
           <CopyButton text={md} label="复制今日日报事实包" />
         </div>
       </div>
@@ -96,7 +139,7 @@ export default async function ExportTodayPage() {
         <span className="export-ready-tag"><i />可复制事实材料</span>
       </div>
 
-      <div className="card export-preview">
+      <div className="card export-preview export-preview--secondary">
         <div className="export-preview-bar">
           <span><i className="preview-dot red" /><i className="preview-dot amber" /><i className="preview-dot green" /></span>
           <span>daily-facts.md</span>
