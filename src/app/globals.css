@@ -8228,3 +8228,266 @@ body,
     max-width: none !important;
   }
 }
+
+/* ===== Visual Consistency Pass ===== */
+.btn:not(.btn-sm) {
+  min-height: 36px !important;
+  padding: 8px 14px !important;
+  border-radius: var(--radius-md) !important;
+  font-size: 13px !important;
+  font-weight: 650 !important;
+  line-height: 1 !important;
+}
+
+.btn-primary,
+.hero-btn-primary {
+  color: #fff !important;
+  background: var(--accent-blue) !important;
+  border-color: color-mix(in srgb, var(--accent-blue) 82%, var(--border-primary)) !important;
+  box-shadow: 0 1px 2px rgba(37, 99, 235, 0.18) !important;
+}
+
+.btn-secondary,
+.hero-btn-secondary {
+  color: var(--text-primary) !important;
+  background: var(--bg-secondary) !important;
+  border-color: var(--border-primary) !important;
+  box-shadow: none !important;
+}
+
+.btn-ghost,
+.hero-btn-ghost {
+  color: var(--text-secondary) !important;
+  background: transparent !important;
+  border-color: var(--border-primary) !important;
+  box-shadow: none !important;
+}
+
+.btn-primary:hover,
+.hero-btn-primary:hover {
+  filter: brightness(1.04) !important;
+}
+
+.btn-secondary:hover,
+.btn-ghost:hover,
+.hero-btn-secondary:hover,
+.hero-btn-ghost:hover {
+  color: var(--text-primary) !important;
+  background: var(--bg-tertiary) !important;
+  border-color: var(--border-secondary) !important;
+}
+
+.btn-danger {
+  color: var(--accent-red) !important;
+  background: color-mix(in srgb, var(--accent-red-light) 52%, var(--bg-secondary)) !important;
+  border-color: color-mix(in srgb, var(--accent-red) 18%, var(--border-primary)) !important;
+  box-shadow: none !important;
+}
+
+.card,
+.cockpit-card,
+.filter-panel,
+.item-filter-panel,
+.log-filter-panel,
+.log-quick-view-panel,
+.item-quick-view-panel,
+.report-entry-card,
+.reports-shortcuts-card,
+.reports-boundary-card {
+  border-color: var(--border-primary) !important;
+  border-radius: var(--radius-lg) !important;
+  background: var(--bg-elevated) !important;
+  box-shadow: var(--shadow-sm) !important;
+}
+
+.dashboard-hero.command-banner,
+.command-banner {
+  border-color: var(--border-primary) !important;
+  border-radius: var(--radius-xl) !important;
+  color: var(--text-primary) !important;
+  background:
+    linear-gradient(135deg, color-mix(in srgb, var(--bg-secondary) 92%, var(--bg-accent)), var(--bg-secondary)) !important;
+  box-shadow: var(--shadow-sm) !important;
+}
+
+.command-banner::before,
+.command-banner::after,
+.command-banner .hero-orbit {
+  opacity: 0.08 !important;
+  box-shadow: none !important;
+}
+
+.command-banner h1 {
+  color: var(--text-primary) !important;
+}
+
+.command-banner .hero-subtitle,
+.command-banner .banner-judgement {
+  color: var(--text-secondary) !important;
+}
+
+.hero-actions {
+  gap: 8px !important;
+}
+
+.badge,
+.entity-pill {
+  min-height: 21px !important;
+  padding: 2px 8px !important;
+  border-radius: 999px !important;
+  font-size: 11px !important;
+  font-weight: 650 !important;
+  line-height: 1.25 !important;
+  letter-spacing: 0.01em !important;
+}
+
+.entity-pill--muted,
+.badge-other,
+.badge-p3 {
+  color: var(--text-secondary) !important;
+  background: var(--bg-tertiary) !important;
+  border-color: var(--border-primary) !important;
+}
+
+.stat-card-purple {
+  color: var(--text-secondary) !important;
+  border-color: var(--border-primary) !important;
+  background: color-mix(in srgb, var(--bg-secondary) 88%, var(--accent-indigo-light)) !important;
+}
+
+.stat-card-purple .stat-value,
+.stat-card-purple .stat-label,
+.stat-card-purple .stat-meta {
+  color: inherit !important;
+}
+
+.section-eyebrow,
+.stat-meta,
+.filter-panel-label {
+  color: var(--text-tertiary) !important;
+}
+
+[data-theme="dark"] .btn-primary,
+[data-theme="dark"] .hero-btn-primary {
+  color: var(--text-inverse) !important;
+}
+
+[data-theme="dark"] .btn-secondary,
+[data-theme="dark"] .hero-btn-secondary {
+  color: var(--text-primary) !important;
+  background: var(--bg-secondary) !important;
+  border-color: var(--border-primary) !important;
+}
+
+[data-theme="dark"] .dashboard-hero.command-banner,
+[data-theme="dark"] .command-banner {
+  background:
+    linear-gradient(135deg, color-mix(in srgb, var(--bg-secondary) 92%, var(--bg-accent)), var(--bg-secondary)) !important;
+}
+
+/* Keep the final cascade aligned with the design tokens above. */
+:root {
+  --radius-md: 10px;
+  --radius-lg: 14px;
+  --radius-xl: 20px;
+  --accent-blue: #2563eb;
+  --accent-blue-light: #dbeafe;
+  --accent-indigo: #4f46e5;
+  --accent-indigo-light: #e0e7ff;
+}
+
+[data-theme="dark"] {
+  --accent-blue: #60a5fa;
+  --accent-blue-light: #112f55;
+  --accent-indigo: #818cf8;
+  --accent-indigo-light: #27275f;
+}
+
+html body .app-main .btn:not(.btn-sm),
+html body .app-main .page-header-actions .btn:not(.btn-sm),
+html body .app-main .hero-actions .btn:not(.btn-sm),
+html body .app-main .reports-shortcuts-row .btn:not(.btn-sm),
+html body .app-main .list-action-button.btn:not(.btn-sm) {
+  min-height: 36px !important;
+  padding: 8px 14px !important;
+  border-radius: var(--radius-md) !important;
+  font-size: 13px !important;
+  font-weight: 650 !important;
+  line-height: 1 !important;
+}
+
+html body .app-main .btn-primary,
+html body .app-main .hero-btn-primary,
+html body .app-main .dashboard-hero .hero-actions .hero-btn-primary {
+  color: #fff !important;
+  background: var(--accent-blue) !important;
+  border-color: color-mix(in srgb, var(--accent-blue) 82%, var(--border-primary)) !important;
+  box-shadow: 0 1px 2px rgba(37, 99, 235, 0.18) !important;
+}
+
+html body .app-main .btn-secondary,
+html body .app-main .hero-btn-secondary,
+html body .app-main .dashboard-hero .hero-actions .hero-btn-secondary {
+  color: var(--text-primary) !important;
+  background: var(--bg-secondary) !important;
+  border-color: var(--border-primary) !important;
+  box-shadow: none !important;
+}
+
+html body .app-main .btn-ghost,
+html body .app-main .hero-btn-ghost,
+html body .app-main .dashboard-hero .hero-actions .hero-btn-ghost {
+  color: var(--text-secondary) !important;
+  background: transparent !important;
+  border-color: var(--border-primary) !important;
+  box-shadow: none !important;
+}
+
+html body .app-main .card,
+html body .app-main .card.cockpit-card,
+html body .app-main .card.filter-panel,
+html body .app-main .card.item-filter-panel,
+html body .app-main .card.log-filter-panel,
+html body .app-main .card.log-quick-view-panel,
+html body .app-main .card.item-quick-view-panel,
+html body .app-main .card.report-entry-card,
+html body .app-main .card.reports-shortcuts-card,
+html body .app-main .card.reports-boundary-card {
+  border-color: var(--border-primary) !important;
+  border-radius: var(--radius-lg) !important;
+  background: var(--bg-elevated) !important;
+  box-shadow: var(--shadow-sm) !important;
+}
+
+html body .app-main .dashboard-hero.command-banner {
+  border-radius: var(--radius-xl) !important;
+}
+
+html body .dashboard-shell .dashboard-hero.command-banner .hero-actions .btn:not(.btn-sm) {
+  min-height: 36px !important;
+  height: auto !important;
+  padding: 8px 14px !important;
+  border-radius: var(--radius-md) !important;
+  font-size: 13px !important;
+  font-weight: 650 !important;
+  line-height: 1 !important;
+}
+
+html body .dashboard-shell .dashboard-hero.command-banner .hero-actions .hero-btn-primary {
+  color: #fff !important;
+  background: var(--accent-blue) !important;
+  border-color: color-mix(in srgb, var(--accent-blue) 82%, var(--border-primary)) !important;
+  box-shadow: 0 1px 2px rgba(37, 99, 235, 0.18) !important;
+}
+
+html body .dashboard-shell .dashboard-hero.command-banner .hero-actions .hero-btn-secondary {
+  color: var(--text-primary) !important;
+  background: var(--bg-secondary) !important;
+  border-color: var(--border-primary) !important;
+}
+
+html body .dashboard-shell .dashboard-hero.command-banner .hero-actions .hero-btn-ghost {
+  color: var(--text-secondary) !important;
+  background: transparent !important;
+  border-color: var(--border-primary) !important;
+}
