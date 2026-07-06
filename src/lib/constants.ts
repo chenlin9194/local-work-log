@@ -158,14 +158,18 @@ export const SOURCES = [
 ] as const;
 
 export const MODULES = [
-  "Camera",
-  "Telephony",
-  "OTA",
-  "Power",
-  "Stability",
-  "Launcher",
-  "Framework",
-  "Other",
+  "需求",
+  "变更",
+  "Bug",
+  "计划",
+  "里程碑",
+  "发布",
+  "测试",
+  "风险",
+  "决策",
+  "沟通",
+  "数据",
+  "其他",
 ] as const;
 
 export const WORK_ITEM_TYPE_LABELS: Record<string, string> = Object.fromEntries(
