@@ -111,6 +111,10 @@ export async function PUT(
       }
     }
 
+    if ("doneNote" in body) {
+      data.doneNote = toNullableString(body.doneNote);
+    }
+
     if ("status" in body) {
       const statusResult = normalizeStatus(body.status);
       if (statusResult.error) {
@@ -126,6 +130,7 @@ export async function PUT(
       data.doneAt = currentActionItem.status === "done" ? undefined : new Date();
     } else if (currentActionItem.status === "done" || "status" in body) {
       data.doneAt = null;
+      if (!("doneNote" in body)) data.doneNote = null;
     }
 
     const actionItem = await prisma.actionItem.update({

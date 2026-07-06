@@ -155,6 +155,7 @@ export async function POST(request: NextRequest) {
         workLogId,
         projectId: resolvedProjectId,
         doneAt,
+        doneNote: toNullableString(body.doneNote),
       },
     });
 

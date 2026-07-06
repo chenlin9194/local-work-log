@@ -4,6 +4,7 @@ import Icon from "@/components/Icon";
 import WorkItemCard from "@/components/WorkItemCard";
 import WorkLogCard from "@/components/WorkLogCard";
 import { formatTodayStr, getLocalDateString, getTodayRange } from "@/lib/utils";
+import { ACTION_ITEM_STATUS_LABELS } from "@/lib/constants";
 import { signalToItemsHref, signalToLogsHref } from "@/lib/signalMap";
 
 export const dynamic = "force-dynamic";
@@ -21,6 +22,7 @@ export default async function TodayPage() {
     overdueItems,
     riskBlockerLogs,
     decisionLogs,
+    openActionItems,
   ] = await Promise.all([
     prisma.workLog.findMany({ where: { workDate: today }, orderBy: { createdAt: "desc" } }),
     prisma.workItem.findMany({ where: { closedAt: { gte: todayStart, lt: todayEnd } }, orderBy: { closedAt: "desc" } }),
@@ -30,10 +32,25 @@ export default async function TodayPage() {
     prisma.workItem.findMany({ where: { dueDate: { lt: today }, status: { not: "closed" } }, orderBy: { dueDate: "asc" }, take: 20 }),
     prisma.workLog.findMany({ where: { workDate: today, type: { in: ["risk", "blocker"] } }, orderBy: { createdAt: "desc" } }),
     prisma.workLog.findMany({ where: { workDate: today, type: "decision" }, orderBy: { createdAt: "desc" } }),
+    prisma.actionItem.findMany({
+      where: { status: { not: "done" } },
+      include: {
+        workItem: { select: { id: true, title: true } },
+        workLog: { select: { id: true, title: true } },
+        project: { select: { id: true, name: true, code: true } },
+      },
+      orderBy: [
+        { dueDate: "asc" },
+        { status: "asc" },
+        { createdAt: "asc" },
+      ],
+      take: 20,
+    }),
   ]);
 
   const situation = [
     { label: "今日日志", value: todayLogs.length, icon: "file-text", tone: "blue" },
+    { label: "待办行动项", value: openActionItems.length, icon: "clipboard-list", tone: "purple" },
     { label: "关闭事项", value: todayClosedItems.length, icon: "check-circle", tone: "success" },
     { label: "更新事项", value: todayUpdatedItems.length, icon: "refresh", tone: "cyan" },
     { label: "P0/P1", value: p0p1Items.length, icon: "zap", tone: "warning" },
@@ -91,6 +108,50 @@ export default async function TodayPage() {
             </div>
           ))}
         </div>
+      </section>
+
+      <section className="card cockpit-card today-group-card today-action-items-card">
+        <div className="cockpit-card-head">
+          <div>
+            <span className="section-eyebrow">ACTION ITEMS</span>
+            <h2>今日行动项</h2>
+          </div>
+          <span className="section-count">只显示未处理行动项，已处理内容在详情页折叠。</span>
+        </div>
+        {openActionItems.length === 0 ? (
+          <div className="today-compact-empty"><span />当前没有未处理行动项。</div>
+        ) : (
+          <div className="today-action-item-list">
+            {openActionItems.map((action) => {
+              const href = action.workItemId
+                ? `/items/${action.workItemId}`
+                : action.workLogId
+                  ? `/logs/${action.workLogId}`
+                  : undefined;
+              const parentTitle = action.workItem?.title || action.workLog?.title;
+              const isOverdue = Boolean(action.dueDate && action.dueDate < today);
+              return (
+                <div key={action.id} className={`today-action-item ${isOverdue ? "today-action-item--overdue" : ""}`}>
+                  <div className="today-action-item-main">
+                    <div className="today-action-item-title">{action.title}</div>
+                    <div className="today-action-item-meta">
+                      <span>{ACTION_ITEM_STATUS_LABELS[action.status] || action.status}</span>
+                      {action.owner && <span>负责人：{action.owner}</span>}
+                      {action.dueDate && <span>{isOverdue ? "已逾期" : "截止"}：{action.dueDate}</span>}
+                      {action.project && <span>项目：{action.project.code || action.project.name}</span>}
+                      {parentTitle && <span>来源：{parentTitle}</span>}
+                    </div>
+                  </div>
+                  {href && (
+                    <Link href={href} className="section-link">
+                      处理 <Icon name="chevron-right" size={13} />
+                    </Link>
+                  )}
+                </div>
+              );
+            })}
+          </div>
+        )}
       </section>
 
       <div className="today-sections">

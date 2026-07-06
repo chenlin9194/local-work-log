@@ -15,6 +15,7 @@ type DraftState = {
   status: string;
   owner: string;
   dueDate: string;
+  doneNote: string;
 };
 
 const EMPTY_DRAFT: DraftState = {
@@ -22,6 +23,7 @@ const EMPTY_DRAFT: DraftState = {
   status: "pending",
   owner: "",
   dueDate: "",
+  doneNote: "",
 };
 
 const inputStyle = {
@@ -48,6 +50,7 @@ function draftFromItem(item: ActionItem): DraftState {
     status: item.status || "pending",
     owner: item.owner || "",
     dueDate: item.dueDate || "",
+    doneNote: item.doneNote || "",
   };
 }
 
@@ -71,6 +74,7 @@ export default function ActionItemSection({ workItemId, workLogId, projectId }: 
   const [loading, setLoading] = useState(true);
   const [creating, setCreating] = useState(false);
   const [busyMap, setBusyMap] = useState<Record<string, boolean>>({});
+  const [showDoneItems, setShowDoneItems] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
   const loadItems = useCallback(
@@ -202,6 +206,7 @@ export default function ActionItemSection({ workItemId, workLogId, projectId }: 
           status: draft.status,
           owner: draft.owner,
           dueDate: draft.dueDate,
+          doneNote: draft.doneNote,
         }),
       });
 
@@ -224,6 +229,18 @@ export default function ActionItemSection({ workItemId, workLogId, projectId }: 
   const setActionItemStatus = async (itemId: string, status: string) => {
     const item = items.find((candidate) => candidate.id === itemId);
     if (!item || item.status === status) return;
+
+    if (status === "done") {
+      setDrafts((prev) => ({
+        ...prev,
+        [item.id]: {
+          ...draftFromItem(item),
+          status: "done",
+        },
+      }));
+      setEditingMap((prev) => ({ ...prev, [item.id]: true }));
+      return;
+    }
 
     setRowBusy(itemId, true);
     try {
@@ -277,6 +294,10 @@ export default function ActionItemSection({ workItemId, workLogId, projectId }: 
     return null;
   }
 
+  const openItems = items.filter((item) => item.status !== "done");
+  const doneItems = items.filter((item) => item.status === "done");
+  const visibleItems = showDoneItems ? items : openItems;
+
   return (
     <section className="form-card" style={{ marginBottom: 24 }}>
       <div className="dashboard-section-title">
@@ -284,10 +305,22 @@ export default function ActionItemSection({ workItemId, workLogId, projectId }: 
           <span className="section-eyebrow">ACTION ITEMS</span>
           <h2>行动项</h2>
         </div>
-        <span className="section-live">
-          <i />
-          {items.length} 条
-        </span>
+        <div style={{ display: "flex", alignItems: "center", gap: 8, flexWrap: "wrap" }}>
+          <span className="section-live">
+            <i />
+            待处理 {openItems.length} / 已处理 {doneItems.length}
+          </span>
+          <button
+            type="button"
+            className={`btn ${showDoneItems ? "btn-secondary" : "btn-primary"}`}
+            style={{ fontSize: 12, padding: "6px 12px", fontWeight: 760 }}
+            onClick={() => setShowDoneItems((prev) => !prev)}
+            disabled={doneItems.length === 0}
+            title={doneItems.length === 0 ? "当前没有已处理行动项" : undefined}
+          >
+            {showDoneItems ? `隐藏已处理（${doneItems.length}）` : `显示已处理（${doneItems.length}）`}
+          </button>
+        </div>
       </div>
 
       <div className="card form-section" style={{ padding: 16, marginBottom: 12 }}>
@@ -368,13 +401,13 @@ export default function ActionItemSection({ workItemId, workLogId, projectId }: 
             重试
           </button>
         </div>
-      ) : items.length === 0 ? (
+      ) : visibleItems.length === 0 ? (
         <div className="card empty-state">
-          <p>暂无行动项</p>
+          <p>{items.length === 0 ? "暂无行动项" : "当前没有未处理行动项，已处理内容已折叠。"}</p>
         </div>
       ) : (
         <div style={{ display: "grid", gap: 12 }}>
-          {items.map((item) => {
+          {visibleItems.map((item) => {
             const busy = Boolean(busyMap[item.id]);
             const draft = drafts[item.id] || draftFromItem(item);
             const isEditing = Boolean(editingMap[item.id]);
@@ -442,6 +475,23 @@ export default function ActionItemSection({ workItemId, workLogId, projectId }: 
                       </div>
                     </div>
 
+                    {draft.status === "done" && (
+                      <div>
+                        <div style={{ fontSize: 12, color: "var(--text-tertiary)", marginBottom: 4 }}>完成结论 / 已采取行动</div>
+                        <textarea
+                          value={draft.doneNote}
+                          onChange={(e) => updateDraft(item.id, { doneNote: e.target.value })}
+                          disabled={busy}
+                          placeholder="例如：已同步研发确认根因，结论是继续按当前计划推进；或记录决策、协同结果。"
+                          rows={3}
+                          style={{ ...inputStyle, resize: "vertical", lineHeight: 1.5 }}
+                        />
+                        <div style={{ marginTop: 6, fontSize: 12, color: "var(--text-tertiary)" }}>
+                          点击保存后才会切换为已处理；取消则保持原状态。
+                        </div>
+                      </div>
+                    )}
+
                     <div style={{ display: "flex", justifyContent: "space-between", gap: 12, flexWrap: "wrap" }}>
                       <div style={{ fontSize: 12, color: "var(--text-tertiary)", lineHeight: 1.6 }}>
                         关联：
@@ -492,6 +542,11 @@ export default function ActionItemSection({ workItemId, workLogId, projectId }: 
                           {item.dueDate && <span>截止：{item.dueDate}</span>}
                           {item.doneAt && <span>完成：{new Date(item.doneAt).toLocaleDateString("zh-CN")}</span>}
                         </div>
+                        {item.doneNote && (
+                          <div style={{ marginTop: 8, fontSize: 12, color: "var(--text-secondary)", lineHeight: 1.55 }}>
+                            <strong style={{ color: "var(--text-primary)" }}>完成记录：</strong>{item.doneNote}
+                          </div>
+                        )}
                       </div>
                       <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
                         <button

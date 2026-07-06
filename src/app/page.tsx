@@ -6,6 +6,7 @@ import HomeTopbarActions from "@/components/HomeTopbarActions";
 import { prisma } from "@/lib/prisma";
 import { formatTodayStr, getLocalDateString, getTodayRange } from "@/lib/utils";
 import {
+  ACTION_ITEM_STATUS_LABELS,
   PRIORITY_LABELS,
   PROJECT_STAGE_LABELS,
   PROJECT_STATUS_LABELS,
@@ -21,6 +22,11 @@ interface PageProps {
 type WorkItemList = Awaited<ReturnType<typeof prisma.workItem.findMany>>;
 type WorkLogList = Awaited<ReturnType<typeof prisma.workLog.findMany>>;
 type DashboardItem = WorkItemList[number];
+type DashboardActionItem = Awaited<ReturnType<typeof prisma.actionItem.findMany>>[number] & {
+  workItem?: { id: string; title: string } | null;
+  workLog?: { id: string; title: string } | null;
+  project?: { id: string; name: string; code: string | null } | null;
+};
 
 type FocusKey = "open" | "following" | "blocked" | "overdue" | "p0" | "p1" | "todayLogs" | "todayClosed";
 
@@ -194,6 +200,42 @@ function CompactTaskRow({ item }: { item: DashboardItem }) {
   );
 }
 
+function DashboardActionRow({ action, today }: { action: DashboardActionItem; today: string }) {
+  const href = action.workItemId
+    ? `/items/${action.workItemId}`
+    : action.workLogId
+      ? `/logs/${action.workLogId}`
+      : undefined;
+  const isOverdue = Boolean(action.dueDate && action.dueDate < today);
+  const parentTitle = action.workItem?.title || action.workLog?.title;
+
+  const content = (
+    <>
+      <span className={`dashboard-action-status${isOverdue ? " is-overdue" : ""}`}>
+        {isOverdue ? "逾期" : ACTION_ITEM_STATUS_LABELS[action.status] || action.status}
+      </span>
+      <div className="dashboard-action-main">
+        <strong>{action.title}</strong>
+        <span>
+          {action.dueDate ? `截止 ${action.dueDate}` : "无截止日期"}
+          {action.owner ? ` · ${action.owner}` : ""}
+          {action.project ? ` · ${action.project.code || action.project.name}` : ""}
+          {parentTitle ? ` · 来源：${parentTitle}` : ""}
+        </span>
+      </div>
+      <Icon name="chevron-right" size={13} />
+    </>
+  );
+
+  return href ? (
+    <Link href={href} className="dashboard-action-row">
+      {content}
+    </Link>
+  ) : (
+    <div className="dashboard-action-row">{content}</div>
+  );
+}
+
 function AttentionRow({ item, reason }: { item: DashboardItem; reason: string }) {
   return (
     <Link href={`/items/${item.id}`} className="attention-row">
@@ -323,6 +365,7 @@ export default async function Dashboard({ searchParams }: PageProps) {
     followingItems,
     upcomingItems,
     recentItems,
+    openActionItems,
     activeProjects,
   ] = await Promise.all([
     prisma.workItem.count({ where: { status: "open" } }),
@@ -371,6 +414,20 @@ export default async function Dashboard({ searchParams }: PageProps) {
       where: { status: { not: "closed" } },
       orderBy: { updatedAt: "desc" },
       take: 8,
+    }),
+    prisma.actionItem.findMany({
+      where: { status: { not: "done" } },
+      include: {
+        workItem: { select: { id: true, title: true } },
+        workLog: { select: { id: true, title: true } },
+        project: { select: { id: true, name: true, code: true } },
+      },
+      orderBy: [
+        { dueDate: "asc" },
+        { status: "asc" },
+        { createdAt: "asc" },
+      ],
+      take: 6,
     }),
     prisma.project.findMany({
       where: { status: { in: ["active", "planning"] } },
@@ -505,6 +562,24 @@ export default async function Dashboard({ searchParams }: PageProps) {
                     <Icon name="calendar" size={15} />
                     今日视图
                   </Link>
+                </div>
+              </div>
+              <div className="hero-action-panel">
+                <div className="hero-action-panel-head">
+                  <div>
+                    <span className="section-eyebrow">Action Items</span>
+                    <h2>今日行动项</h2>
+                  </div>
+                  <span className="section-count">{openActionItems.length} 项</span>
+                </div>
+                <div className="dashboard-action-list">
+                  {openActionItems.length === 0 ? (
+                    <div className="compact-empty">当前没有未处理行动项。</div>
+                  ) : (
+                    openActionItems.map((action) => (
+                      <DashboardActionRow key={action.id} action={action} today={today} />
+                    ))
+                  )}
                 </div>
               </div>
             </section>

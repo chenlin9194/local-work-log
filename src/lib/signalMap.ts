@@ -19,10 +19,11 @@ export const signalToItemsFilter = (signal: ItemHrefSignal, projectId?: string):
     case "p1":
       return { projectId, priority: "P1" };
     case "p0p1":
-      return { projectId, priority: ["P0", "P1"] };
+      return { projectId, visibility: "open", priority: ["P0", "P1"] };
     case "overdue":
-      return { projectId, overdue: true };
+      return { projectId, visibility: "open", overdue: true };
     case "redYellow":
+      return { projectId, visibility: "open", health: "red,yellow" };
     case "projectItems":
       return { projectId };
     default:

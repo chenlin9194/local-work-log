@@ -42,7 +42,10 @@ export async function GET(request: NextRequest) {
       where.priority = priorityValues.length > 1 ? { in: priorityValues } : priorityValues[0] ?? priority;
     }
     if (owner) where.owner = owner;
-    if (health) where.health = health;
+    if (health) {
+      const healthValues = health.split(",").map((value) => value.trim()).filter(Boolean);
+      where.health = healthValues.length > 1 ? { in: healthValues } : healthValues[0] ?? health;
+    }
     if (reportLevel) where.reportLevel = reportLevel;
     if (sourceSystem) where.sourceSystem = sourceSystem;
     if (keyword) {

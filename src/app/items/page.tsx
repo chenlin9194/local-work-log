@@ -14,6 +14,12 @@ import {
   HEALTH_OPTIONS,
   REPORT_LEVEL_OPTIONS,
   SOURCE_SYSTEM_OPTIONS,
+  PRIORITY_LABELS,
+  HEALTH_LABELS,
+  STATUS_LABELS,
+  WORK_ITEM_TYPE_LABELS,
+  REPORT_LEVEL_LABELS,
+  SOURCE_SYSTEM_LABELS,
 } from "@/lib/constants";
 import { buildItemsQueryString } from "@/lib/filterLinks";
 
@@ -90,6 +96,37 @@ function readItemFilters(searchParams: URLSearchParams): ItemFilters {
     keyword: searchParams.get("keyword") || "",
     overdue: searchParams.get("overdue") === "true",
   };
+}
+
+function formatCombinedLabel(value: string, labels: Record<string, string>) {
+  return value
+    .split(",")
+    .map((item) => item.trim())
+    .filter(Boolean)
+    .map((item) => labels[item] || item)
+    .join(" / ");
+}
+
+function buildActiveFilterLabels(filters: ItemFilters) {
+  const activeLabels: string[] = [];
+
+  if (filters.projectId) activeLabels.push("项目范围");
+  else if (filters.project) activeLabels.push(`项目：${filters.project}`);
+  if (filters.keyword) activeLabels.push(`关键词：${filters.keyword}`);
+  if (filters.visibility === "open") activeLabels.push("未关闭");
+  else if (filters.visibility === "closed") activeLabels.push("仅已关闭");
+  else if (filters.visibility === "all") activeLabels.push("全部事项");
+  if (filters.type) activeLabels.push(`类型：${WORK_ITEM_TYPE_LABELS[filters.type] || filters.type}`);
+  if (filters.priority) activeLabels.push(`优先级：${formatCombinedLabel(filters.priority, PRIORITY_LABELS)}`);
+  if (filters.status) activeLabels.push(`状态：${STATUS_LABELS[filters.status] || filters.status}`);
+  if (filters.health) activeLabels.push(`健康度：${formatCombinedLabel(filters.health, HEALTH_LABELS)}`);
+  if (filters.reportLevel) activeLabels.push(`汇报层级：${REPORT_LEVEL_LABELS[filters.reportLevel] || filters.reportLevel}`);
+  if (filters.sourceSystem) activeLabels.push(`来源：${SOURCE_SYSTEM_LABELS[filters.sourceSystem] || filters.sourceSystem}`);
+  if (filters.module) activeLabels.push(`模块：${filters.module}`);
+  if (filters.owner) activeLabels.push(`责任人：${filters.owner}`);
+  if (filters.overdue) activeLabels.push("仅显示逾期");
+
+  return activeLabels;
 }
 
 export default function ItemsPage() {
@@ -179,6 +216,8 @@ export default function ItemsPage() {
     alert("已复制到剪贴板");
   };
 
+  const activeFilterLabels = buildActiveFilterLabels(filters);
+
   return (
     <div className="command-list-page item-list-page">
       {/* Header */}
@@ -214,9 +253,11 @@ export default function ItemsPage() {
       {/* Filters */}
       <div className="card filter-panel item-filter-panel">
         <div className="filter-panel-label"><Icon name="search" size={14} />高级筛选</div>
-        {filters.projectId && (
-          <div className="filter-scope-note">
-            当前项目筛选已启用
+        {activeFilterLabels.length > 0 && (
+          <div className="filter-scope-note active-filter-summary">
+            {activeFilterLabels.map((label) => (
+              <span key={label} className="entity-pill entity-pill--muted">{label}</span>
+            ))}
           </div>
         )}
         <div className="filter-grid">
@@ -248,6 +289,7 @@ export default function ItemsPage() {
             onChange={(e) => handleFilterChange("priority", e.target.value)}
           >
             <option value="">全部优先级</option>
+            <option value="P0,P1">P0/P1</option>
             {PRIORITIES.map((p) => (
               <option key={p.value} value={p.value}>{p.label}</option>
             ))}
@@ -266,6 +308,7 @@ export default function ItemsPage() {
             onChange={(e) => handleFilterChange("health", e.target.value)}
           >
             <option value="">全部健康度</option>
+            <option value="red,yellow">风险/关注</option>
             {HEALTH_OPTIONS.map((option) => (
               <option key={option.value} value={option.value}>{option.label}</option>
             ))}

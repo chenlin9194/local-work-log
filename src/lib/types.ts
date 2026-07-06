@@ -42,6 +42,7 @@ export interface ActionItem {
   workLogId?: string | null;
   projectId?: string | null;
   doneAt?: string | Date | null;
+  doneNote?: string | null;
   createdAt: string | Date;
   updatedAt: string | Date;
 }
