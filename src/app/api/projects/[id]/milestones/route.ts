@@ -4,7 +4,6 @@ import {
   PROJECT_MILESTONE_STAGE_VALUES,
   normalizeDateMode,
   normalizePlanType,
-  normalizeStage,
 } from "@/lib/projectMilestones";
 import { prisma } from "@/lib/prisma";
 import { toNullableString } from "@/lib/utils";
@@ -119,7 +118,7 @@ export async function POST(
     if (typeof body.stage !== "string" || !PROJECT_MILESTONE_STAGE_VALUES.has(body.stage.trim())) {
       return NextResponse.json({ error: "stage is required" }, { status: 400 });
     }
-    const stage = normalizeStage(body.stage, { title, description });
+    const stage = body.stage.trim();
 
     const plannedStartDate = parseOptionalDateInput(body.plannedStartDate, "plannedStartDate");
     if (!plannedStartDate.ok) {

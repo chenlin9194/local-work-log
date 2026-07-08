@@ -4,7 +4,6 @@ import {
   PROJECT_MILESTONE_STAGE_VALUES,
   normalizeDateMode,
   normalizePlanType,
-  normalizeStage,
 } from "@/lib/projectMilestones";
 import { prisma } from "@/lib/prisma";
 import { toNullableString } from "@/lib/utils";
@@ -105,15 +104,11 @@ export async function PUT(
     const nextDateMode = "dateMode" in body || "planType" in body
       ? normalizeDateMode(body.dateMode, nextPlanType)
       : normalizeDateMode(currentMilestone.dateMode, nextPlanType);
-    const nextStage = "stage" in body
-      ? normalizeStage(body.stage, { title: nextTitle, description: nextDescription })
-      : normalizeStage(currentMilestone.stage, { title: nextTitle, description: nextDescription });
-
     if ("stage" in body) {
       if (typeof body.stage !== "string" || !PROJECT_MILESTONE_STAGE_VALUES.has(body.stage.trim())) {
         return NextResponse.json({ error: "stage cannot be empty" }, { status: 400 });
       }
-      data.stage = nextStage;
+      data.stage = body.stage.trim();
     }
 
     if ("planType" in body) {
