@@ -656,6 +656,76 @@ function DateRangeValue({
   );
 }
 
+function TimelineItemDetails({
+  item,
+  today,
+}: {
+  item: TimelineScheduledItem;
+  today: string;
+}) {
+  const milestone = item.milestone;
+  const isRange = isRangePlan(milestone);
+  const actualPointDate = getActualPointDate(milestone);
+  const plannedRange = getPlannedRange(milestone);
+  const actualRange = getActualRange(milestone);
+  const hasActualRange = Boolean(actualRange.start || actualRange.end);
+
+  return (
+    <div
+      style={{
+        display: "grid",
+        gap: 2,
+        padding: "5px 7px",
+        borderRadius: 6,
+        border: "1px solid var(--border-secondary)",
+        background: "color-mix(in srgb, var(--bg-primary) 92%, var(--bg-secondary))",
+        color: "var(--text-secondary)",
+        fontSize: 11,
+        lineHeight: 1.45,
+        boxShadow: "0 4px 12px color-mix(in srgb, var(--text-primary) 8%, transparent)",
+      }}
+    >
+      {isRange ? (
+        <>
+          {item.scheduleKind === "start-only" ? (
+            <span>
+              计划开始: <DateValue value={plannedRange.start} />，待补结束
+            </span>
+          ) : item.scheduleKind === "end-only" ? (
+            <span>
+              计划结束: <DateValue value={plannedRange.end} />，待补开始
+            </span>
+          ) : (
+            <span>
+              计划周期: <DateRangeValue start={plannedRange.start} end={plannedRange.end} />
+            </span>
+          )}
+          {hasActualRange ? (
+            <span>
+              实际周期: <DateRangeValue start={actualRange.start} end={actualRange.end} startDelayed={isRangeStartDelayed(milestone, today)} endDelayed={isRangeEndDelayed(milestone, today)} />
+            </span>
+          ) : (
+            <span style={{ color: "var(--text-tertiary)" }}>实际周期待补</span>
+          )}
+        </>
+      ) : (
+        <>
+          <span>
+            计划日期: <DateValue value={getPlannedPointDate(milestone)} />
+          </span>
+          {actualPointDate ? (
+            <span>
+              实际日期: <DateValue value={actualPointDate} delayed={isPointDelayed(milestone, today)} />
+            </span>
+          ) : (
+            <span style={{ color: "var(--text-tertiary)" }}>实际日期待补</span>
+          )}
+        </>
+      )}
+    </div>
+  );
+}
+
 function MilestoneFormPanel({
   form,
   setForm,
@@ -1024,11 +1094,13 @@ function TimelineView({
   groups,
   today,
   nextMilestoneId,
+  selectedMilestoneId,
   onSelect,
 }: {
   groups: StageGroup[];
   today: string;
   nextMilestoneId?: string | null;
+  selectedMilestoneId?: string | null;
   onSelect: (milestone: ProjectMilestone) => void;
 }) {
   const milestones = groups.flatMap((group) => group.milestones);
@@ -1098,7 +1170,20 @@ function TimelineView({
             </div>
 
             {scheduledLanes.map(({ planType, items }) => {
-              const rowCount = Math.max(1, items.length);
+              const isPointLane = items.every((item) => item.scheduleKind === "point");
+              const pointItemsByTick = new Map<string, TimelineScheduledItem[]>();
+              items.forEach((item) => {
+                if (!isPointLane) return;
+                const tick = getHalfMonthStart(item.start);
+                pointItemsByTick.set(tick, [...(pointItemsByTick.get(tick) || []), item]);
+              });
+              const maxPointStack = Math.max(1, ...Array.from(pointItemsByTick.values()).map((tickItems) => tickItems.length));
+              const expandedInLane = items.some((item) => item.milestone.id === selectedMilestoneId);
+              const rowCount = isPointLane ? 1 : Math.max(1, items.length);
+              const rowHeight = !isPointLane && expandedInLane ? 86 : 26;
+              const laneMinHeight = isPointLane
+                ? Math.max(52, Math.min(92, maxPointStack * 26 + 16)) + (expandedInLane ? 62 : 0)
+                : Math.max(58, rowCount * rowHeight + 16);
 
               return (
                 <div key={planType} style={{ display: "grid", gridTemplateColumns: "96px 1fr", gap: 10, alignItems: "stretch" }}>
@@ -1110,8 +1195,8 @@ function TimelineView({
                     position: "relative",
                     display: "grid",
                     gridTemplateColumns,
-                    gridTemplateRows: `repeat(${rowCount}, 26px)`,
-                    minHeight: Math.max(58, rowCount * 26 + 16),
+                    gridTemplateRows: isPointLane ? "1fr" : `repeat(${rowCount}, ${rowHeight}px)`,
+                    minHeight: laneMinHeight,
                     padding: "8px 0",
                     borderRadius: 8,
                     background: `repeating-linear-gradient(to right, transparent 0, transparent calc((100% / ${Math.max(1, ticks.length)}) - 1px), var(--border-secondary) calc((100% / ${Math.max(1, ticks.length)}) - 1px), var(--border-secondary) calc(100% / ${Math.max(1, ticks.length)}))`,
@@ -1142,60 +1227,133 @@ function TimelineView({
                       }}
                     />
                   )}
-                  {items.map((item, index) => {
+                  {isPointLane ? ticks.map((tick, tickIndex) => {
+                    const tickItems = pointItemsByTick.get(tick) || [];
+                    if (tickItems.length === 0) return null;
+
+                    return (
+                      <div
+                        key={`${planType}-${tick}-items`}
+                        style={{
+                          gridColumn: tickIndex + 1,
+                          gridRow: 1,
+                          alignSelf: "start",
+                          justifySelf: "center",
+                          display: "flex",
+                          flexDirection: "column",
+                          alignItems: "center",
+                          gap: 4,
+                          maxWidth: "100%",
+                          padding: "2px 4px",
+                          zIndex: 2,
+                        }}
+                      >
+                        {tickItems.map((item) => {
+                          const signal = getMilestoneSignal(item.milestone, today, nextMilestoneId);
+                          const tone = TONE_STYLE[signal.tone];
+                          const expanded = selectedMilestoneId === item.milestone.id;
+                          const chipBackground = signal.isNext
+                            ? "color-mix(in srgb, var(--accent-blue-light) 76%, var(--bg-primary))"
+                            : signal.isRisk
+                              ? "color-mix(in srgb, var(--accent-red-light) 72%, var(--bg-primary))"
+                              : signal.isDone
+                                ? "color-mix(in srgb, var(--accent-green-light) 72%, var(--bg-primary))"
+                                : "var(--bg-primary)";
+
+                          return (
+                            <div key={item.milestone.id} style={{ display: "grid", gap: 4, justifyItems: "center", maxWidth: "100%" }}>
+                              <button
+                                type="button"
+                                onClick={() => onSelect(item.milestone)}
+                                title={item.milestone.description || item.milestone.title}
+                                style={{
+                                  width: "max-content",
+                                  maxWidth: 156,
+                                  height: 23,
+                                  borderRadius: 999,
+                                  border: `1px solid ${signal.isNext ? "var(--accent-blue)" : tone.border}`,
+                                  background: chipBackground,
+                                  color: "var(--text-primary)",
+                                  cursor: "pointer",
+                                  display: "flex",
+                                  alignItems: "center",
+                                  justifyContent: "flex-start",
+                                  gap: 5,
+                                  padding: "0 8px",
+                                  boxShadow: signal.isNext ? "0 0 0 1px color-mix(in srgb, var(--accent-blue) 22%, transparent)" : "0 1px 0 color-mix(in srgb, var(--border-secondary) 70%, transparent)",
+                                }}
+                              >
+                                <span style={{ color: signal.isNext ? "var(--accent-blue)" : tone.color, fontSize: 10, lineHeight: 1 }}>●</span>
+                                <span style={{ overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap", fontSize: 12, fontWeight: signal.isNext ? 750 : 650 }}>
+                                  {item.milestone.title}
+                                </span>
+                              </button>
+                              {expanded && (
+                                <div style={{ width: 190, maxWidth: "calc(100vw - 64px)" }}>
+                                  <TimelineItemDetails item={item} today={today} />
+                                </div>
+                              )}
+                            </div>
+                          );
+                        })}
+                      </div>
+                    );
+                  }) : items.map((item, index) => {
                       const signal = getMilestoneSignal(item.milestone, today, nextMilestoneId);
                       const tone = TONE_STYLE[signal.tone];
-                      const isPoint = item.scheduleKind === "point";
                       const startIndex = tickIndexByKey.get(getHalfMonthStart(item.start)) ?? 0;
                       const endIndex = tickIndexByKey.get(getHalfMonthStart(item.end)) ?? startIndex;
                       const stackRow = (index % rowCount) + 1;
-                      const chipBackground = signal.isNext
-                        ? "color-mix(in srgb, var(--accent-blue-light) 76%, var(--bg-primary))"
-                        : signal.isRisk
-                          ? "color-mix(in srgb, var(--accent-red-light) 72%, var(--bg-primary))"
-                          : signal.isDone
-                            ? "color-mix(in srgb, var(--accent-green-light) 72%, var(--bg-primary))"
-                            : "var(--bg-primary)";
-
+                      const expanded = selectedMilestoneId === item.milestone.id;
                       return (
-                        <button
+                        <div
                           key={item.milestone.id}
-                          type="button"
-                          onClick={() => onSelect(item.milestone)}
-                          title={item.milestone.description || item.milestone.title}
                           style={{
-                            gridColumn: isPoint ? `${startIndex + 1} / span 1` : `${startIndex + 1} / ${Math.max(startIndex, endIndex) + 2}`,
+                            gridColumn: `${startIndex + 1} / ${Math.max(startIndex, endIndex) + 2}`,
                             gridRow: stackRow,
                             alignSelf: "center",
-                            justifySelf: isPoint ? "center" : "stretch",
-                            width: isPoint ? "max-content" : "auto",
-                            maxWidth: isPoint ? 156 : "none",
-                            minWidth: isPoint ? 0 : 72,
-                            height: isPoint ? 23 : 24,
-                            borderRadius: isPoint ? 999 : 6,
-                            border: `1px solid ${signal.isNext ? "var(--accent-blue)" : tone.border}`,
-                            background: isPoint ? chipBackground : signal.isRisk ? "color-mix(in srgb, var(--accent-red-light) 55%, var(--bg-primary))" : "color-mix(in srgb, var(--accent-blue-light) 36%, var(--bg-primary))",
-                            color: "var(--text-primary)",
-                            cursor: "pointer",
-                            display: "flex",
-                            alignItems: "center",
-                            justifyContent: "flex-start",
-                            gap: 5,
-                            padding: "0 8px",
+                            justifySelf: "stretch",
+                            display: "grid",
+                            gap: 4,
                             zIndex: 2,
-                            boxShadow: signal.isNext ? "0 0 0 1px color-mix(in srgb, var(--accent-blue) 22%, transparent)" : "0 1px 0 color-mix(in srgb, var(--border-secondary) 70%, transparent)",
                           }}
                         >
-                          {isPoint && <span style={{ color: signal.isNext ? "var(--accent-blue)" : tone.color, fontSize: 10, lineHeight: 1 }}>●</span>}
-                          <span style={{ overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap", fontSize: 12, fontWeight: signal.isNext ? 750 : 650 }}>
-                            {item.milestone.title}
-                          </span>
-                          {item.scheduleNote && (
-                            <span style={{ color: "var(--text-tertiary)", fontSize: 11, fontWeight: 600, whiteSpace: "nowrap" }}>
-                              {item.scheduleNote}
+                          <button
+                            type="button"
+                            onClick={() => onSelect(item.milestone)}
+                            title={item.milestone.description || item.milestone.title}
+                            style={{
+                              width: "100%",
+                              minWidth: 72,
+                              height: 24,
+                              borderRadius: 6,
+                              border: `1px solid ${signal.isNext ? "var(--accent-blue)" : tone.border}`,
+                              background: signal.isRisk ? "color-mix(in srgb, var(--accent-red-light) 55%, var(--bg-primary))" : "color-mix(in srgb, var(--accent-blue-light) 36%, var(--bg-primary))",
+                              color: "var(--text-primary)",
+                              cursor: "pointer",
+                              display: "flex",
+                              alignItems: "center",
+                              justifyContent: "flex-start",
+                              gap: 5,
+                              padding: "0 8px",
+                              boxShadow: signal.isNext ? "0 0 0 1px color-mix(in srgb, var(--accent-blue) 22%, transparent)" : "0 1px 0 color-mix(in srgb, var(--border-secondary) 70%, transparent)",
+                            }}
+                          >
+                            <span style={{ overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap", fontSize: 12, fontWeight: signal.isNext ? 750 : 650 }}>
+                              {item.milestone.title}
                             </span>
+                            {item.scheduleNote && (
+                              <span style={{ color: "var(--text-tertiary)", fontSize: 11, fontWeight: 600, whiteSpace: "nowrap" }}>
+                                {item.scheduleNote}
+                              </span>
+                            )}
+                          </button>
+                          {expanded && (
+                            <div style={{ maxWidth: 260 }}>
+                              <TimelineItemDetails item={item} today={today} />
+                            </div>
                           )}
-                        </button>
+                        </div>
                       );
                   })}
                 </div>
@@ -1713,6 +1871,7 @@ export default function ProjectMilestoneSection({ projectId }: ProjectMilestoneS
           groups={populatedStageGroups}
           today={today}
           nextMilestoneId={nextKeyMilestone?.id}
+          selectedMilestoneId={selectedMilestoneId}
           onSelect={handleMilestoneSelect}
         />
       ) : (
