@@ -5,7 +5,7 @@ import { useParams, useRouter } from "next/navigation";
 import Link from "next/link";
 import Icon from "@/components/Icon";
 import { WORK_LOG_TYPE_LABELS, SOURCE_LABELS } from "@/lib/constants";
-import { generateWorkLogMarkdown } from "@/lib/utils";
+import { generateWorkLogMarkdown, splitCommaSeparatedText } from "@/lib/utils";
 import AutoLinkText from "@/components/AutoLinkText";
 import ActionItemSection from "@/components/ActionItemSection";
 import PageLoadingState from "@/components/PageLoadingState";
@@ -27,14 +27,6 @@ interface WorkLog {
   sourceUrl?: string | null;
   createdAt: Date;
   updatedAt: Date;
-}
-
-function splitTags(tags?: string | null) {
-  if (!tags) return [];
-  return tags
-    .split(",")
-    .map((tag) => tag.trim())
-    .filter(Boolean);
 }
 
 export default function LogDetailPage() {
@@ -118,7 +110,7 @@ export default function LogDetailPage() {
 
   if (!log) return null;
 
-  const tags = splitTags(log.tags);
+  const tags = splitCommaSeparatedText(log.tags);
 
   return (
     <div className="detail-page detail-page--log log-detail-evidence-page">

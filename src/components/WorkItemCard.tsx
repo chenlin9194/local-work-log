@@ -6,7 +6,7 @@ import {
   STATUS_LABELS,
   WORK_ITEM_TYPE_LABELS,
 } from "@/lib/constants";
-import { isOverdue } from "@/lib/utils";
+import { isOverdue, splitCommaSeparatedText } from "@/lib/utils";
 import Icon from "./Icon";
 
 interface WorkItemCardProps {
@@ -39,20 +39,12 @@ interface WorkItemCardProps {
   lowActivity?: boolean;
 }
 
-function splitTags(tags?: string | null) {
-  if (!tags) return [];
-  return tags
-    .split(",")
-    .map((tag) => tag.trim())
-    .filter(Boolean);
-}
-
 export default function WorkItemCard({ item, evidenceLabel, lowActivity = false }: WorkItemCardProps) {
   const overdue = isOverdue(item.dueDate, item.status);
   const blocked = item.status === "blocked";
   const closed = item.status === "closed";
   const summary = item.description || item.trackingReason || item.currentSummary || "暂无事项说明";
-  const tags = splitTags(item.tags);
+  const tags = splitCommaSeparatedText(item.tags);
   const visibleTags = tags.slice(0, 2);
   const hiddenTagCount = Math.max(tags.length - visibleTags.length, 0);
 

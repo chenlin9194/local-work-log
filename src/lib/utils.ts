@@ -10,8 +10,6 @@ export function getLocalDateString(date?: Date): string {
   return `${year}-${month}-${day}`;
 }
 
-// getTodayStr() has been removed — use getLocalDateString() instead.
-
 /**
  * Converts empty string / undefined / null to null; otherwise returns String(value).
  * Shared helper used across API routes.
@@ -97,37 +95,17 @@ export function formatTodayStr() {
   });
 }
 
-export function groupWorkLogs(logs: { id: string; title: string; content: string; type: string; project: string | null; module: string | null }[]) {
-  const meetings = logs.filter((l) => l.type === "meeting");
-  const risks = logs.filter((l) => l.type === "risk");
-  const blockers = logs.filter((l) => l.type === "blocker");
-  const decisions = logs.filter((l) => l.type === "decision");
-  const todos = logs.filter((l) => l.type === "todo");
-  const updates = logs.filter((l) => l.type === "update");
-  const issues = logs.filter((l) => l.type === "issue");
-  const others = logs.filter(
-    (l) => !["meeting", "risk", "blocker", "decision", "todo", "update", "issue"].includes(l.type)
-  );
-
-  return [
-    { title: "会议记录", items: meetings, icon: "users" },
-    { title: "风险", items: risks, icon: "alert-triangle" },
-    { title: "阻塞", items: blockers, icon: "shield-off" },
-    { title: "决策", items: decisions, icon: "lightbulb" },
-    { title: "待办", items: todos, icon: "clipboard-list" },
-    { title: "更新", items: updates, icon: "refresh-cw" },
-    { title: "问题跟进", items: issues, icon: "search" },
-    { title: "其他记录", items: others, icon: "file-text" },
-  ].filter((g) => g.items.length > 0);
-}
-
 export function isOverdue(dueDate: string | null | undefined, status: string): boolean {
   if (!dueDate || status === "closed") return false;
   return dueDate < getLocalDateString();
 }
 
-export function cn(...classes: (string | undefined | false | null)[]) {
-  return classes.filter(Boolean).join(" ");
+export function splitCommaSeparatedText(value?: string | null): string[] {
+  if (!value) return [];
+  return value
+    .split(",")
+    .map((item) => item.trim())
+    .filter(Boolean);
 }
 
 export function generateWorkItemMarkdown(item: {
