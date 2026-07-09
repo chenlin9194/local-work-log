@@ -115,48 +115,49 @@ function uniqueItems(items: DashboardItem[]) {
   });
 }
 
-function getProjectFocusText(
-  projects: {
-    items: { id: string }[];
-    code: string | null;
-    name: string;
-    currentSummary: string | null;
-    nextMilestone: string | null;
-    nextAction: string | null;
-  }[]
-) {
-  const project = projects.find((item) => item.items.length > 0 && (item.nextAction || item.nextMilestone || item.currentSummary)) ?? projects[0];
-  if (!project) return "当前没有进行中项目需要额外提示";
-
-  const projectName = project.code || project.name;
-  const focus = project.nextAction || project.nextMilestone || project.currentSummary;
-  if (!focus) return `${projectName} 需要保持例行跟进`;
-
-  return `${projectName} 仍需跟进${focus}`;
-}
-
 function getBannerJudgement({
   blockedCount,
   p0Count,
   p1Count,
   overdueCount,
-  focusText,
+  actionItemCount,
 }: {
   blockedCount: number;
   p0Count: number;
   p1Count: number;
   overdueCount: number;
-  focusText: string;
+  actionItemCount: number;
 }) {
-  const riskParts = [];
-  if (blockedCount > 0) riskParts.push(`${blockedCount} 个阻塞`);
-  if (p0Count > 0) riskParts.push(`${p0Count} 个 P0`);
-  if (overdueCount > 0) riskParts.push(`${overdueCount} 个逾期`);
+  const pressureParts = [];
+  if (blockedCount > 0) pressureParts.push(`${blockedCount} 个阻塞待处理`);
+  if (overdueCount > 0) pressureParts.push(`${overdueCount} 个逾期需确认`);
 
-  const riskText = riskParts.length > 0 ? `当前需优先处理 ${riskParts.join("、")}` : "当前无阻塞";
-  const p1Text = p1Count > 0 ? `P1 高优 ${p1Count} 项` : "暂无 P1 高优积压";
+  const riskText = pressureParts.length > 0 ? pressureParts.join("；") : "阻塞和逾期压力较低";
+  const actionText = actionItemCount > 0 ? `${actionItemCount} 个行动项需要跟进` : "暂无未处理行动项";
+  const priorityText = p0Count + p1Count > 0 ? `P0/P1 高优 ${p0Count + p1Count} 项` : "P0/P1 高优压力较低";
 
-  return `${riskText}，${p1Text}，${focusText}`;
+  return `今日重点：${riskText}；${actionText}；${priorityText}。`;
+}
+
+function getActionItemRank(action: DashboardActionItem, today: string) {
+  if (action.dueDate && action.dueDate < today) return 0;
+  if (action.status === "pending") return 1;
+  if (action.status === "in_progress") return 2;
+  if (action.dueDate) return 3;
+  return 4;
+}
+
+function sortDashboardActionItems(actions: DashboardActionItem[], today: string) {
+  return [...actions].sort((a, b) => {
+    const rankDiff = getActionItemRank(a, today) - getActionItemRank(b, today);
+    if (rankDiff !== 0) return rankDiff;
+
+    const aDue = a.dueDate || "9999-12-31";
+    const bDue = b.dueDate || "9999-12-31";
+    if (aDue !== bDue) return aDue.localeCompare(bDue);
+
+    return a.createdAt.getTime() - b.createdAt.getTime();
+  });
 }
 
 function CompactTaskRow({ item }: { item: DashboardItem }) {
@@ -365,6 +366,7 @@ export default async function Dashboard({ searchParams }: PageProps) {
     followingItems,
     upcomingItems,
     recentItems,
+    openActionItemCount,
     openActionItems,
     activeProjects,
   ] = await Promise.all([
@@ -415,6 +417,7 @@ export default async function Dashboard({ searchParams }: PageProps) {
       orderBy: { updatedAt: "desc" },
       take: 8,
     }),
+    prisma.actionItem.count({ where: { status: { not: "done" } } }),
     prisma.actionItem.findMany({
       where: { status: { not: "done" } },
       include: {
@@ -427,7 +430,7 @@ export default async function Dashboard({ searchParams }: PageProps) {
         { status: "asc" },
         { createdAt: "asc" },
       ],
-      take: 6,
+      take: 20,
     }),
     prisma.project.findMany({
       where: { status: { in: ["active", "planning"] } },
@@ -439,21 +442,27 @@ export default async function Dashboard({ searchParams }: PageProps) {
         },
       },
       orderBy: { updatedAt: "desc" },
-      take: 6,
+      take: 8,
     }),
   ]);
 
   const focusView = focus ? await loadFocusView(focus, today, todayStart, todayEnd) : null;
   const primaryAttentionItems = uniqueItems([...overdueItems, ...p0Items, ...blockedItems]);
   const fallbackAttentionItems = uniqueItems([...p1Items, ...followingItems, ...upcomingItems]);
-  const attentionItems = (primaryAttentionItems.length > 0 ? primaryAttentionItems : fallbackAttentionItems).slice(0, 7);
+  const attentionItems = (primaryAttentionItems.length > 0 ? primaryAttentionItems : fallbackAttentionItems).slice(0, 3);
   const todayItems = uniqueItems([...todayDueItems, ...recentItems]).slice(0, 8);
+  const sortedActionItems = sortDashboardActionItems(openActionItems, today);
+  const visibleActionItems = sortedActionItems.slice(0, 5);
+  const hasMoreActionItems = openActionItemCount > visibleActionItems.length;
+  const riskyPortfolioProjects = activeProjects
+    .filter((project) => project.items.length > 0 || project.health === "red" || project.health === "yellow")
+    .slice(0, 3);
   const bannerJudgement = getBannerJudgement({
     blockedCount,
     p0Count,
     p1Count,
     overdueCount: overdueItems.length,
-    focusText: getProjectFocusText(activeProjects),
+    actionItemCount: openActionItemCount,
   });
 
   const stats = [
@@ -514,73 +523,71 @@ export default async function Dashboard({ searchParams }: PageProps) {
           <HomeTopbarActions />
         </header>
 
-        <main className="cockpit-grid">
-          <section className="cockpit-main-column">
-            <section className="dashboard-hero command-banner">
-              <div className="hero-orbit hero-orbit-one" />
-              <div className="hero-orbit hero-orbit-two" />
-              <div className="hero-content">
+        <main className="cockpit-grid cockpit-grid--today-entry">
+          <section className="dashboard-toolbar" aria-label="今日工作台摘要">
+            <div className="hero-content">
+              <div className="hero-title-stack">
                 <div className="hero-kicker">
                   <span className="hero-status-dot" />
                   LOCAL WORK HUB
                 </div>
-                <h1>当前交付上下文</h1>
-                <p className="hero-subtitle">{formatTodayStr()} · 首页态势总览</p>
+                <h1>今日工作台</h1>
+                <p className="hero-subtitle">{formatTodayStr()} · 今日执行入口</p>
+              </div>
+              <div className="hero-summary-stack">
                 <p className="banner-judgement">{bannerJudgement}</p>
-                <div className="banner-summary-grid" aria-label="当前态势摘要">
-                  <Link href={getDashboardFocusHref("blocked")}>
-                    <span>阻塞</span>
-                    <strong>{blockedCount}</strong>
-                  </Link>
-                  <Link href={getDashboardFocusHref("p0")}>
-                    <span>P0 紧急</span>
-                    <strong>{p0Count}</strong>
-                  </Link>
-                  <Link href={getDashboardFocusHref("overdue")}>
-                    <span>逾期</span>
-                    <strong>{overdueItems.length}</strong>
-                  </Link>
-                  <Link href={getDashboardFocusHref("todayLogs")}>
-                    <span>今日日志</span>
-                    <strong>{todayLogsCount}</strong>
-                  </Link>
-                </div>
-                <div className="hero-actions">
-                  <Link href="/logs/new" className="btn hero-btn-primary">
-                    <Icon name="edit" size={15} />
-                    记录今日日志
-                  </Link>
-                  <Link href="/items/new" className="btn hero-btn-secondary">
-                    <Icon name="plus" size={15} />
-                    新建事项
-                  </Link>
-                  <Link href="/export/today" className="btn hero-btn-secondary">
-                    <Icon name="download" size={15} />
-                    导出日报
-                  </Link>
-                  <Link href="/today" className="btn hero-btn-ghost">
-                    <Icon name="calendar" size={15} />
-                    今日视图
-                  </Link>
+                <div className="hero-signal-chips" aria-label="交付风险信号">
+                  <span className={`hero-signal-chip${blockedCount > 0 ? " is-risk" : " is-muted"}`}>阻塞 {blockedCount}</span>
+                  <span className={`hero-signal-chip${p0Count > 0 ? " is-risk" : " is-muted"}`}>P0 {p0Count}</span>
+                  <span className={`hero-signal-chip${p1Count > 0 ? " is-warning" : " is-muted"}`}>P1 {p1Count}</span>
+                  <span className={`hero-signal-chip${overdueItems.length > 0 ? " is-risk" : " is-muted"}`}>逾期 {overdueItems.length}</span>
                 </div>
               </div>
-              <div className="hero-action-panel">
-                <div className="hero-action-panel-head">
-                  <div>
-                    <span className="section-eyebrow">Action Items</span>
-                    <h2>今日行动项</h2>
-                  </div>
-                  <span className="section-count">{openActionItems.length} 项</span>
+              <div className="hero-actions">
+                <Link href="/logs/new" className="btn hero-btn-primary">
+                  <Icon name="edit" size={15} />
+                  记录今日日志
+                </Link>
+                <Link href="/items/new" className="btn hero-btn-secondary">
+                  <Icon name="plus" size={15} />
+                  新建事项
+                </Link>
+                <Link href="/today" className="btn hero-btn-secondary">
+                  <Icon name="calendar" size={15} />
+                  今日视图
+                </Link>
+                <Link href="/export/today" className="btn hero-btn-ghost">
+                  <Icon name="download" size={15} />
+                  导出日报
+                </Link>
+              </div>
+            </div>
+          </section>
+
+          <section className="cockpit-main-column">
+            <section className="card cockpit-card dashboard-action-card">
+              <div className="cockpit-card-head">
+                <div>
+                  <span className="section-eyebrow">Action Items</span>
+                  <h2>今日行动项</h2>
                 </div>
-                <div className="dashboard-action-list">
-                  {openActionItems.length === 0 ? (
-                    <div className="compact-empty">当前没有未处理行动项。</div>
-                  ) : (
-                    openActionItems.map((action) => (
-                      <DashboardActionRow key={action.id} action={action} today={today} />
-                    ))
+                <div className="section-head-actions">
+                  <span className="section-count">{openActionItemCount} 项</span>
+                  {hasMoreActionItems && (
+                    <Link href="/today" className="section-link">
+                      查看全部 <Icon name="chevron-right" size={14} />
+                    </Link>
                   )}
                 </div>
+              </div>
+              <div className="dashboard-action-list">
+                {visibleActionItems.length === 0 ? (
+                  <div className="compact-empty">当前没有未处理行动项。</div>
+                ) : (
+                  visibleActionItems.map((action) => (
+                    <DashboardActionRow key={action.id} action={action} today={today} />
+                  ))
+                )}
               </div>
             </section>
 
@@ -699,7 +706,7 @@ export default async function Dashboard({ searchParams }: PageProps) {
               </div>
             </section>
 
-            <section className="card cockpit-card">
+            <section className={`card cockpit-card portfolio-card${riskyPortfolioProjects.length === 0 ? " portfolio-card--quiet" : ""}`}>
               <div className="cockpit-card-head">
                 <div>
                   <span className="section-eyebrow">Portfolio</span>
@@ -709,11 +716,11 @@ export default async function Dashboard({ searchParams }: PageProps) {
                   全部 <Icon name="chevron-right" size={14} />
                 </Link>
               </div>
-              <div className="portfolio-list">
-                {activeProjects.length === 0 ? (
-                  <div className="compact-empty">当前没有进行中或规划中的项目。</div>
-                ) : (
-                  activeProjects.map((project) => (
+              {riskyPortfolioProjects.length === 0 ? (
+                <div className="portfolio-quiet-empty">暂无需重点关注项目</div>
+              ) : (
+                <div className="portfolio-list">
+                  {riskyPortfolioProjects.map((project) => (
                     <Link key={project.id} href={`/projects/${project.id}`} className="portfolio-row">
                       <span className="portfolio-code">{project.code || "NO-CODE"}</span>
                       <strong>{project.name}</strong>
@@ -724,9 +731,9 @@ export default async function Dashboard({ searchParams }: PageProps) {
                       <span>{project.stage ? PROJECT_STAGE_LABELS[project.stage] || project.stage : "阶段未设定"}</span>
                       <small>{project.currentSummary || project.nextMilestone || project.nextAction || "暂无备注"}</small>
                     </Link>
-                  ))
-                )}
-              </div>
+                  ))}
+                </div>
+              )}
             </section>
           </aside>
         </main>

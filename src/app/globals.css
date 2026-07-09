@@ -8691,3 +8691,316 @@ html body .app-main .cockpit-metrics .stat-card-success {
   border-color: color-mix(in srgb, var(--accent-green) 24%, var(--border-primary)) !important;
   background: linear-gradient(180deg, #ffffff 0%, color-mix(in srgb, var(--accent-green-light) 66%, #ffffff) 100%) !important;
 }
+
+/* ===== Home Today Execution Entry ===== */
+html body .dashboard-shell .dashboard-toolbar {
+  grid-column: 1 / -1 !important;
+  padding: 10px 12px !important;
+  border: 1px solid color-mix(in srgb, var(--border-primary) 78%, transparent) !important;
+  border-radius: var(--radius-lg) !important;
+  background: color-mix(in srgb, #ffffff 78%, var(--bg-secondary)) !important;
+  box-shadow: none !important;
+}
+
+html body .dashboard-shell .dashboard-hero.command-banner {
+  display: block !important;
+  min-height: 0 !important;
+  padding: 11px 14px !important;
+}
+
+html body .dashboard-shell .cockpit-grid--today-entry {
+  align-items: start !important;
+}
+
+html body .dashboard-shell .cockpit-grid--today-entry > .dashboard-hero.command-banner,
+html body .dashboard-shell .cockpit-grid--today-entry > .dashboard-toolbar {
+  grid-column: 1 / -1 !important;
+}
+
+html body .dashboard-shell .dashboard-hero.command-banner .hero-content,
+html body .dashboard-shell .dashboard-toolbar .hero-content {
+  display: grid !important;
+  grid-template-columns: minmax(150px, 0.34fr) minmax(260px, 1fr) auto !important;
+  align-items: center !important;
+  gap: 12px !important;
+  max-width: 100% !important;
+}
+
+html body .dashboard-shell .dashboard-hero.command-banner .hero-kicker,
+html body .dashboard-shell .dashboard-toolbar .hero-kicker {
+  margin-bottom: 3px !important;
+  font-size: 9px !important;
+}
+
+html body .dashboard-shell .dashboard-hero.command-banner h1,
+html body .dashboard-shell .dashboard-toolbar h1 {
+  margin: 0 !important;
+  color: var(--text-primary) !important;
+  font-size: 20px !important;
+  line-height: 1.12 !important;
+  font-weight: 760 !important;
+  letter-spacing: -0.015em !important;
+}
+
+html body .dashboard-shell .dashboard-hero.command-banner .hero-subtitle,
+html body .dashboard-shell .dashboard-toolbar .hero-subtitle {
+  margin-top: 2px !important;
+  font-size: 12px !important;
+}
+
+html body .dashboard-shell .dashboard-hero.command-banner .banner-judgement,
+html body .dashboard-shell .dashboard-toolbar .banner-judgement {
+  margin: 0 !important;
+  color: color-mix(in srgb, var(--text-secondary) 90%, var(--text-primary)) !important;
+  font-size: 13px !important;
+  line-height: 1.42 !important;
+}
+
+html body .dashboard-shell .hero-title-stack,
+html body .dashboard-shell .hero-summary-stack {
+  min-width: 0 !important;
+}
+
+html body .dashboard-shell .hero-signal-chips {
+  display: flex !important;
+  flex-wrap: wrap !important;
+  gap: 5px !important;
+  margin-top: 5px !important;
+}
+
+html body .dashboard-shell .hero-signal-chip {
+  display: inline-flex !important;
+  align-items: center !important;
+  min-height: 20px !important;
+  padding: 2px 7px !important;
+  border: 1px solid var(--border-primary) !important;
+  border-radius: 999px !important;
+  color: var(--text-secondary) !important;
+  background: color-mix(in srgb, #ffffff 72%, var(--bg-secondary)) !important;
+  font-size: 11px !important;
+  font-weight: 650 !important;
+  line-height: 1.2 !important;
+}
+
+html body .dashboard-shell .hero-signal-chip.is-muted {
+  opacity: 0.58 !important;
+}
+
+html body .dashboard-shell .hero-signal-chip.is-risk {
+  color: var(--accent-red) !important;
+  border-color: color-mix(in srgb, var(--accent-red) 22%, var(--border-primary)) !important;
+  background: color-mix(in srgb, var(--accent-red-light) 44%, #ffffff) !important;
+}
+
+html body .dashboard-shell .hero-signal-chip.is-warning {
+  color: var(--accent-orange) !important;
+  border-color: color-mix(in srgb, var(--accent-orange) 22%, var(--border-primary)) !important;
+  background: color-mix(in srgb, var(--accent-orange-light) 52%, #ffffff) !important;
+}
+
+html body .dashboard-shell .banner-summary-grid {
+  grid-template-columns: repeat(4, minmax(0, 1fr)) !important;
+  gap: 7px !important;
+  margin-top: 10px !important;
+}
+
+html body .dashboard-shell .banner-summary-grid a {
+  padding: 8px 10px !important;
+  border-color: color-mix(in srgb, var(--border-primary) 76%, transparent) !important;
+  color: var(--text-primary) !important;
+  background: color-mix(in srgb, #ffffff 78%, var(--bg-secondary)) !important;
+  box-shadow: none !important;
+}
+
+html body .dashboard-shell .banner-summary-grid a.is-muted {
+  opacity: 0.58 !important;
+}
+
+html body .dashboard-shell .banner-summary-grid a.is-risk {
+  border-color: color-mix(in srgb, var(--accent-red) 28%, var(--border-primary)) !important;
+  background: color-mix(in srgb, var(--accent-red-light) 48%, #ffffff) !important;
+}
+
+html body .dashboard-shell .banner-summary-grid a.is-warning {
+  border-color: color-mix(in srgb, var(--accent-orange) 28%, var(--border-primary)) !important;
+  background: color-mix(in srgb, var(--accent-orange-light) 58%, #ffffff) !important;
+}
+
+html body .dashboard-shell .banner-summary-grid a.is-active {
+  border-color: color-mix(in srgb, var(--accent-blue) 26%, var(--border-primary)) !important;
+  background: color-mix(in srgb, var(--accent-blue-light) 54%, #ffffff) !important;
+}
+
+html body .dashboard-shell .banner-summary-grid span {
+  color: var(--text-tertiary) !important;
+  font-size: 10px !important;
+  letter-spacing: 0.04em !important;
+}
+
+html body .dashboard-shell .banner-summary-grid strong {
+  margin-top: 3px !important;
+  color: inherit !important;
+  font-size: 20px !important;
+}
+
+html body .dashboard-shell .hero-actions {
+  flex-wrap: nowrap !important;
+  gap: 8px !important;
+  justify-content: flex-end !important;
+  margin-top: 0 !important;
+}
+
+html body .dashboard-shell .hero-actions .btn {
+  white-space: nowrap !important;
+}
+
+html body .app-main .dashboard-action-card {
+  border-color: color-mix(in srgb, var(--accent-blue) 22%, var(--border-primary)) !important;
+}
+
+html body .app-main .dashboard-action-card .cockpit-card-head {
+  min-height: 42px !important;
+  background: linear-gradient(90deg, color-mix(in srgb, var(--accent-blue-light) 34%, transparent), transparent 74%) !important;
+}
+
+html body .app-main .dashboard-action-card .section-head-actions {
+  display: inline-flex !important;
+  align-items: center !important;
+  justify-content: flex-end !important;
+  gap: 10px !important;
+  min-width: 0 !important;
+}
+
+html body .app-main .dashboard-action-card .section-count {
+  margin-left: 0 !important;
+  white-space: nowrap !important;
+}
+
+html body .app-main .dashboard-action-card .dashboard-action-list {
+  gap: 4px !important;
+  padding: 6px !important;
+}
+
+html body .app-main .dashboard-action-card .dashboard-action-row {
+  min-height: 36px !important;
+  gap: 7px !important;
+  padding: 5px 8px !important;
+  border-radius: 9px !important;
+  background: #ffffff !important;
+}
+
+html body .app-main .dashboard-action-card .dashboard-action-status {
+  min-width: 40px !important;
+  min-height: 19px !important;
+  padding: 1px 6px !important;
+  font-size: 10px !important;
+  font-weight: 660 !important;
+}
+
+html body .app-main .dashboard-action-card .dashboard-action-main strong {
+  font-size: 12.5px !important;
+  line-height: 1.25 !important;
+}
+
+html body .app-main .dashboard-action-card .dashboard-action-main span {
+  color: var(--text-tertiary) !important;
+  font-size: 10.5px !important;
+}
+
+html body .app-main .cockpit-metrics .stat-card {
+  min-height: 78px !important;
+  padding: 9px 10px !important;
+}
+
+html body .app-main .cockpit-metrics .stat-card .stat-value {
+  margin-top: 6px !important;
+  font-size: 22px !important;
+}
+
+html body .app-main .cockpit-metrics .stat-card-neutral {
+  opacity: 0.62 !important;
+  color: var(--text-tertiary) !important;
+  background: color-mix(in srgb, #ffffff 86%, var(--bg-secondary)) !important;
+}
+
+html body .app-main .cockpit-side-column .cockpit-card {
+  background: color-mix(in srgb, #ffffff 82%, var(--bg-secondary)) !important;
+  box-shadow: none !important;
+}
+
+html body .app-main .cockpit-side-column .cockpit-card-head {
+  min-height: 44px !important;
+  padding: 9px 11px !important;
+}
+
+html body .app-main .cockpit-side-column .attention-list,
+html body .app-main .cockpit-side-column .portfolio-list {
+  gap: 6px !important;
+  padding: 8px !important;
+}
+
+html body .app-main .cockpit-side-column .attention-row,
+html body .app-main .cockpit-side-column .portfolio-row {
+  min-height: 38px !important;
+  padding: 8px 9px !important;
+  border-radius: 10px !important;
+  background: color-mix(in srgb, #ffffff 76%, var(--bg-secondary)) !important;
+  box-shadow: none !important;
+}
+
+html body .app-main .cockpit-side-column .attention-row strong,
+html body .app-main .cockpit-side-column .portfolio-row strong {
+  font-size: 12px !important;
+  line-height: 1.28 !important;
+}
+
+html body .app-main .cockpit-side-column .attention-row > span:last-child,
+html body .app-main .cockpit-side-column .portfolio-row > span,
+html body .app-main .cockpit-side-column .portfolio-row small {
+  font-size: 10.5px !important;
+  color: var(--text-tertiary) !important;
+}
+
+html body .app-main .cockpit-side-column .attention-ok,
+html body .app-main .cockpit-side-column .portfolio-quiet-empty {
+  margin: 8px !important;
+  min-height: 0 !important;
+  padding: 8px 10px !important;
+  border: 1px solid var(--border-primary) !important;
+  border-radius: 10px !important;
+  color: var(--text-tertiary) !important;
+  background: color-mix(in srgb, #ffffff 72%, var(--bg-secondary)) !important;
+  font-size: 12px !important;
+}
+
+html body .app-main .cockpit-side-column .portfolio-card--quiet {
+  border-style: dashed !important;
+  opacity: 0.72 !important;
+}
+
+html body .app-main .cockpit-side-column .portfolio-card--quiet .cockpit-card-head {
+  min-height: 38px !important;
+  padding-top: 7px !important;
+  padding-bottom: 6px !important;
+}
+
+html body .app-main .cockpit-side-column .portfolio-card--quiet .cockpit-card-head h2 {
+  font-size: 13px !important;
+}
+
+@media (max-width: 860px) {
+  html body .dashboard-shell .dashboard-hero.command-banner .hero-content,
+  html body .dashboard-shell .dashboard-toolbar .hero-content {
+    grid-template-columns: 1fr !important;
+    gap: 8px !important;
+  }
+
+  html body .dashboard-shell .hero-actions {
+    flex-wrap: wrap !important;
+    justify-content: flex-start !important;
+  }
+
+  html body .dashboard-shell .banner-summary-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
+  }
+}
