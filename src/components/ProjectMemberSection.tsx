@@ -516,6 +516,7 @@ export default function ProjectMemberSection({ projectId }: ProjectMemberSection
   const displayedOtherMembers = displayedMembers.filter((member) => !member.isCore);
   const groupedOtherMembers = useMemo(() => groupMembersByRole(displayedOtherMembers), [displayedOtherMembers]);
   const selectedMember = selectedMemberId ? members.find((member) => member.id === selectedMemberId) ?? null : null;
+  const hasMembers = members.length > 0;
 
   return (
     <section className="cockpit-section">
@@ -525,18 +526,20 @@ export default function ProjectMemberSection({ projectId }: ProjectMemberSection
           <h2>项目成员</h2>
         </div>
         <div style={{ display: "flex", gap: 8, flexWrap: "wrap", justifyContent: "flex-end", alignItems: "center", minWidth: 0, flex: "1 1 420px" }}>
-          <div style={{ width: 360, maxWidth: "100%", minWidth: 260, position: "relative", flex: "0 1 420px" }}>
-            <span style={{ position: "absolute", left: 10, top: "50%", transform: "translateY(-50%)", pointerEvents: "none", color: "var(--text-tertiary)", display: "inline-flex" }}>
-              <Icon name="search" size={14} />
-            </span>
-            <input
-              type="search"
-              value={keyword}
-              onChange={(e) => setKeyword(e.target.value)}
-              placeholder="查询姓名、角色、团队、职责、联系方式"
-              style={{ ...INPUT_STYLE, paddingLeft: 30, height: 36 }}
-            />
-          </div>
+          {hasMembers && (
+            <div style={{ width: 360, maxWidth: "100%", minWidth: 260, position: "relative", flex: "0 1 420px" }}>
+              <span style={{ position: "absolute", left: 10, top: "50%", transform: "translateY(-50%)", pointerEvents: "none", color: "var(--text-tertiary)", display: "inline-flex" }}>
+                <Icon name="search" size={14} />
+              </span>
+              <input
+                type="search"
+                value={keyword}
+                onChange={(e) => setKeyword(e.target.value)}
+                placeholder="查询姓名、角色、团队、职责、联系方式"
+                style={{ ...INPUT_STYLE, paddingLeft: 30, height: 36 }}
+              />
+            </div>
+          )}
           {!showCreateForm && (
             <button
               type="button"
@@ -600,11 +603,15 @@ export default function ProjectMemberSection({ projectId }: ProjectMemberSection
             </button>
           </div>
         </div>
-      ) : members.length === 0 && !showCreateForm ? (
-        <div className="card empty-state">
-          <div className="empty-icon">👥</div>
-          <strong>还没有项目成员</strong>
-          <p>可补充 SE、产品、项目、测试、开发等关键角色。</p>
+      ) : !hasMembers && !showCreateForm ? (
+        <div className="card empty-state project-compact-empty">
+          <p>还没有项目成员，可补充 SE、产品、项目、测试、开发等关键角色。</p>
+          <div className="empty-actions">
+            <button type="button" className="btn btn-secondary" onClick={openCreateForm}>
+              <Icon name="plus" size={14} />
+              新增成员
+            </button>
+          </div>
         </div>
       ) : (
         <div className="card entity-card entity-card--compact" style={{ padding: 12, display: "grid", gap: 12 }}>

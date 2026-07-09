@@ -126,28 +126,31 @@ function SignalMetric({
 }) {
   const resolvedTone = value > 0 ? tone : "neutral";
   const toneStyle = SIGNAL_TONE_STYLE[resolvedTone];
+  const isEmpty = value === 0 && !active;
 
   return (
     <button
       type="button"
-      onClick={onClick}
+      onClick={isEmpty ? undefined : onClick}
       aria-pressed={active}
+      disabled={isEmpty}
       style={{
         display: "inline-flex",
         alignItems: "baseline",
         gap: 6,
-        minHeight: 32,
-        padding: "5px 10px",
+        minHeight: 28,
+        padding: "4px 9px",
         borderRadius: 8,
         border: `1px solid ${active ? toneStyle.color : toneStyle.border}`,
         background: active ? "var(--bg-primary)" : toneStyle.background,
         color: value > 0 ? toneStyle.color : "var(--text-tertiary)",
         whiteSpace: "nowrap",
-        cursor: "pointer",
+        cursor: isEmpty ? "default" : "pointer",
         boxShadow: active ? `0 0 0 1px ${toneStyle.border}` : "none",
+        opacity: isEmpty ? 0.58 : 1,
       }}
     >
-      <strong style={{ fontSize: 16, lineHeight: 1 }}>{value}</strong>
+      <strong style={{ fontSize: 15, lineHeight: 1 }}>{value}</strong>
       <span style={{ fontSize: 12, fontWeight: value > 0 || active ? 650 : 500 }}>{label}</span>
     </button>
   );
@@ -229,7 +232,7 @@ export default function ProjectSignalSection({
         </div>
       </div>
 
-      <div className="card entity-card entity-card--compact" style={{ padding: 12, display: "grid", gap: 10 }}>
+      <div className="card entity-card entity-card--compact project-signal-card" style={{ padding: 12, display: "grid", gap: 10 }}>
         <div style={{ display: "flex", justifyContent: "space-between", gap: 12, flexWrap: "wrap", alignItems: "center" }}>
           <div style={{ display: "grid", gap: 3, minWidth: 0 }}>
             <strong style={{ color: hasHardSignal ? "var(--accent-red)" : hasRiskSignal ? "var(--accent-orange)" : "var(--text-primary)", fontSize: 14 }}>
@@ -242,7 +245,7 @@ export default function ProjectSignalSection({
           <div style={{ color: "var(--text-tertiary)", fontSize: 12, whiteSpace: "nowrap" }}>事项 {itemCount} · 日志 {logCount}</div>
         </div>
 
-        <div style={{ display: "flex", flexWrap: "wrap", gap: 8 }}>
+        <div style={{ display: "flex", flexWrap: "wrap", gap: 6 }}>
           <SignalMetric value={p0p1Count} label="P0/P1" tone={p0p1Count > 0 ? "danger" : "success"} active={focus === "p0p1"} onClick={() => setFocus("p0p1")} />
           <SignalMetric value={blockedCount} label="阻塞" tone={blockedCount > 0 ? "danger" : "success"} active={focus === "blocked"} onClick={() => setFocus("blocked")} />
           <SignalMetric value={overdueCount} label="逾期" tone={overdueCount > 0 ? "danger" : "success"} active={focus === "overdue"} onClick={() => setFocus("overdue")} />
@@ -251,7 +254,7 @@ export default function ProjectSignalSection({
           <SignalMetric value={logCount} label="日志" active={focus === "logs"} onClick={() => setFocus("logs")} />
         </div>
 
-        <div style={{ display: "grid", gap: 2, padding: "8px 10px 4px", borderRadius: 8, background: "var(--bg-secondary)", border: "1px solid var(--border-secondary)" }}>
+        <div style={{ display: "grid", gap: 2, padding: "7px 10px 4px", borderRadius: 8, background: "var(--bg-secondary)", border: "1px solid var(--border-secondary)" }}>
           <div style={{ display: "flex", justifyContent: "space-between", gap: 10, alignItems: "center", flexWrap: "wrap" }}>
             <strong style={{ color: "var(--text-primary)", fontSize: 13 }}>聚焦：{FOCUS_LABELS[focus]}</strong>
             <a href={viewAllHref} style={{ color: "var(--text-tertiary)", fontSize: 12, textDecoration: "none" }}>查看全部</a>

@@ -1925,6 +1925,7 @@ export default function ProjectMilestoneSection({ projectId }: ProjectMilestoneS
   const scheduleSignalCounts = useMemo(() => getScheduleSignalCounts(milestones, today), [milestones, today]);
   const nextMilestoneSignal = nextKeyMilestone ? getMilestoneSignal(nextKeyMilestone, today, nextKeyMilestone.id) : null;
   const showAllMatchedMilestones = Boolean(normalizedKeyword) || selectedPlanType !== "all" || selectedStatus !== "all";
+  const hasMilestones = milestones.length > 0;
 
   return (
     <section className="cockpit-section">
@@ -1945,103 +1946,105 @@ export default function ProjectMilestoneSection({ projectId }: ProjectMilestoneS
         )}
       </div>
 
-      <div className="card entity-card entity-card--compact" style={{ padding: 12, marginBottom: 12, display: "grid", gap: 8 }}>
-        <div style={{ display: "flex", justifyContent: "space-between", gap: 12, flexWrap: "wrap", alignItems: "center" }}>
-          <button
-            type="button"
-            onClick={() => nextKeyMilestone && setSelectedMilestoneId(nextKeyMilestone.id)}
-            disabled={!nextKeyMilestone}
-            style={{
-              minWidth: 260,
-              flex: "1 1 360px",
-              border: `1px solid ${nextKeyMilestone ? "color-mix(in srgb, var(--accent-blue) 30%, var(--border-primary))" : "var(--border-primary)"}`,
-              borderRadius: 8,
-              background: nextKeyMilestone ? "color-mix(in srgb, var(--accent-blue-light) 42%, var(--bg-primary))" : "var(--bg-primary)",
-              padding: "10px 12px",
-              textAlign: "left",
-              color: "var(--text-secondary)",
-              cursor: nextKeyMilestone ? "pointer" : "default",
-              display: "grid",
-              gap: 4,
-              boxShadow: nextKeyMilestone ? "0 1px 0 color-mix(in srgb, var(--accent-blue) 12%, transparent)" : "none",
-            }}
-          >
-            <span style={{ color: "var(--accent-blue)", fontSize: 11, fontWeight: 750, letterSpacing: 0 }}>下一节点</span>
-            {nextKeyMilestone ? (
-              <>
-                <strong style={{ color: "var(--text-primary)", fontSize: 14, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
-                  {nextKeyMilestone.title}
-                  {getPlannedDateText(nextKeyMilestone) ? ` · ${getPlannedDateText(nextKeyMilestone)}` : ""}
-                  {nextKeyMilestone.owner ? ` · ${nextKeyMilestone.owner}` : ""}
-                </strong>
-                {nextMilestoneSignal && <DeviationText signal={nextMilestoneSignal} fallback="日期待定" />}
-              </>
-            ) : (
-              <strong style={{ color: "var(--text-tertiary)", fontSize: 14 }}>暂无未完成节点</strong>
-            )}
-          </button>
-          <div style={{ display: "flex", gap: 8, flexWrap: "wrap", alignItems: "center", color: "var(--text-secondary)", fontSize: 13 }}>
-            <span className={scheduleSignalCounts.pointDelayed > 0 ? "entity-pill entity-pill--danger" : "entity-pill entity-pill--muted"}>节点延期 {scheduleSignalCounts.pointDelayed}</span>
-            <span className={scheduleSignalCounts.rangeStartDelayed > 0 ? "entity-pill entity-pill--danger" : "entity-pill entity-pill--muted"}>晚启 {scheduleSignalCounts.rangeStartDelayed}</span>
-            <span className={scheduleSignalCounts.rangeEndDelayed > 0 ? "entity-pill entity-pill--danger" : "entity-pill entity-pill--muted"}>晚结 {scheduleSignalCounts.rangeEndDelayed}</span>
-            <span className="entity-pill entity-pill--success">准时 {scheduleSignalCounts.onTime}</span>
-          </div>
-        </div>
-
-        <div style={{ display: "flex", justifyContent: "space-between", gap: 12, flexWrap: "wrap", alignItems: "center", paddingTop: 8, borderTop: "1px solid var(--border-secondary)" }}>
-          <div style={{ display: "flex", flexWrap: "wrap", gap: 8 }}>
+      {hasMilestones && (
+        <div className="card entity-card entity-card--compact" style={{ padding: 12, marginBottom: 12, display: "grid", gap: 8 }}>
+          <div style={{ display: "flex", justifyContent: "space-between", gap: 12, flexWrap: "wrap", alignItems: "center" }}>
             <button
               type="button"
-              onClick={() => setSelectedPlanType("all")}
-              className={`btn ${selectedPlanType === "all" ? "btn-primary" : "btn-secondary"}`}
-              style={VIEW_BUTTON_STYLE}
+              onClick={() => nextKeyMilestone && setSelectedMilestoneId(nextKeyMilestone.id)}
+              disabled={!nextKeyMilestone}
+              style={{
+                minWidth: 260,
+                flex: "1 1 360px",
+                border: `1px solid ${nextKeyMilestone ? "color-mix(in srgb, var(--accent-blue) 30%, var(--border-primary))" : "var(--border-primary)"}`,
+                borderRadius: 8,
+                background: nextKeyMilestone ? "color-mix(in srgb, var(--accent-blue-light) 42%, var(--bg-primary))" : "var(--bg-primary)",
+                padding: "10px 12px",
+                textAlign: "left",
+                color: "var(--text-secondary)",
+                cursor: nextKeyMilestone ? "pointer" : "default",
+                display: "grid",
+                gap: 4,
+                boxShadow: nextKeyMilestone ? "0 1px 0 color-mix(in srgb, var(--accent-blue) 12%, transparent)" : "none",
+              }}
             >
-              全部
+              <span style={{ color: "var(--accent-blue)", fontSize: 11, fontWeight: 750, letterSpacing: 0 }}>下一节点</span>
+              {nextKeyMilestone ? (
+                <>
+                  <strong style={{ color: "var(--text-primary)", fontSize: 14, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
+                    {nextKeyMilestone.title}
+                    {getPlannedDateText(nextKeyMilestone) ? ` · ${getPlannedDateText(nextKeyMilestone)}` : ""}
+                    {nextKeyMilestone.owner ? ` · ${nextKeyMilestone.owner}` : ""}
+                  </strong>
+                  {nextMilestoneSignal && <DeviationText signal={nextMilestoneSignal} fallback="日期待定" />}
+                </>
+              ) : (
+                <strong style={{ color: "var(--text-tertiary)", fontSize: 14 }}>暂无未完成节点</strong>
+              )}
             </button>
-            {PROJECT_PLAN_TYPES.map((planType) => (
+            <div style={{ display: "flex", gap: 8, flexWrap: "wrap", alignItems: "center", color: "var(--text-secondary)", fontSize: 13 }}>
+              <span className={scheduleSignalCounts.pointDelayed > 0 ? "entity-pill entity-pill--danger" : "entity-pill entity-pill--muted"}>节点延期 {scheduleSignalCounts.pointDelayed}</span>
+              <span className={scheduleSignalCounts.rangeStartDelayed > 0 ? "entity-pill entity-pill--danger" : "entity-pill entity-pill--muted"}>晚启 {scheduleSignalCounts.rangeStartDelayed}</span>
+              <span className={scheduleSignalCounts.rangeEndDelayed > 0 ? "entity-pill entity-pill--danger" : "entity-pill entity-pill--muted"}>晚结 {scheduleSignalCounts.rangeEndDelayed}</span>
+              <span className="entity-pill entity-pill--success">准时 {scheduleSignalCounts.onTime}</span>
+            </div>
+          </div>
+
+          <div style={{ display: "flex", justifyContent: "space-between", gap: 12, flexWrap: "wrap", alignItems: "center", paddingTop: 8, borderTop: "1px solid var(--border-secondary)" }}>
+            <div style={{ display: "flex", flexWrap: "wrap", gap: 8 }}>
               <button
-                key={planType.value}
                 type="button"
-                onClick={() => setSelectedPlanType(planType.value)}
-                className={`btn ${selectedPlanType === planType.value ? "btn-primary" : "btn-secondary"}`}
+                onClick={() => setSelectedPlanType("all")}
+                className={`btn ${selectedPlanType === "all" ? "btn-primary" : "btn-secondary"}`}
                 style={VIEW_BUTTON_STYLE}
               >
-                {PROJECT_PLAN_TYPE_LABELS[planType.value] || planType.label}
+                全部
               </button>
-            ))}
-          </div>
-          <div style={{ display: "flex", gap: 8, flex: "1 1 360px", justifyContent: "flex-end", flexWrap: "wrap" }}>
-            <div style={{ display: "flex", gap: 6 }}>
-              <button type="button" className={`btn ${viewMode === "list" ? "btn-primary" : "btn-secondary"}`} style={VIEW_BUTTON_STYLE} onClick={() => setViewMode("list")}>
-                列表
-              </button>
-              <button type="button" className={`btn ${viewMode === "timeline" ? "btn-primary" : "btn-secondary"}`} style={VIEW_BUTTON_STYLE} onClick={() => setViewMode("timeline")}>
-                时间轴
-              </button>
-            </div>
-            <select value={selectedStatus} onChange={(event) => setSelectedStatus(event.target.value)} style={{ ...INPUT_STYLE, width: 128, height: 36, padding: "0 9px" }} title="状态筛选">
-              <option value="all">全部状态</option>
-              {PROJECT_MILESTONE_STATUSES.map((status) => (
-                <option key={status.value} value={status.value}>
-                  {status.label}
-                </option>
+              {PROJECT_PLAN_TYPES.map((planType) => (
+                <button
+                  key={planType.value}
+                  type="button"
+                  onClick={() => setSelectedPlanType(planType.value)}
+                  className={`btn ${selectedPlanType === planType.value ? "btn-primary" : "btn-secondary"}`}
+                  style={VIEW_BUTTON_STYLE}
+                >
+                  {PROJECT_PLAN_TYPE_LABELS[planType.value] || planType.label}
+                </button>
               ))}
-            </select>
-          <div style={{ minWidth: 240, maxWidth: 360, flex: "1 1 260px", position: "relative" }}>
-            <span style={{ position: "absolute", left: 10, top: "50%", transform: "translateY(-50%)", pointerEvents: "none", color: "var(--text-tertiary)", display: "inline-flex" }}>
-              <Icon name="search" size={14} />
-            </span>
-            <input
-              type="search"
-              value={keyword}
-              onChange={(event) => setKeyword(event.target.value)}
-              placeholder="查询名称、类型、状态、负责人、说明"
-                style={{ ...INPUT_STYLE, paddingLeft: 30 }}
-              />
+            </div>
+            <div style={{ display: "flex", gap: 8, flex: "1 1 360px", justifyContent: "flex-end", flexWrap: "wrap" }}>
+              <div style={{ display: "flex", gap: 6 }}>
+                <button type="button" className={`btn ${viewMode === "list" ? "btn-primary" : "btn-secondary"}`} style={VIEW_BUTTON_STYLE} onClick={() => setViewMode("list")}>
+                  列表
+                </button>
+                <button type="button" className={`btn ${viewMode === "timeline" ? "btn-primary" : "btn-secondary"}`} style={VIEW_BUTTON_STYLE} onClick={() => setViewMode("timeline")}>
+                  时间轴
+                </button>
+              </div>
+              <select value={selectedStatus} onChange={(event) => setSelectedStatus(event.target.value)} style={{ ...INPUT_STYLE, width: 128, height: 36, padding: "0 9px" }} title="状态筛选">
+                <option value="all">全部状态</option>
+                {PROJECT_MILESTONE_STATUSES.map((status) => (
+                  <option key={status.value} value={status.value}>
+                    {status.label}
+                  </option>
+                ))}
+              </select>
+              <div style={{ minWidth: 240, maxWidth: 360, flex: "1 1 260px", position: "relative" }}>
+                <span style={{ position: "absolute", left: 10, top: "50%", transform: "translateY(-50%)", pointerEvents: "none", color: "var(--text-tertiary)", display: "inline-flex" }}>
+                  <Icon name="search" size={14} />
+                </span>
+                <input
+                  type="search"
+                  value={keyword}
+                  onChange={(event) => setKeyword(event.target.value)}
+                  placeholder="查询名称、类型、状态、负责人、说明"
+                  style={{ ...INPUT_STYLE, paddingLeft: 30 }}
+                />
+              </div>
             </div>
           </div>
         </div>
-      </div>
+      )}
 
       {milestoneActionError && (
         <div className="feedback-note feedback-note--error" style={{ marginBottom: 12 }}>
@@ -2074,9 +2077,15 @@ export default function ProjectMilestoneSection({ projectId }: ProjectMilestoneS
             </button>
           </div>
         </div>
-      ) : milestones.length === 0 && !showMilestoneCreateForm ? (
-        <div className="card empty-state">
-          <p>可补充关键里程碑、管理节点或阶段计划，便于判断项目节奏。</p>
+      ) : !hasMilestones && !showMilestoneCreateForm ? (
+        <div className="card empty-state project-compact-empty">
+          <p>暂无关键节点，可补充里程碑、开发计划、测试计划等。</p>
+          <div className="empty-actions">
+            <button type="button" className="btn btn-secondary" onClick={openMilestoneCreateForm}>
+              <Icon name="plus" size={14} />
+              新增节点/计划
+            </button>
+          </div>
         </div>
       ) : displayedMilestones.length === 0 ? (
         <div className="card empty-state">

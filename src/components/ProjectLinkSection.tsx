@@ -388,10 +388,14 @@ export default function ProjectLinkSection({ projectId }: ProjectLinkSectionProp
           </div>
         </div>
       ) : links.length === 0 ? (
-        <div className="card empty-state">
-          <div className="empty-icon">🔗</div>
-          <strong>还没有项目资源</strong>
-          <p>可补充 wiki、版本计划、测试平台、发布入口或项目资料。</p>
+        <div className="card empty-state project-compact-empty">
+          <p>还没有项目资源，可补充 wiki、版本计划、测试平台、发布入口或项目资料。</p>
+          <div className="empty-actions">
+            <button type="button" className="btn btn-secondary" onClick={openCreateForm}>
+              <Icon name="plus" size={14} />
+              新增资源
+            </button>
+          </div>
         </div>
       ) : (
         <div className="card entity-card entity-card--compact" style={{ padding: 10, display: "grid", gap: 6 }}>

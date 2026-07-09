@@ -4,8 +4,6 @@ import { useCallback, useEffect, useState } from "react";
 import { useParams } from "next/navigation";
 import Link from "next/link";
 import Icon from "@/components/Icon";
-import WorkItemCard from "@/components/WorkItemCard";
-import WorkLogCard from "@/components/WorkLogCard";
 import PageLoadingState from "@/components/PageLoadingState";
 import ProjectHeaderSection from "@/components/ProjectHeaderSection";
 import ProjectOverviewSection from "@/components/ProjectOverviewSection";
@@ -13,6 +11,7 @@ import ProjectSignalSection from "@/components/ProjectSignalSection";
 import ProjectMilestoneSection from "@/components/ProjectMilestoneSection";
 import ProjectLinkSection from "@/components/ProjectLinkSection";
 import ProjectMemberSection from "@/components/ProjectMemberSection";
+import { PRIORITY_LABELS, STATUS_LABELS, WORK_LOG_TYPE_LABELS } from "@/lib/constants";
 import { signalToItemsHref, signalToLogsHref } from "@/lib/signalMap";
 import { getLocalDateString } from "@/lib/utils";
 import type { Project, WorkItem, WorkLog } from "@/lib/types";
@@ -99,6 +98,66 @@ const ATTENTION_CHIP_STYLES = {
     border: "var(--border-primary)",
   },
 } as const;
+
+function getShortDate(value?: Date | string | null) {
+  if (!value) return "未设日期";
+  if (typeof value === "string" && /^\d{4}-\d{2}-\d{2}$/.test(value)) return value;
+  const date = new Date(value);
+  if (!Number.isFinite(date.getTime())) return "未设日期";
+  return date.toLocaleDateString("zh-CN", { month: "2-digit", day: "2-digit" });
+}
+
+function getItemSupportText(item: WorkItem) {
+  return item.nextAction || item.currentSummary || item.trackingReason || item.description || "暂无下一步或进展说明";
+}
+
+function ProjectItemEvidenceRow({ item, today }: { item: WorkItem; today: string }) {
+  const evidenceLabel = getItemEvidenceLabel(item, today);
+  const overdue = isItemOverdue(item, today);
+  const supportText = getItemSupportText(item);
+
+  return (
+    <Link
+      href={`/items/${item.id}`}
+      className={`project-evidence-row project-evidence-row--item${overdue ? " is-overdue" : ""}${item.status === "blocked" ? " is-blocked" : ""}`}
+    >
+      <div className="project-evidence-badges">
+        {evidenceLabel && <span className="entity-pill entity-pill--warning">{evidenceLabel}</span>}
+        <span className={`badge badge-${item.priority.toLowerCase()}`}>{PRIORITY_LABELS[item.priority] || item.priority}</span>
+        <span className={`badge badge-${item.status}`}>{STATUS_LABELS[item.status] || item.status}</span>
+      </div>
+      <div className="project-evidence-title">
+        <strong>{item.title}</strong>
+        <span>{item.owner || item.module || item.type}</span>
+      </div>
+      <div className="project-evidence-support">{supportText}</div>
+      <div className={`project-evidence-date${overdue ? " is-danger" : ""}`}>{item.dueDate || getShortDate(item.updatedAt)}</div>
+      <Icon name="chevron-right" size={14} />
+    </Link>
+  );
+}
+
+function ProjectLogEvidenceRow({ log }: { log: WorkLog }) {
+  const evidenceLabel = getLogEvidenceLabel(log);
+  const summary = log.content || log.item?.title || "暂无日志正文";
+
+  return (
+    <Link href={`/logs/${log.id}`} className={`project-evidence-row project-evidence-row--log${log.reportable ? " is-reportable" : ""}`}>
+      <div className="project-evidence-badges">
+        {evidenceLabel && <span className="entity-pill entity-pill--warning">{evidenceLabel}</span>}
+        {log.reportable && <span className="entity-pill entity-pill--success">可汇报</span>}
+        <span className="entity-pill entity-pill--muted">{WORK_LOG_TYPE_LABELS[log.type] || log.type}</span>
+      </div>
+      <div className="project-evidence-title">
+        <strong>{log.title}</strong>
+        <span>{log.item?.title ? `关联事项：${log.item.title}` : log.module || log.source}</span>
+      </div>
+      <div className="project-evidence-support">{summary}</div>
+      <div className="project-evidence-date">{log.workDate}</div>
+      <Icon name="chevron-right" size={14} />
+    </Link>
+  );
+}
 
 export default function ProjectDetailPage() {
   const params = useParams();
@@ -273,8 +332,14 @@ export default function ProjectDetailPage() {
           </Link>
         </div>
         {items.length === 0 ? (
-          <div className="card empty-state">
-            <p>暂无关联事项</p>
+          <div className="card empty-state project-compact-empty">
+            <p>暂无关联事项，可新增事项作为项目状态支撑。</p>
+            <div className="empty-actions">
+              <Link href={`/items/new?projectId=${project.id}`} className="btn btn-secondary">
+                <Icon name="plus" size={14} />
+                新建关联事项
+              </Link>
+            </div>
           </div>
         ) : (
           <>
@@ -334,9 +399,9 @@ export default function ProjectDetailPage() {
                 </button>
               </div>
             )}
-            <div className="content-card-grid">
+            <div className="project-evidence-list">
               {visibleProjectItems.slice(0, 20).map((item) => (
-                <WorkItemCard key={item.id} item={item} evidenceLabel={getItemEvidenceLabel(item, today)} />
+                <ProjectItemEvidenceRow key={item.id} item={item} today={today} />
               ))}
             </div>
           </>
@@ -354,8 +419,14 @@ export default function ProjectDetailPage() {
           </Link>
         </div>
         {logs.length === 0 ? (
-          <div className="card empty-state">
-            <p>暂无关联日志</p>
+          <div className="card empty-state project-compact-empty">
+            <p>暂无关联日志，可补充事实记录支撑项目判断。</p>
+            <div className="empty-actions">
+              <Link href={`/logs/new?projectId=${project.id}`} className="btn btn-secondary">
+                <Icon name="edit" size={14} />
+                新建关联日志
+              </Link>
+            </div>
           </div>
         ) : (
           <>
@@ -412,9 +483,9 @@ export default function ProjectDetailPage() {
                 </button>
               )}
             </div>
-            <div className="content-card-grid">
+            <div className="project-evidence-list">
               {visibleProjectLogs.slice(0, 20).map((log) => (
-                <WorkLogCard key={log.id} log={log} evidenceLabel={getLogEvidenceLabel(log)} />
+                <ProjectLogEvidenceRow key={log.id} log={log} />
               ))}
             </div>
           </>

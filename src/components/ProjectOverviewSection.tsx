@@ -70,9 +70,11 @@ function isOverdue(item: WorkItem) {
 }
 
 function MetaItem({ label, value }: { label: string; value?: string | Date | null }) {
+  if (!value) return null;
+
   const formattedValue = value instanceof Date || (typeof value === "string" && /^\d{4}-/.test(value))
     ? formatDate(value)
-    : value || "—";
+    : value;
 
   return (
     <div className="project-overview-meta-item">
@@ -105,6 +107,8 @@ export default function ProjectOverviewSection({ project }: ProjectOverviewSecti
   const overdueCount = openItems.filter(isOverdue).length;
   const recentLogCount = logs.slice(0, 5).length;
   const projectDescription = project.description || project.currentSummary || "";
+  const hasMetaInfo = Boolean(project.owner || project.pm || project.startDate || project.targetDate || project.releaseDate || project.tags);
+  const hasNextMilestone = Boolean(nextMilestone || fallbackMilestone || project.targetDate);
 
   return (
     <section className="cockpit-section">
@@ -140,18 +144,24 @@ export default function ProjectOverviewSection({ project }: ProjectOverviewSecti
             )}
           </section>
 
-          <Link href="#project-milestones" className="project-overview-panel project-overview-panel--next">
+          <Link href="#project-milestones" className={`project-overview-panel project-overview-panel--next${hasNextMilestone ? "" : " is-empty"}`}>
             <span className="project-overview-panel-label">下一个关键节点</span>
             <strong>{milestoneTitle}</strong>
-            <div className="project-overview-next-meta">
-              <span>{formatDate(milestoneDate)}</span>
-              <span>{getDaySignal(milestoneDate)}</span>
-              <span>
-                {nextMilestone
-                  ? PROJECT_PLAN_TYPE_LABELS[nextMilestone.planType] || "节点"
-                  : "项目级锚点"}
-              </span>
-            </div>
+            {hasNextMilestone ? (
+              <div className="project-overview-next-meta">
+                <span>{formatDate(milestoneDate)}</span>
+                <span>{getDaySignal(milestoneDate)}</span>
+                <span>
+                  {nextMilestone
+                    ? PROJECT_PLAN_TYPE_LABELS[nextMilestone.planType] || "节点"
+                    : "项目级锚点"}
+                </span>
+              </div>
+            ) : (
+              <div className="project-overview-next-meta project-overview-next-meta--empty">
+                <span>可在项目计划中补充里程碑或下一步关注。</span>
+              </div>
+            )}
             {nextMilestone && (
               <span className="project-overview-next-status">
                 {PROJECT_MILESTONE_STATUS_LABELS[nextMilestone.status] || nextMilestone.status}
@@ -172,19 +182,23 @@ export default function ProjectOverviewSection({ project }: ProjectOverviewSecti
           </section>
         </div>
 
-        <div className="project-overview-meta-rail">
-          <MetaItem label="负责人" value={project.owner} />
-          <MetaItem label="PM" value={project.pm} />
-          <MetaItem label="开始" value={project.startDate} />
-          <MetaItem label="目标" value={project.targetDate} />
-          <MetaItem label="发布" value={project.releaseDate} />
-          {project.tags && (
-            <div className="project-overview-meta-item project-overview-meta-item--wide">
-              <span>标签</span>
-              <strong>{project.tags}</strong>
-            </div>
-          )}
-        </div>
+        {hasMetaInfo ? (
+          <div className="project-overview-meta-rail">
+            <MetaItem label="负责人" value={project.owner} />
+            <MetaItem label="PM" value={project.pm} />
+            <MetaItem label="开始" value={project.startDate} />
+            <MetaItem label="目标" value={project.targetDate} />
+            <MetaItem label="发布" value={project.releaseDate} />
+            {project.tags && (
+              <div className="project-overview-meta-item project-overview-meta-item--wide">
+                <span>标签</span>
+                <strong>{project.tags}</strong>
+              </div>
+            )}
+          </div>
+        ) : (
+          <div className="project-overview-meta-empty">基础信息待补充</div>
+        )}
       </div>
     </section>
   );
