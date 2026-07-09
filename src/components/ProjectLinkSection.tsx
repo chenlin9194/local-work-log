@@ -245,8 +245,11 @@ export default function ProjectLinkSection({ projectId }: ProjectLinkSectionProp
     <section className="cockpit-section">
       <div className="dashboard-section-title">
         <div>
-          <span className="section-eyebrow">LINKS</span>
-          <h2>关键链接</h2>
+          <span className="section-eyebrow">PROJECT RESOURCES</span>
+          <h2>项目资源</h2>
+          <p className="project-resource-section-copy">
+            统一维护常用入口和项目资料，避免关键链接与项目资料分散在多个模块。
+          </p>
         </div>
         {!showCreateForm && (
           <button
@@ -258,7 +261,7 @@ export default function ProjectLinkSection({ projectId }: ProjectLinkSectionProp
             className="btn btn-secondary"
           >
             <Icon name="plus" size={14} />
-            新增关键链接
+            新增资源
           </button>
         )}
       </div>
@@ -370,13 +373,13 @@ export default function ProjectLinkSection({ projectId }: ProjectLinkSectionProp
       {linksLoading ? (
         <div className="card empty-state empty-state--loading">
           <div className="empty-icon">…</div>
-          <strong>正在读取关键链接</strong>
-          <p>关键链接会显示项目常用资料入口和外部系统地址。</p>
+          <strong>正在读取项目资源</strong>
+          <p>项目资源会显示常用入口、方案文档、计划资料和外部系统地址。</p>
         </div>
       ) : linksError ? (
         <div className="card empty-state empty-state--error">
           <div className="empty-icon">!</div>
-          <strong>关键链接暂时加载失败</strong>
+          <strong>项目资源暂时加载失败</strong>
           <p>可以稍后重试，不影响项目其它信息查看。</p>
           <div className="empty-actions">
             <button type="button" className="btn btn-secondary" onClick={() => void fetchLinks()}>
@@ -387,8 +390,8 @@ export default function ProjectLinkSection({ projectId }: ProjectLinkSectionProp
       ) : links.length === 0 ? (
         <div className="card empty-state">
           <div className="empty-icon">🔗</div>
-          <strong>还没有关键链接</strong>
-          <p>可补充主链接，便于快速回到外部资料。</p>
+          <strong>还没有项目资源</strong>
+          <p>可补充 wiki、版本计划、测试平台、发布入口或项目资料。</p>
         </div>
       ) : (
         <div className="card entity-card entity-card--compact" style={{ padding: 10, display: "grid", gap: 6 }}>

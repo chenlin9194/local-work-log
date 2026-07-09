@@ -80,36 +80,53 @@ export default async function ExportTodayPage() {
   const logsWithTraceCount = workLogs.filter((log) => log.item || log.sourceUrl || log.project || log.module).length;
   const traceRate = workLogs.length > 0 ? Math.round((logsWithTraceCount / workLogs.length) * 100) : 100;
   const pendingCheckCount = missingOwnerCount + missingNextActionCount;
+  const copyState = pendingCheckCount > 0 ? "建议先补齐" : "可复制";
 
   const exportChecks = [
-    { label: "事实规模", value: factsCount, note: `日志 ${workLogs.length} 条 / 事项 ${trackedItems.length} 项`, icon: "file-text", tone: "blue" },
-    { label: "风险信号", value: riskSignalCount, note: riskSignalCount > 0 ? "复制前优先确认风险表达" : "今日风险压力较低", icon: "alert-triangle", tone: riskSignalCount > 0 ? "danger" : "success" },
-    { label: "待确认缺口", value: pendingCheckCount, note: `责任人 ${missingOwnerCount} / 下一步 ${missingNextActionCount}`, icon: "flag", tone: pendingCheckCount > 0 ? "warning" : "success" },
-    { label: "可追溯性", value: `${traceRate}%`, note: "日志关联事项/链接/项目/模块覆盖", icon: "target", tone: traceRate < 60 ? "warning" : "success" },
+    { label: "事实规模", value: factsCount, note: `日志 ${workLogs.length} / 事项 ${trackedItems.length}`, icon: "file-text", tone: "neutral" },
+    { label: "风险信号", value: riskSignalCount, note: riskSignalCount > 0 ? "复制前先确认表达" : "今日压力较低", icon: "alert-triangle", tone: riskSignalCount > 0 ? "warning" : "neutral" },
+    { label: "待确认", value: pendingCheckCount, note: `责任人 ${missingOwnerCount} / 下一步 ${missingNextActionCount}`, icon: "flag", tone: pendingCheckCount > 0 ? "warning" : "success" },
+    { label: "证据完整", value: `${traceRate}%`, note: "日志关联覆盖", icon: "target", tone: "neutral" },
   ];
 
   return (
-    <div className="page-shell auxiliary-page export-page">
+    <div className="page-shell auxiliary-page export-page export-today-package-page">
       <div className="export-header command-page-header">
         <div>
           <span className="section-eyebrow">FACT PACKAGE / TODAY</span>
           <h1>今日日报事实包</h1>
           <p>{formatTodayStr()}</p>
+          <div className={`daily-package-status ${pendingCheckCount > 0 ? "is-warning" : "is-ready"}`}>
+            <strong>今日事实包 · {copyState}</strong>
+            <span>
+              事实 {factsCount} 条 · 风险 {riskSignalCount} 项 · 待确认 {pendingCheckCount} · 证据完整度 {traceRate}%
+            </span>
+          </div>
+        </div>
+        <div className="page-header-actions">
+          <CopyButton
+            text={md}
+            label="复制今日日报事实包"
+            successLabel="已复制，可粘贴到外部工具"
+            variant="primary"
+          />
         </div>
       </div>
 
-      <div className="card cockpit-card export-inspection-card">
-        <div className="cockpit-card-head">
+      <section className="card export-quality-strip">
+        <div className="export-quality-head">
           <div>
-            <span className="section-eyebrow">PRE-COPY CHECK</span>
-            <h2>导出前检查</h2>
+            <span className="section-eyebrow">PRE-COPY QA</span>
+            <h2>复制前质检</h2>
           </div>
-          <span className="section-count">先判断事实够不够，再复制</span>
+          <span>先判断事实够不够，再复制。</span>
         </div>
-        <div className="export-check-grid">
+        <div className="export-quality-grid">
           {exportChecks.map((check) => (
-            <div key={check.label} className={`export-check-item metric-${check.tone}`}>
-              <span className="export-check-icon"><Icon name={check.icon} size={16} /></span>
+            <div key={check.label} className={`export-quality-item metric-${check.tone}`}>
+              <span className="export-check-icon">
+                <Icon name={check.icon} size={15} />
+              </span>
               <div>
                 <strong>{check.value}</strong>
                 <span>{check.label}</span>
@@ -118,35 +135,33 @@ export default async function ExportTodayPage() {
             </div>
           ))}
         </div>
-        <div className="export-copy-row">
-          <span>Markdown 只承载已记录事实，外部工具只能整理表达。</span>
-          <CopyButton text={md} label="复制今日日报事实包" />
-        </div>
+      </section>
+
+      <div className="export-rule-note">
+        <strong>规则：</strong>
+        <span>这里只复制事实，不生成结论。复制后请先核对事实，再交给外部工具整理表达；不补写、不推断、不扩大事实边界。</span>
       </div>
 
-      <div className="card export-notice">
-        <div className="export-notice-icon">i</div>
-        <div style={{ minWidth: 0 }}>
-          <strong>Work Hub 只导出事实包</strong>
-          <p>汇总今天的日志、事项、风险与决策事实，复制 Markdown 后可交给外部工具整理成日报表达。这里新增了质量检查和待确认信息，方便你在复制前先确认事实边界。</p>
-          <div style={{ display: "grid", gap: 4, marginTop: 8, color: "var(--text-secondary)", fontSize: 12, lineHeight: 1.6 }}>
-            <div>质量检查：查看事实规模、覆盖情况、完整性。</div>
-            <div>待确认信息：提示缺责任人、下一步、项目/模块等缺口。</div>
-            <div>追溯编号：关键事实会带有 LOG-01、P-01 之类编号，便于回查原始事实。</div>
-            <div>外部工具只能整理表达，不得补写事实或改写事实边界。</div>
-          </div>
-        </div>
-        <span className="export-ready-tag"><i />可复制事实材料</span>
-      </div>
-
-      <div className="card export-preview export-preview--secondary">
+      <section className="card export-preview export-preview--secondary export-deliverable-card">
         <div className="export-preview-bar">
-          <span><i className="preview-dot red" /><i className="preview-dot amber" /><i className="preview-dot green" /></span>
+          <span>
+            <i className="preview-dot red" />
+            <i className="preview-dot amber" />
+            <i className="preview-dot green" />
+          </span>
           <span>daily-facts.md</span>
           <span>MARKDOWN</span>
+          <div className="export-preview-copy">
+            <CopyButton
+              text={md}
+              label="复制今日日报事实包"
+              successLabel="已复制，可粘贴到外部工具"
+              variant="primary"
+            />
+          </div>
         </div>
         <pre>{md}</pre>
-      </div>
+      </section>
     </div>
   );
 }

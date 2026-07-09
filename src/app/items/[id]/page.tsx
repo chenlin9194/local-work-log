@@ -54,14 +54,23 @@ interface WorkItem {
   }[];
 }
 
+function isSystemLog(log: WorkItem["logs"][number]) {
+  return log.type === "update" && (
+    log.title.startsWith("事项变化：") ||
+    log.title.startsWith("浜嬮」鍙樺寲")
+  );
+}
+
 export default function ItemDetailPage() {
   const params = useParams();
   const router = useRouter();
   const id = params.id as string;
   const [item, setItem] = useState<WorkItem | null>(null);
   const [loading, setLoading] = useState(true);
-  const actionInFlightRef = useRef(false);
   const [deleting, setDeleting] = useState(false);
+  const [showAllLogs, setShowAllLogs] = useState(false);
+  const [showSystemLogs, setShowSystemLogs] = useState(false);
+  const actionInFlightRef = useRef(false);
 
   const fetchItem = useCallback(async () => {
     setLoading(true);
@@ -86,8 +95,9 @@ export default function ItemDetailPage() {
   }, [fetchItem]);
 
   const handleStatusChange = async (newStatus: string) => {
-    if (!item || actionInFlightRef.current) return;
+    if (!item || actionInFlightRef.current || newStatus === item.status) return;
 
+    actionInFlightRef.current = true;
     try {
       const res = await fetch(`/api/items/${item.id}`, {
         method: "PUT",
@@ -102,17 +112,18 @@ export default function ItemDetailPage() {
       }
     } catch (error) {
       console.error("Error updating status:", error);
+    } finally {
+      actionInFlightRef.current = false;
     }
   };
 
   const handleDelete = async (e: React.MouseEvent<HTMLButtonElement>) => {
     if (!item || actionInFlightRef.current) return;
-    if (!confirm("确定删除此事项？关联的日志不会被删除。")) return;
+    if (!confirm("确定删除此事项？关联日志不会被删除。")) return;
 
     const button = e.currentTarget;
     actionInFlightRef.current = true;
     button.disabled = true;
-    button.textContent = "删除中...";
     setDeleting(true);
     let shouldRestoreButton = true;
 
@@ -122,16 +133,14 @@ export default function ItemDetailPage() {
         shouldRestoreButton = false;
         window.location.assign("/items");
         return;
-      } else {
-        alert("删除失败，请重试");
       }
+      alert("删除失败，请重试");
     } catch (error) {
       console.error("Error deleting item:", error);
     } finally {
       if (shouldRestoreButton) {
         actionInFlightRef.current = false;
         button.disabled = false;
-        button.textContent = "删除";
         setDeleting(false);
       }
     }
@@ -139,8 +148,7 @@ export default function ItemDetailPage() {
 
   const copyMarkdown = () => {
     if (!item) return;
-    const md = generateWorkItemMarkdown(item);
-    navigator.clipboard.writeText(md);
+    navigator.clipboard.writeText(generateWorkItemMarkdown(item));
     alert("已复制到剪贴板");
   };
 
@@ -154,15 +162,16 @@ export default function ItemDetailPage() {
     );
   }
 
-  if (!item) {
-    return null;
-  }
+  if (!item) return null;
 
   const overdue = isOverdue(item.dueDate, item.status);
   const addLogHref = itemToAddLogHref(item.id, item.projectId ?? undefined);
+  const systemLogs = item.logs.filter(isSystemLog);
+  const visibleLogs = showSystemLogs ? item.logs : item.logs.filter((log) => !isSystemLog(log));
+  const timelineLogs = showAllLogs ? visibleLogs : visibleLogs.slice(0, 3);
 
   return (
-    <div className="detail-page detail-page--item">
+    <div className="detail-page detail-page--item item-detail-command-page">
       <header className="card detail-header">
         <div className="detail-header-main">
           <Link href="/items" className="detail-back-link">
@@ -190,6 +199,17 @@ export default function ItemDetailPage() {
           </div>
         </div>
         <div className="detail-actions">
+          <select
+            className="item-status-compact-select"
+            value={item.status}
+            onChange={(event) => handleStatusChange(event.target.value)}
+            aria-label="更新事项状态"
+          >
+            <option value="open">待处理</option>
+            <option value="following">跟进中</option>
+            <option value="blocked">已阻塞</option>
+            <option value="closed">已关闭</option>
+          </select>
           <button onClick={copyMarkdown} className="btn btn-secondary">
             <Icon name="copy" size={14} />
             复制 Markdown
@@ -202,10 +222,8 @@ export default function ItemDetailPage() {
             <Icon name="plus" size={14} />
             添加日志
           </Link>
-          <button onClick={handleDelete} className="btn btn-danger" disabled={deleting}>
-            {deleting ? (
-              "删除中..."
-            ) : (
+          <button onClick={handleDelete} className="btn btn-danger item-delete-quiet" disabled={deleting}>
+            {deleting ? "删除中..." : (
               <>
                 <Icon name="trash" size={14} />
                 删除
@@ -215,159 +233,132 @@ export default function ItemDetailPage() {
         </div>
       </header>
 
-      <div className="card detail-main-card">
-        {item.description && (
-          <div className="detail-copy-block">
-            <div className="detail-field-label">事项描述</div>
-            <p className="detail-body-text">
-              <AutoLinkText text={item.description} />
-            </p>
-          </div>
-        )}
+      <div className="detail-main-grid item-detail-main-grid">
+        <section className="card detail-main-card item-summary-card">
+          {item.description && (
+            <div className="detail-copy-block">
+              <div className="detail-field-label">事项描述</div>
+              <p className="detail-body-text">
+                <AutoLinkText text={item.description} />
+              </p>
+            </div>
+          )}
 
-        {(item.currentSummary || item.trackingReason || item.nextAction) && (
-          <div className="detail-insight-grid">
-            {item.currentSummary && (
-              <div className="detail-insight-panel">
-                <div className="detail-field-label">当前摘要</div>
-                <div className="detail-field-value detail-field-value--body">
-                  <AutoLinkText text={item.currentSummary} />
+          {(item.nextAction || item.trackingReason || item.currentSummary) && (
+            <div className="detail-insight-grid">
+              {item.nextAction && (
+                <div className="detail-insight-panel detail-insight-panel--accent">
+                  <div className="detail-field-label">Next Action</div>
+                  <div className="detail-field-value detail-field-value--strong">
+                    <AutoLinkText text={item.nextAction} />
+                  </div>
                 </div>
+              )}
+              {item.trackingReason && (
+                <div className="detail-insight-panel">
+                  <div className="detail-field-label">跟踪原因</div>
+                  <div className="detail-field-value detail-field-value--body">
+                    <AutoLinkText text={item.trackingReason} />
+                  </div>
+                </div>
+              )}
+              {item.currentSummary && (
+                <div className="detail-insight-panel">
+                  <div className="detail-field-label">当前进展</div>
+                  <div className="detail-field-value detail-field-value--body">
+                    <AutoLinkText text={item.currentSummary} />
+                  </div>
+                </div>
+              )}
+            </div>
+          )}
+
+          <div className="detail-meta-grid">
+            <div className="detail-meta-item">
+              <span>健康度</span>
+              <strong>{HEALTH_LABELS[item.health] || item.health}</strong>
+            </div>
+            <div className="detail-meta-item">
+              <span>汇报层级</span>
+              <strong>{REPORT_LEVEL_LABELS[item.reportLevel] || item.reportLevel}</strong>
+            </div>
+            {item.project && (
+              <div className="detail-meta-item">
+                <span>项目</span>
+                <strong>{item.project}</strong>
               </div>
             )}
-            {item.nextAction && (
-              <div className="detail-insight-panel detail-insight-panel--accent">
-                <div className="detail-field-label">Next Action</div>
-                <div className="detail-field-value detail-field-value--strong">
-                  <AutoLinkText text={item.nextAction} />
-                </div>
+            {item.module && (
+              <div className="detail-meta-item">
+                <span>模块</span>
+                <strong>{item.module}</strong>
               </div>
             )}
-            {item.trackingReason && (
-              <div className="detail-insight-panel">
-                <div className="detail-field-label">跟踪原因</div>
-                <div className="detail-field-value detail-field-value--body">
-                  <AutoLinkText text={item.trackingReason} />
-                </div>
+            {item.owner && (
+              <div className="detail-meta-item">
+                <span>负责人</span>
+                <strong>{item.owner}</strong>
               </div>
             )}
+            {item.dueDate && (
+              <div className={`detail-meta-item ${overdue ? "detail-meta-item--danger" : ""}`}>
+                <span>截止日期</span>
+                <strong>{item.dueDate}</strong>
+              </div>
+            )}
+            {item.nextCheckpoint && (
+              <div className="detail-meta-item">
+                <span>下一检查点</span>
+                <strong>{item.nextCheckpoint}</strong>
+              </div>
+            )}
+            {item.sourceSystem && (
+              <div className="detail-meta-item">
+                <span>来源系统</span>
+                <strong>{SOURCE_SYSTEM_LABELS[item.sourceSystem] || item.sourceSystem}</strong>
+              </div>
+            )}
+            {item.sourceId && (
+              <div className="detail-meta-item">
+                <span>来源编号</span>
+                <strong>{item.sourceId}</strong>
+              </div>
+            )}
+            {item.sourceUrl && (
+              <div className="detail-meta-item detail-meta-item--wide">
+                <span>来源链接</span>
+                <a href={item.sourceUrl} target="_blank" rel="noopener noreferrer">
+                  打开来源链接
+                </a>
+              </div>
+            )}
+            <div className="detail-meta-item">
+              <span>创建时间</span>
+              <strong>{new Date(item.createdAt).toLocaleString("zh-CN")}</strong>
+            </div>
+            <div className="detail-meta-item">
+              <span>更新时间</span>
+              <strong>{new Date(item.updatedAt).toLocaleString("zh-CN")}</strong>
+            </div>
           </div>
-        )}
 
-        <div className="detail-meta-grid">
-          <div className="detail-meta-item">
-            <span>健康度</span>
-            <strong>{HEALTH_LABELS[item.health] || item.health}</strong>
-          </div>
-          <div className="detail-meta-item">
-            <span>汇报层级</span>
-            <strong>{REPORT_LEVEL_LABELS[item.reportLevel] || item.reportLevel}</strong>
-          </div>
-          {item.sourceSystem && (
-            <div className="detail-meta-item">
-              <span>来源系统</span>
-              <strong>{SOURCE_SYSTEM_LABELS[item.sourceSystem] || item.sourceSystem}</strong>
+          {item.tags && (
+            <div className="detail-tag-row">
+              {item.tags.split(",").map((tag) => (
+                <span key={tag.trim()} className="entity-pill entity-pill--muted">
+                  {tag.trim()}
+                </span>
+              ))}
             </div>
           )}
-          {item.sourceId && (
-            <div className="detail-meta-item">
-              <span>来源编号</span>
-              <strong>{item.sourceId}</strong>
-            </div>
-          )}
-          {item.nextCheckpoint && (
-            <div className="detail-meta-item">
-              <span>下个检查点</span>
-              <strong>{item.nextCheckpoint}</strong>
-            </div>
-          )}
-          {item.project && (
-            <div className="detail-meta-item">
-              <span>项目</span>
-              <strong>{item.project}</strong>
-            </div>
-          )}
-          {item.module && (
-            <div className="detail-meta-item">
-              <span>模块</span>
-              <strong>{item.module}</strong>
-            </div>
-          )}
-          {item.owner && (
-            <div className="detail-meta-item">
-              <span>负责人</span>
-              <strong>{item.owner}</strong>
-            </div>
-          )}
-          {item.dueDate && (
-            <div className={`detail-meta-item ${overdue ? "detail-meta-item--danger" : ""}`}>
-              <span>截止日期</span>
-              <strong>{item.dueDate}</strong>
-            </div>
-          )}
-          {item.sourceUrl && (
-            <div className="detail-meta-item detail-meta-item--wide">
-              <span>来源链接</span>
-              <a href={item.sourceUrl} target="_blank" rel="noopener noreferrer">
-                打开来源链接
-              </a>
-            </div>
-          )}
-          <div className="detail-meta-item">
-            <span>创建时间</span>
-            <strong>{new Date(item.createdAt).toLocaleString("zh-CN")}</strong>
-          </div>
-          <div className="detail-meta-item">
-            <span>更新时间</span>
-            <strong>{new Date(item.updatedAt).toLocaleString("zh-CN")}</strong>
-          </div>
-        </div>
+        </section>
 
-        {item.tags && (
-          <div className="detail-tag-row">
-            {item.tags.split(",").map((tag, index) => (
-              <span key={index} className="entity-pill entity-pill--muted">
-                {tag.trim()}
-              </span>
-            ))}
-          </div>
-        )}
+        <aside className="item-action-items-column">
+          <ActionItemSection workItemId={item.id} projectId={item.projectId ?? undefined} />
+        </aside>
       </div>
 
-      <ActionItemSection workItemId={item.id} projectId={item.projectId ?? undefined} />
-
-      <div className="card detail-section-card">
-        <div className="detail-section-heading">
-          <div>
-            <span className="section-eyebrow">ACTIONS</span>
-            <h2>快速操作</h2>
-          </div>
-        </div>
-        <div className="detail-actions detail-actions--inline">
-          {item.status !== "open" && (
-            <button onClick={() => handleStatusChange("open")} className="btn btn-secondary">
-              设为待处理
-            </button>
-          )}
-          {item.status !== "following" && (
-            <button onClick={() => handleStatusChange("following")} className="btn btn-secondary">
-              设为跟进中
-            </button>
-          )}
-          {item.status !== "blocked" && (
-            <button onClick={() => handleStatusChange("blocked")} className="btn btn-secondary">
-              设为已阻塞
-            </button>
-          )}
-          {item.status !== "closed" && (
-            <button onClick={() => handleStatusChange("closed")} className="btn btn-primary">
-              标记为已关闭
-            </button>
-          )}
-        </div>
-      </div>
-
-      <div className="card detail-section-card">
+      <section className="card detail-section-card item-related-log-section">
         <div className="detail-section-heading">
           <div>
             <span className="section-eyebrow">TIMELINE</span>
@@ -377,8 +368,20 @@ export default function ItemDetailPage() {
             查看全部 <Icon name="chevron-right" size={14} />
           </Link>
         </div>
-        <Timeline logs={item.logs} />
-      </div>
+        <div className="item-related-log-controls">
+          {visibleLogs.length > 3 && (
+            <button type="button" className="btn btn-secondary" onClick={() => setShowAllLogs((value) => !value)}>
+              {showAllLogs ? "收起日志" : "展开全部日志"}（{visibleLogs.length}）
+            </button>
+          )}
+          {systemLogs.length > 0 && (
+            <button type="button" className="btn btn-secondary" onClick={() => setShowSystemLogs((value) => !value)}>
+              {showSystemLogs ? "隐藏系统动态" : "显示系统动态"}（{systemLogs.length}）
+            </button>
+          )}
+        </div>
+        <Timeline logs={timelineLogs} />
+      </section>
     </div>
   );
 }

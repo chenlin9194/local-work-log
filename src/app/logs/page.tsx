@@ -1,12 +1,12 @@
 "use client";
 
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect, useCallback, useMemo } from "react";
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import WorkLogCard from "@/components/WorkLogCard";
 import Icon from "@/components/Icon";
 import PageLoadingState from "@/components/PageLoadingState";
-import { WORK_LOG_TYPES, SOURCES } from "@/lib/constants";
+import { WORK_LOG_TYPES, SOURCES, MODULES, WORK_LOG_TYPE_LABELS, SOURCE_LABELS } from "@/lib/constants";
 import { buildLogsQueryString } from "@/lib/filterLinks";
 import { getLocalDateString } from "@/lib/utils";
 
@@ -35,10 +35,17 @@ interface WorkLog {
   project?: string | null;
   module?: string | null;
   itemId?: string | null;
+  item?: { id: string; title: string } | null;
   reportable: boolean;
   sourceUrl?: string | null;
   createdAt: Date;
   updatedAt: Date;
+}
+
+interface ProjectOption {
+  id: string;
+  name: string;
+  code?: string | null;
 }
 
 const DEFAULT_FILTERS: LogFilters = {
@@ -56,13 +63,13 @@ const DEFAULT_FILTERS: LogFilters = {
   keyword: "",
 };
 
-const LOG_VIEW_OPTIONS = [
+const FACT_VIEW_OPTIONS = [
   { key: "facts", label: "关键事实", hint: "风险、阻塞、决策、问题与可汇报记录" },
-  { key: "risk_blocker", label: "风险/阻塞", hint: "只看需要升级或跨团队推动的异常事实" },
-  { key: "decision", label: "决策", hint: "只看已经形成结论的记录" },
-  { key: "reportable", label: "可汇报", hint: "只看可进入日报/周报/管理汇报的素材" },
-  { key: "system", label: "系统动态", hint: "自动记录的事项状态变化，用于追溯，不进入默认关键事实" },
-  { key: "all", label: "全部记录", hint: "包含普通记录与系统状态变化" },
+  { key: "risk_blocker", label: "风险/阻塞", hint: "需要关注、升级或跨团队推动的异常事实" },
+  { key: "decision", label: "决策", hint: "已经形成结论的记录" },
+  { key: "reportable", label: "可汇报", hint: "可进入日报、周报或管理汇报的素材" },
+  { key: "system", label: "系统动态", hint: "自动记录的事项状态变化，用于追溯" },
+  { key: "all", label: "全部记录", hint: "包含人工日志与系统动态" },
 ] as const;
 
 function readLogFilters(searchParams: URLSearchParams): LogFilters {
@@ -91,16 +98,48 @@ function getActiveView(filters: LogFilters) {
   return "all";
 }
 
+function buildActiveFilterLabels(filters: LogFilters, projects: ProjectOption[]) {
+  const labels: string[] = [];
+  const projectName = filters.projectId
+    ? projects.find((project) => project.id === filters.projectId)?.name
+    : filters.project;
+
+  if (filters.startDate || filters.endDate) labels.push(`日期：${filters.startDate || "起"} ~ ${filters.endDate || "今"}`);
+  if (filters.keyword) labels.push(`关键词：${filters.keyword}`);
+  if (projectName) labels.push(`项目：${projectName}`);
+  if (filters.itemId) labels.push("关联事项范围");
+  if (filters.module) labels.push(`模块：${filters.module}`);
+  if (filters.type) labels.push(`类型：${WORK_LOG_TYPE_LABELS[filters.type] || filters.type}`);
+  if (filters.source) labels.push(`来源：${SOURCE_LABELS[filters.source] || filters.source}`);
+  if (filters.reportable === "true") labels.push("仅可汇报");
+  if (filters.reportable === "false") labels.push("仅不可汇报");
+  if (filters.hasItem === "true") labels.push("已关联事项");
+  if (filters.hasItem === "false") labels.push("未关联事项");
+  return labels;
+}
+
+function groupLogsByDate(logs: WorkLog[]) {
+  const groups = new Map<string, WorkLog[]>();
+  logs.forEach((log) => {
+    const current = groups.get(log.workDate) || [];
+    current.push(log);
+    groups.set(log.workDate, current);
+  });
+  return Array.from(groups.entries()).map(([date, items]) => ({ date, items }));
+}
+
 export default function LogsPage() {
   const pathname = usePathname();
   const router = useRouter();
   const today = getLocalDateString();
   const [logs, setLogs] = useState<WorkLog[]>([]);
+  const [projects, setProjects] = useState<ProjectOption[]>([]);
   const [total, setTotal] = useState(0);
   const [page, setPage] = useState(1);
   const [loading, setLoading] = useState(true);
   const [urlFiltersInitialized, setUrlFiltersInitialized] = useState(false);
   const [filters, setFilters] = useState<LogFilters>(DEFAULT_FILTERS);
+  const [showAdvancedFilters, setShowAdvancedFilters] = useState(false);
 
   const fetchLogs = useCallback(async () => {
     setLoading(true);
@@ -120,6 +159,26 @@ export default function LogsPage() {
   useEffect(() => {
     setFilters(readLogFilters(new URLSearchParams(window.location.search)));
     setUrlFiltersInitialized(true);
+  }, []);
+
+  useEffect(() => {
+    let cancelled = false;
+
+    async function fetchProjects() {
+      try {
+        const res = await fetch("/api/projects?pageSize=100");
+        if (!res.ok) return;
+        const data = await res.json();
+        if (!cancelled) setProjects(data.projects || []);
+      } catch (error) {
+        console.error("Error fetching projects for log filters:", error);
+      }
+    }
+
+    fetchProjects();
+    return () => {
+      cancelled = true;
+    };
   }, []);
 
   useEffect(() => {
@@ -150,8 +209,28 @@ export default function LogsPage() {
     return () => window.clearTimeout(timer);
   }, [filters, page, pathname, router, urlFiltersInitialized]);
 
-  const handleFilterChange = (key: string, value: string) => {
+  const handleFilterChange = (key: keyof LogFilters, value: string) => {
     setFilters((prev) => ({ ...prev, [key]: value }));
+    setPage(1);
+  };
+
+  const handleProjectChange = (value: string) => {
+    if (value.startsWith("name:")) {
+      setFilters((prev) => ({
+        ...prev,
+        projectId: "",
+        project: value.slice(5),
+      }));
+      setPage(1);
+      return;
+    }
+
+    const projectId = value.startsWith("id:") ? value.slice(3) : value;
+    setFilters((prev) => ({
+      ...prev,
+      projectId,
+      project: "",
+    }));
     setPage(1);
   };
 
@@ -170,6 +249,7 @@ export default function LogsPage() {
       projectId: filters.projectId,
       project: filters.project,
       itemId: filters.itemId,
+      module: filters.module,
     };
 
     if (view === "facts") applyQuickView({ ...scopedFilters, view: "facts" });
@@ -193,85 +273,144 @@ export default function LogsPage() {
   };
 
   const activeView = getActiveView(filters);
-  const activeViewHint = LOG_VIEW_OPTIONS.find((view) => view.key === activeView)?.hint;
+  const activeViewHint = FACT_VIEW_OPTIONS.find((view) => view.key === activeView)?.hint;
+  const activeFilterLabels = buildActiveFilterLabels(filters, projects);
+  const projectSelectValue = filters.projectId ? `id:${filters.projectId}` : filters.project ? `name:${filters.project}` : "";
+  const groupedLogs = useMemo(() => groupLogsByDate(logs), [logs]);
 
   return (
-    <div className="command-list-page log-list-page">
+    <div className="command-list-page log-list-page log-evidence-page">
       <div className="command-page-header">
         <div>
           <span className="section-eyebrow">FACT TIMELINE</span>
           <h1>事实记录台</h1>
-          <p>默认只看关键事实与汇报证据，普通状态流进入“全部记录”。</p>
+          <p>默认聚焦人工关键事实、风险阻塞、决策和可汇报证据；系统动态保留追溯，但不抢主视线。</p>
         </div>
         <div className="page-header-actions">
-          <button onClick={copyMarkdown} className="btn btn-secondary list-action-button"><Icon name="copy" size={14} />复制 Markdown</button>
-          <Link href="/logs/new" className="btn btn-primary"><Icon name="plus" size={14} />新增日志</Link>
+          <button onClick={copyMarkdown} className="btn btn-secondary list-action-button">
+            <Icon name="copy" size={14} />
+            复制 Markdown
+          </button>
+          <Link href="/logs/new" className="btn btn-primary">
+            <Icon name="plus" size={14} />
+            新增日志
+          </Link>
         </div>
       </div>
 
       <div className="card log-quick-view-panel">
         <div className="log-quick-view-head">
-          <span>事实分层</span>
-          <strong>先回看需要支撑汇报、复盘和解释项目状态的事实</strong>
+          <span>证据视图</span>
+          <strong>先看能支撑汇报、复盘和状态解释的事实</strong>
           {activeViewHint && <p>{activeViewHint}</p>}
         </div>
-        <div className="log-quick-view-actions">
-          {LOG_VIEW_OPTIONS.map((view) => (
-            <button
-              key={view.key}
-              type="button"
-              onClick={() => applyView(view.key)}
-              className={`btn ${activeView === view.key ? "btn-primary" : "btn-secondary"}`}
-              title={view.hint}
-            >
-              {view.label}
-            </button>
-          ))}
-          <button type="button" onClick={() => applyQuickView({ startDate: today, endDate: today, view: "" })} className="btn btn-secondary">
-            今日日志
-          </button>
-          <button type="button" onClick={() => applyQuickView({ hasItem: "false", view: "" })} className="btn btn-secondary">
-            未关联事项
-          </button>
-          {filters.projectId || filters.project ? (
-            <button
-              type="button"
-              onClick={() => applyQuickView({ projectId: filters.projectId, project: filters.project, view: "facts" })}
-              className="btn btn-secondary"
-            >
-              项目关键事实
-            </button>
-          ) : (
-            <Link href="/projects" className="btn btn-secondary">
-              项目日志
-            </Link>
-          )}
+        <div className="log-quick-view-body">
+          <div className="log-quick-group">
+            <span className="log-quick-group-label">事实视图</span>
+            <div className="log-quick-view-actions">
+              {FACT_VIEW_OPTIONS.map((view) => (
+                <button
+                  key={view.key}
+                  type="button"
+                  onClick={() => applyView(view.key)}
+                  className={`log-filter-chip${activeView === view.key ? " is-active" : ""}`}
+                  title={view.hint}
+                >
+                  {view.label}
+                </button>
+              ))}
+            </div>
+          </div>
+          <div className="log-quick-group log-quick-group--scope">
+            <span className="log-quick-group-label">范围入口</span>
+            <div className="log-quick-view-actions">
+              <button
+                type="button"
+                onClick={() => applyQuickView({ startDate: today, endDate: today, view: "" })}
+                className={`log-filter-chip${filters.startDate === today && filters.endDate === today ? " is-active" : ""}`}
+              >
+                今日日志
+              </button>
+              <button
+                type="button"
+                onClick={() => applyQuickView({ hasItem: "false", view: "" })}
+                className={`log-filter-chip${filters.hasItem === "false" ? " is-active" : ""}`}
+              >
+                未关联事项
+              </button>
+            </div>
+          </div>
         </div>
       </div>
 
       <div className="card filter-panel log-filter-panel">
-        <div className="filter-panel-label"><Icon name="search" size={14} />高级筛选</div>
-        {filters.projectId && (
-          <div className="filter-scope-note">
-            当前项目筛选已启用
+        <div className="log-filter-toolbar">
+          <div className="log-filter-search">
+            <Icon name="search" size={14} />
+            <input
+              type="text"
+              placeholder="搜索标题、正文、来源链接"
+              value={filters.keyword}
+              onChange={(e) => handleFilterChange("keyword", e.target.value)}
+            />
           </div>
-        )}
-        {filters.itemId && (
-          <div className="filter-scope-note">
-            当前事项筛选已启用
-          </div>
-        )}
-        <div className="filter-grid">
           <input type="date" value={filters.startDate} onChange={(e) => handleFilterChange("startDate", e.target.value)} />
           <input type="date" value={filters.endDate} onChange={(e) => handleFilterChange("endDate", e.target.value)} />
-          <input type="text" placeholder="关键词搜索" value={filters.keyword} onChange={(e) => handleFilterChange("keyword", e.target.value)} />
+          <button type="button" className="btn btn-secondary log-filter-toggle" onClick={() => setShowAdvancedFilters((prev) => !prev)}>
+            {showAdvancedFilters ? "收起高级筛选" : "展开高级筛选"}
+          </button>
+          {activeFilterLabels.length > 0 && (
+            <button type="button" onClick={clearFilters} className="btn btn-ghost log-filter-clear">
+              清除筛选
+            </button>
+          )}
+        </div>
+
+        {activeFilterLabels.length > 0 && (
+          <div className="filter-scope-note active-filter-summary log-active-filter-summary">
+            {activeFilterLabels.map((label) => (
+              <span key={label} className="entity-pill entity-pill--muted">
+                {label}
+              </span>
+            ))}
+          </div>
+        )}
+
+        <div className={`filter-grid log-filter-advanced${showAdvancedFilters ? " is-open" : ""}`}>
+          <select value={projectSelectValue} onChange={(e) => handleProjectChange(e.target.value)}>
+            <option value="">全部项目</option>
+            {filters.project && !filters.projectId && (
+              <option value={`name:${filters.project}`}>{filters.project}</option>
+            )}
+            {projects.map((project) => (
+              <option key={project.id} value={`id:${project.id}`}>
+                {project.code ? `${project.code} · ${project.name}` : project.name}
+              </option>
+            ))}
+          </select>
+          <select value={filters.module} onChange={(e) => handleFilterChange("module", e.target.value)}>
+            <option value="">全部模块</option>
+            {MODULES.map((module) => (
+              <option key={module} value={module}>
+                {module}
+              </option>
+            ))}
+          </select>
           <select value={filters.type} onChange={(e) => handleFilterChange("type", e.target.value)}>
             <option value="">全部类型</option>
-            {WORK_LOG_TYPES.map((t) => (<option key={t.value} value={t.value}>{t.label}</option>))}
+            {WORK_LOG_TYPES.map((type) => (
+              <option key={type.value} value={type.value}>
+                {type.label}
+              </option>
+            ))}
           </select>
           <select value={filters.source} onChange={(e) => handleFilterChange("source", e.target.value)}>
             <option value="">全部来源</option>
-            {SOURCES.map((s) => (<option key={s.value} value={s.value}>{s.label}</option>))}
+            {SOURCES.map((source) => (
+              <option key={source.value} value={source.value}>
+                {source.label}
+              </option>
+            ))}
           </select>
           <select value={filters.reportable} onChange={(e) => handleFilterChange("reportable", e.target.value)}>
             <option value="">全部汇报状态</option>
@@ -283,7 +422,6 @@ export default function LogsPage() {
             <option value="true">已关联事项</option>
             <option value="false">未关联事项</option>
           </select>
-          <button onClick={clearFilters} className="btn btn-ghost">清除筛选</button>
         </div>
       </div>
 
@@ -297,22 +435,46 @@ export default function LogsPage() {
         />
       ) : logs.length === 0 ? (
         <div className="card empty-state compact-list-empty">
-          <div className="empty-icon"><Icon name="file-text" size={25} /></div>
+          <div className="empty-icon">
+            <Icon name="file-text" size={25} />
+          </div>
           <strong>当前没有匹配的工作日志</strong>
-          <p>记录一条今天发生的事实，后续需要闭环时再关联事项。</p>
-          <div className="empty-actions"><Link href="/logs/new" className="btn btn-primary">记录今日进展</Link></div>
+          <p>记录一条今天发生的事实，后续需要闭环时再关联事项或行动项。</p>
+          <div className="empty-actions">
+            <Link href="/logs/new" className="btn btn-primary">
+              记录今日进展
+            </Link>
+          </div>
         </div>
       ) : (
-        <div className="content-card-grid">
-          {logs.map((log) => (<WorkLogCard key={log.id} log={log} />))}
+        <div className="log-timeline-list">
+          {groupedLogs.map((group) => (
+            <section key={group.date} className="log-date-group">
+              <div className="log-date-rail">
+                <span>{group.date}</span>
+                <small>{group.items.length} 条</small>
+              </div>
+              <div className="log-date-items">
+                {group.items.map((log) => (
+                  <WorkLogCard key={log.id} log={log} />
+                ))}
+              </div>
+            </section>
+          ))}
         </div>
       )}
 
       {total > 20 && (
         <div className="pagination-row">
-          <button onClick={() => setPage((p) => Math.max(1, p - 1))} disabled={page === 1} className="btn btn-secondary">上一页</button>
-          <span className="pagination-status">第 {page} 页 / 共 {Math.ceil(total / 20)} 页</span>
-          <button onClick={() => setPage((p) => p + 1)} disabled={page * 20 >= total} className="btn btn-secondary">下一页</button>
+          <button onClick={() => setPage((prev) => Math.max(1, prev - 1))} disabled={page === 1} className="btn btn-secondary">
+            上一页
+          </button>
+          <span className="pagination-status">
+            第 {page} 页 / 共 {Math.ceil(total / 20)} 页
+          </span>
+          <button onClick={() => setPage((prev) => prev + 1)} disabled={page * 20 >= total} className="btn btn-secondary">
+            下一页
+          </button>
         </div>
       )}
     </div>

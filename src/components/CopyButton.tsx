@@ -5,9 +5,18 @@ import { useState } from "react";
 interface CopyButtonProps {
   text: string;
   label?: string;
+  successLabel?: string;
+  variant?: "primary" | "secondary";
+  className?: string;
 }
 
-export default function CopyButton({ text, label = "复制 Markdown" }: CopyButtonProps) {
+export default function CopyButton({
+  text,
+  label = "复制 Markdown",
+  successLabel = "已复制",
+  variant = "secondary",
+  className = "",
+}: CopyButtonProps) {
   const [copied, setCopied] = useState(false);
   const [busy, setBusy] = useState(false);
 
@@ -28,8 +37,13 @@ export default function CopyButton({ text, label = "复制 Markdown" }: CopyButt
   };
 
   return (
-    <button onClick={handleCopy} className="btn btn-secondary" style={{ fontSize: 13 }} disabled={busy}>
-      {busy ? "复制中..." : copied ? "已复制 ✓" : label}
+    <button
+      onClick={handleCopy}
+      className={`btn ${variant === "primary" ? "btn-primary" : "btn-secondary"} ${className}`.trim()}
+      style={{ fontSize: 13 }}
+      disabled={busy}
+    >
+      {busy ? "复制中..." : copied ? successLabel : label}
     </button>
   );
 }

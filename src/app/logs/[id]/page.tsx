@@ -29,6 +29,14 @@ interface WorkLog {
   updatedAt: Date;
 }
 
+function splitTags(tags?: string | null) {
+  if (!tags) return [];
+  return tags
+    .split(",")
+    .map((tag) => tag.trim())
+    .filter(Boolean);
+}
+
 export default function LogDetailPage() {
   const params = useParams();
   const router = useRouter();
@@ -108,12 +116,12 @@ export default function LogDetailPage() {
     );
   }
 
-  if (!log) {
-    return null;
-  }
+  if (!log) return null;
+
+  const tags = splitTags(log.tags);
 
   return (
-    <div className="detail-page detail-page--log">
+    <div className="detail-page detail-page--log log-detail-evidence-page">
       <header className="card detail-header">
         <div className="detail-header-main">
           <Link href="/logs" className="detail-back-link">
@@ -159,67 +167,109 @@ export default function LogDetailPage() {
         </div>
       </header>
 
-      <div className="card detail-main-card">
-        <div className="detail-copy-block">
-          <div className="detail-field-label">日志正文</div>
-          <div className="detail-body-text detail-body-text--prewrap">
-            <AutoLinkText text={log.content} />
+      <div className="log-detail-layout">
+        <main className="log-detail-primary">
+          <div className="card detail-main-card log-evidence-body-card">
+            <div className="detail-copy-block">
+              <div className="detail-field-label">事实正文</div>
+              <div className="detail-body-text detail-body-text--prewrap log-evidence-body">
+                <AutoLinkText text={log.content} />
+              </div>
+            </div>
           </div>
-        </div>
 
-        <div className="detail-meta-grid">
-          <div className="detail-meta-item">
-            <span>汇报状态</span>
-            <strong>{log.reportable ? "可汇报" : "不可汇报"}</strong>
-          </div>
-          {log.project && (
-            <div className="detail-meta-item">
-              <span>项目</span>
-              <strong>{log.project}</strong>
-            </div>
-          )}
-          {log.module && (
-            <div className="detail-meta-item">
-              <span>模块</span>
-              <strong>{log.module}</strong>
-            </div>
-          )}
-          {log.item && (
-            <div className="detail-meta-item detail-meta-item--wide">
-              <span>关联事项</span>
-              <Link href={`/items/${log.item.id}`}>{log.item.title}</Link>
-            </div>
-          )}
-          {log.sourceUrl && (
-            <div className="detail-meta-item detail-meta-item--wide">
-              <span>来源链接</span>
-              <a href={log.sourceUrl} target="_blank" rel="noopener noreferrer">
-                {log.sourceUrl}
-              </a>
-            </div>
-          )}
-          <div className="detail-meta-item">
-            <span>创建时间</span>
-            <strong>{new Date(log.createdAt).toLocaleString("zh-CN")}</strong>
-          </div>
-        </div>
+          <ActionItemSection
+            workLogId={log.id}
+            workItemId={log.itemId ?? undefined}
+            projectId={log.projectId ?? undefined}
+          />
+        </main>
 
-        {log.tags && (
-          <div className="detail-tag-row">
-            {log.tags.split(",").map((tag, index) => (
-              <span key={index} className="entity-pill entity-pill--muted">
-                {tag.trim()}
-              </span>
-            ))}
-          </div>
-        )}
+        <aside className="log-detail-sidebar">
+          <section className="card log-context-card">
+            <div className="log-context-card-head">
+              <span className="section-eyebrow">CONTEXT</span>
+              <h2>关联上下文</h2>
+            </div>
+            <div className="log-context-list">
+              <div>
+                <span>项目</span>
+                <strong>{log.project || "未关联项目"}</strong>
+              </div>
+              <div>
+                <span>关联事项</span>
+                {log.item ? <Link href={`/items/${log.item.id}`}>{log.item.title}</Link> : <strong>未关联事项</strong>}
+              </div>
+              <div>
+                <span>模块</span>
+                <strong>{log.module || "未标记"}</strong>
+              </div>
+            </div>
+          </section>
+
+          <section className="card log-context-card">
+            <div className="log-context-card-head">
+              <span className="section-eyebrow">ATTRIBUTES</span>
+              <h2>记录属性</h2>
+            </div>
+            <div className="log-context-list">
+              <div>
+                <span>类型</span>
+                <strong>{WORK_LOG_TYPE_LABELS[log.type] || log.type}</strong>
+              </div>
+              <div>
+                <span>来源</span>
+                <strong>{SOURCE_LABELS[log.source] || log.source}</strong>
+              </div>
+              <div>
+                <span>工作日期</span>
+                <strong>{log.workDate}</strong>
+              </div>
+              <div>
+                <span>汇报状态</span>
+                <strong>{log.reportable ? "可汇报" : "不可汇报"}</strong>
+              </div>
+              <div>
+                <span>创建时间</span>
+                <strong>{new Date(log.createdAt).toLocaleString("zh-CN")}</strong>
+              </div>
+            </div>
+          </section>
+
+          <section className="card log-context-card">
+            <div className="log-context-card-head">
+              <span className="section-eyebrow">EVIDENCE</span>
+              <h2>来源证据</h2>
+            </div>
+            <div className="log-context-list">
+              <div>
+                <span>来源链接</span>
+                {log.sourceUrl ? (
+                  <a href={log.sourceUrl} target="_blank" rel="noopener noreferrer">
+                    打开来源链接
+                  </a>
+                ) : (
+                  <strong>暂无</strong>
+                )}
+              </div>
+              <div>
+                <span>标签</span>
+                {tags.length > 0 ? (
+                  <div className="detail-tag-row log-context-tags">
+                    {tags.map((tag) => (
+                      <span key={tag} className="entity-pill entity-pill--muted">
+                        {tag}
+                      </span>
+                    ))}
+                  </div>
+                ) : (
+                  <strong>暂无</strong>
+                )}
+              </div>
+            </div>
+          </section>
+        </aside>
       </div>
-
-      <ActionItemSection
-        workLogId={log.id}
-        workItemId={log.itemId ?? undefined}
-        projectId={log.projectId ?? undefined}
-      />
     </div>
   );
 }

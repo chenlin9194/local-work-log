@@ -228,12 +228,14 @@ function DashboardActionRow({ action, today }: { action: DashboardActionItem; to
     </>
   );
 
+  const rowClassName = `dashboard-action-row dashboard-action-row--${isOverdue ? "overdue" : action.status}`;
+
   return href ? (
-    <Link href={href} className="dashboard-action-row">
+    <Link href={href} className={rowClassName}>
       {content}
     </Link>
   ) : (
-    <div className="dashboard-action-row">{content}</div>
+    <div className={rowClassName}>{content}</div>
   );
 }
 
@@ -248,12 +250,12 @@ function AttentionRow({ item, reason }: { item: DashboardItem; reason: string })
 }
 
 function getAttentionReason(item: DashboardItem, today: string) {
-  if (item.dueDate && item.dueDate < today) return "Overdue";
+  if (item.dueDate && item.dueDate < today) return "逾期";
   if (item.priority === "P0") return "P0";
-  if (item.status === "blocked") return "Blocked";
+  if (item.status === "blocked") return "阻塞";
   if (item.priority === "P1") return "P1";
-  if (item.status === "following") return "Following";
-  return "Due soon";
+  if (item.status === "following") return "跟进";
+  return "临近";
 }
 
 async function loadFocusView(focus: FocusKey, today: string, todayStart: Date, todayEnd: Date): Promise<FocusView> {
@@ -524,7 +526,7 @@ export default async function Dashboard({ searchParams }: PageProps) {
         </header>
 
         <main className="cockpit-grid cockpit-grid--today-entry">
-          <section className="dashboard-toolbar" aria-label="今日工作台摘要">
+          <section className="dashboard-toolbar daily-command-banner" aria-label="今日工作台摘要">
             <div className="hero-content">
               <div className="hero-title-stack">
                 <div className="hero-kicker">
@@ -551,10 +553,6 @@ export default async function Dashboard({ searchParams }: PageProps) {
                 <Link href="/items/new" className="btn hero-btn-secondary">
                   <Icon name="plus" size={15} />
                   新建事项
-                </Link>
-                <Link href="/today" className="btn hero-btn-secondary">
-                  <Icon name="calendar" size={15} />
-                  今日视图
                 </Link>
                 <Link href="/export/today" className="btn hero-btn-ghost">
                   <Icon name="download" size={15} />

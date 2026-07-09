@@ -368,6 +368,7 @@ export default function EditItemPage() {
                   rows={3}
                   className="form-field-control form-field-textarea"
                 />
+                <div className="field-note">用于概括当前最重要的一步；具体执行记录请沉淀到行动项。</div>
               </div>
 
               <div className="field-grid-3">
@@ -489,4 +490,3 @@ export default function EditItemPage() {
     </div>
   );
 }
-

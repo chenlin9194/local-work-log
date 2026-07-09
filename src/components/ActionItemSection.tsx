@@ -75,6 +75,8 @@ export default function ActionItemSection({ workItemId, workLogId, projectId }: 
   const [creating, setCreating] = useState(false);
   const [busyMap, setBusyMap] = useState<Record<string, boolean>>({});
   const [showDoneItems, setShowDoneItems] = useState(false);
+  const [showCreateForm, setShowCreateForm] = useState(false);
+  const [notice, setNotice] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
 
   const loadItems = useCallback(
@@ -87,15 +89,11 @@ export default function ActionItemSection({ workItemId, workLogId, projectId }: 
         return;
       }
 
-      if (!silent) {
-        setLoading(true);
-      }
+      if (!silent) setLoading(true);
 
       try {
         const res = await fetch(`/api/action-items?${scopeQuery}`);
-        if (!res.ok) {
-          throw new Error("Failed to load action items");
-        }
+        if (!res.ok) throw new Error("Failed to load action items");
 
         const data = await res.json();
         const nextItems: ActionItem[] = data.actionItems || [];
@@ -104,11 +102,9 @@ export default function ActionItemSection({ workItemId, workLogId, projectId }: 
         setError(null);
       } catch (fetchError) {
         console.error("Error fetching action items:", fetchError);
-        setError("Action Items 加载失败");
+        setError("行动项加载失败");
       } finally {
-        if (!silent) {
-          setLoading(false);
-        }
+        if (!silent) setLoading(false);
       }
     },
     [scopeQuery]
@@ -119,10 +115,7 @@ export default function ActionItemSection({ workItemId, workLogId, projectId }: 
   }, [loadItems]);
 
   const setRowBusy = (itemId: string, value: boolean) => {
-    setBusyMap((prev) => ({
-      ...prev,
-      [itemId]: value,
-    }));
+    setBusyMap((prev) => ({ ...prev, [itemId]: value }));
   };
 
   const updateDraft = (itemId: string, patch: Partial<DraftState>) => {
@@ -150,7 +143,7 @@ export default function ActionItemSection({ workItemId, workLogId, projectId }: 
 
     const title = newDraft.title.trim();
     if (!title) {
-      alert("Action Item 标题不能为空");
+      setNotice("请先填写行动项标题。");
       return;
     }
 
@@ -172,15 +165,17 @@ export default function ActionItemSection({ workItemId, workLogId, projectId }: 
 
       if (!res.ok) {
         const errorBody = await res.json().catch(() => null);
-        alert(getErrorMessage(errorBody, "创建 Action Item 失败"));
+        setNotice(getErrorMessage(errorBody, "创建行动项失败。"));
         return;
       }
 
       setNewDraft(EMPTY_DRAFT);
+      setShowCreateForm(false);
+      setNotice("行动项已添加。");
       await loadItems(true);
     } catch (createError) {
       console.error("Error creating action item:", createError);
-      alert("创建 Action Item 失败");
+      setNotice("创建行动项失败。");
     } finally {
       setCreating(false);
     }
@@ -192,7 +187,7 @@ export default function ActionItemSection({ workItemId, workLogId, projectId }: 
 
     const title = draft.title.trim();
     if (!title) {
-      alert("Action Item 标题不能为空");
+      setNotice("行动项标题不能为空。");
       return;
     }
 
@@ -212,15 +207,16 @@ export default function ActionItemSection({ workItemId, workLogId, projectId }: 
 
       if (!res.ok) {
         const errorBody = await res.json().catch(() => null);
-        alert(getErrorMessage(errorBody, "保存 Action Item 失败"));
+        setNotice(getErrorMessage(errorBody, "保存行动项失败。"));
         return;
       }
 
       setEditingMap((prev) => ({ ...prev, [itemId]: false }));
+      setNotice("行动项已保存。");
       await loadItems(true);
     } catch (saveError) {
       console.error("Error saving action item:", saveError);
-      alert("保存 Action Item 失败");
+      setNotice("保存行动项失败。");
     } finally {
       setRowBusy(itemId, false);
     }
@@ -231,6 +227,7 @@ export default function ActionItemSection({ workItemId, workLogId, projectId }: 
     if (!item || item.status === status) return;
 
     if (status === "done") {
+      setNotice("补充处理结论并保存后，会切换为已处理。");
       setDrafts((prev) => ({
         ...prev,
         [item.id]: {
@@ -252,54 +249,52 @@ export default function ActionItemSection({ workItemId, workLogId, projectId }: 
 
       if (!res.ok) {
         const errorBody = await res.json().catch(() => null);
-        alert(getErrorMessage(errorBody, "更新 Action Item 状态失败"));
+        setNotice(getErrorMessage(errorBody, "行动项状态更新失败。"));
         return;
       }
 
+      setNotice("行动项状态已更新。");
       await loadItems(true);
     } catch (statusError) {
       console.error("Error updating action item status:", statusError);
-      alert("更新 Action Item 状态失败");
+      setNotice("行动项状态更新失败。");
     } finally {
       setRowBusy(itemId, false);
     }
   };
 
   const deleteActionItem = async (itemId: string) => {
-    if (!confirm("确定删除这个 Action Item 吗？")) return;
+    if (!confirm("确定删除这个行动项吗？")) return;
 
     setRowBusy(itemId, true);
     try {
-      const res = await fetch(`/api/action-items/${itemId}`, {
-        method: "DELETE",
-      });
+      const res = await fetch(`/api/action-items/${itemId}`, { method: "DELETE" });
 
       if (!res.ok) {
         const errorBody = await res.json().catch(() => null);
-        alert(getErrorMessage(errorBody, "删除 Action Item 失败"));
+        setNotice(getErrorMessage(errorBody, "删除行动项失败。"));
         return;
       }
 
       setEditingMap((prev) => ({ ...prev, [itemId]: false }));
+      setNotice("行动项已删除。");
       await loadItems(true);
     } catch (deleteError) {
       console.error("Error deleting action item:", deleteError);
-      alert("删除 Action Item 失败");
+      setNotice("删除行动项失败。");
     } finally {
       setRowBusy(itemId, false);
     }
   };
 
-  if (!scopeQuery) {
-    return null;
-  }
+  if (!scopeQuery) return null;
 
   const openItems = items.filter((item) => item.status !== "done");
   const doneItems = items.filter((item) => item.status === "done");
   const visibleItems = showDoneItems ? items : openItems;
 
   return (
-    <section className="form-card" style={{ marginBottom: 24 }}>
+    <section className="form-card action-item-section" style={{ marginBottom: 24 }}>
       <div className="dashboard-section-title">
         <div>
           <span className="section-eyebrow">ACTION ITEMS</span>
@@ -320,74 +315,103 @@ export default function ActionItemSection({ workItemId, workLogId, projectId }: 
           >
             {showDoneItems ? `隐藏已处理（${doneItems.length}）` : `显示已处理（${doneItems.length}）`}
           </button>
-        </div>
-      </div>
-
-      <div className="card form-section" style={{ padding: 16, marginBottom: 12 }}>
-        <div style={{ display: "grid", gap: 12 }}>
-          <div>
-            <div style={{ fontSize: 12, color: "var(--text-tertiary)", marginBottom: 4 }}>新建行动项</div>
-            <input
-              type="text"
-              value={newDraft.title}
-              onChange={(e) => setNewDraft((prev) => ({ ...prev, title: e.target.value }))}
-              placeholder="输入待办标题"
-              style={inputStyle}
-            />
-          </div>
-
-          <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(160px, 1fr))", gap: 12 }}>
-            <div>
-              <div style={{ fontSize: 12, color: "var(--text-tertiary)", marginBottom: 4 }}>状态</div>
-              <select
-                value={newDraft.status}
-                onChange={(e) => setNewDraft((prev) => ({ ...prev, status: e.target.value }))}
-                style={inputStyle}
-              >
-                {ACTION_ITEM_STATUSES.map((status) => (
-                  <option key={status.value} value={status.value}>
-                    {status.label}
-                  </option>
-                ))}
-              </select>
-            </div>
-
-            <div>
-              <div style={{ fontSize: 12, color: "var(--text-tertiary)", marginBottom: 4 }}>负责人</div>
-              <input
-                type="text"
-                value={newDraft.owner}
-                onChange={(e) => setNewDraft((prev) => ({ ...prev, owner: e.target.value }))}
-                placeholder="可选"
-                style={inputStyle}
-              />
-            </div>
-
-            <div>
-              <div style={{ fontSize: 12, color: "var(--text-tertiary)", marginBottom: 4 }}>截止日期</div>
-              <input
-                type="date"
-                value={newDraft.dueDate}
-                onChange={(e) => setNewDraft((prev) => ({ ...prev, dueDate: e.target.value }))}
-                style={inputStyle}
-              />
-            </div>
-          </div>
-
-          <div style={{ display: "flex", justifyContent: "space-between", gap: 12, flexWrap: "wrap" }}>
-            <span style={{ fontSize: 12, color: "var(--text-tertiary)" }}>新增后会立即保存到当前记录。</span>
+          {!showCreateForm && (
             <button
               type="button"
-              onClick={createActionItem}
-              className="btn btn-secondary"
-              style={{ fontSize: 13 }}
-              disabled={creating}
+              className="btn btn-secondary action-item-add-button"
+              onClick={() => setShowCreateForm(true)}
             >
-              {creating ? "创建中..." : "添加行动项"}
+              + 添加行动项
             </button>
-          </div>
+          )}
         </div>
       </div>
+
+      {notice && <div className="action-item-notice">{notice}</div>}
+
+      {showCreateForm && (
+        <div className="card form-section action-item-create-card" style={{ padding: 16, marginBottom: 12 }}>
+          <div style={{ display: "grid", gap: 12 }}>
+            <div>
+              <div style={{ fontSize: 12, color: "var(--text-tertiary)", marginBottom: 4 }}>新建行动项</div>
+              <input
+                type="text"
+                value={newDraft.title}
+                onChange={(e) => setNewDraft((prev) => ({ ...prev, title: e.target.value }))}
+                placeholder="输入待办标题"
+                style={inputStyle}
+              />
+            </div>
+
+            <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(160px, 1fr))", gap: 12 }}>
+              <div>
+                <div style={{ fontSize: 12, color: "var(--text-tertiary)", marginBottom: 4 }}>状态</div>
+                <select
+                  value={newDraft.status}
+                  onChange={(e) => setNewDraft((prev) => ({ ...prev, status: e.target.value }))}
+                  style={inputStyle}
+                >
+                  {ACTION_ITEM_STATUSES.map((status) => (
+                    <option key={status.value} value={status.value}>
+                      {status.label}
+                    </option>
+                  ))}
+                </select>
+              </div>
+
+              <div>
+                <div style={{ fontSize: 12, color: "var(--text-tertiary)", marginBottom: 4 }}>负责人</div>
+                <input
+                  type="text"
+                  value={newDraft.owner}
+                  onChange={(e) => setNewDraft((prev) => ({ ...prev, owner: e.target.value }))}
+                  placeholder="可选"
+                  style={inputStyle}
+                />
+              </div>
+
+              <div>
+                <div style={{ fontSize: 12, color: "var(--text-tertiary)", marginBottom: 4 }}>截止日期</div>
+                <input
+                  type="date"
+                  value={newDraft.dueDate}
+                  onChange={(e) => setNewDraft((prev) => ({ ...prev, dueDate: e.target.value }))}
+                  style={inputStyle}
+                />
+              </div>
+            </div>
+
+            <div style={{ display: "flex", justifyContent: "space-between", gap: 12, flexWrap: "wrap" }}>
+              <span style={{ fontSize: 12, color: "var(--text-tertiary)" }}>
+                行动项记录具体动作；完成后的处理结论写入已处理备注。
+              </span>
+              <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
+                <button
+                  type="button"
+                  onClick={createActionItem}
+                  className="btn btn-secondary"
+                  style={{ fontSize: 13 }}
+                  disabled={creating}
+                >
+                  {creating ? "创建中..." : "添加行动项"}
+                </button>
+                <button
+                  type="button"
+                  className="btn btn-ghost"
+                  style={{ fontSize: 13 }}
+                  onClick={() => {
+                    setNewDraft(EMPTY_DRAFT);
+                    setShowCreateForm(false);
+                  }}
+                  disabled={creating}
+                >
+                  取消
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
 
       {loading ? (
         <div className="card empty-state">
@@ -415,7 +439,7 @@ export default function ActionItemSection({ workItemId, workLogId, projectId }: 
             return (
               <div
                 key={item.id}
-                className="card form-section"
+                className={`card form-section action-item-row${item.status === "done" ? " is-done" : ""}`}
                 style={{
                   padding: 16,
                   border: "1px solid var(--border-primary)",
@@ -477,12 +501,14 @@ export default function ActionItemSection({ workItemId, workLogId, projectId }: 
 
                     {draft.status === "done" && (
                       <div>
-                        <div style={{ fontSize: 12, color: "var(--text-tertiary)", marginBottom: 4 }}>完成结论 / 已采取行动</div>
+                        <div style={{ fontSize: 12, color: "var(--text-tertiary)", marginBottom: 4 }}>
+                          完成结论 / 已采取行动
+                        </div>
                         <textarea
                           value={draft.doneNote}
                           onChange={(e) => updateDraft(item.id, { doneNote: e.target.value })}
                           disabled={busy}
-                          placeholder="例如：已同步研发确认根因，结论是继续按当前计划推进；或记录决策、协同结果。"
+                          placeholder="记录处理结论、同步结果或后续决策。"
                           rows={3}
                           style={{ ...inputStyle, resize: "vertical", lineHeight: 1.5 }}
                         />
@@ -492,42 +518,34 @@ export default function ActionItemSection({ workItemId, workLogId, projectId }: 
                       </div>
                     )}
 
-                    <div style={{ display: "grid", gridTemplateColumns: "minmax(0, 1fr) auto", gap: 12, alignItems: "flex-start" }}>
-                      <div style={{ minWidth: 0, fontSize: 12, color: "var(--text-tertiary)", lineHeight: 1.6, overflowWrap: "anywhere" }}>
-                        关联：
-                        {item.workItemId && <span> 事项</span>}
-                        {item.workLogId && <span> 日志</span>}
-                        {item.projectId && <span> 项目</span>}
-                      </div>
-                      <div style={{ display: "flex", gap: 8, flexWrap: "wrap", justifyContent: "flex-end", flexShrink: 0 }}>
-                        <button
-                          type="button"
-                          onClick={() => void saveActionItem(item.id)}
-                          className="btn btn-primary"
-                          style={{ fontSize: 12 }}
-                          disabled={busy}
-                        >
-                          {busy ? "保存中..." : "保存"}
-                        </button>
-                        <button
-                          type="button"
-                          onClick={() => cancelEdit(item)}
-                          className="btn btn-secondary"
-                          style={{ fontSize: 12 }}
-                          disabled={busy}
-                        >
-                          取消
-                        </button>
-                        <button
-                          type="button"
-                          onClick={() => void deleteActionItem(item.id)}
-                          className="btn btn-danger"
-                          style={{ fontSize: 12 }}
-                          disabled={busy}
-                        >
-                          {busy ? "删除中..." : "删除"}
-                        </button>
-                      </div>
+                    <div style={{ display: "flex", gap: 8, flexWrap: "wrap", justifyContent: "flex-end" }}>
+                      <button
+                        type="button"
+                        onClick={() => void saveActionItem(item.id)}
+                        className="btn btn-primary"
+                        style={{ fontSize: 12 }}
+                        disabled={busy}
+                      >
+                        {busy ? "保存中..." : "保存"}
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => cancelEdit(item)}
+                        className="btn btn-secondary"
+                        style={{ fontSize: 12 }}
+                        disabled={busy}
+                      >
+                        取消
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => void deleteActionItem(item.id)}
+                        className="btn btn-danger"
+                        style={{ fontSize: 12 }}
+                        disabled={busy}
+                      >
+                        {busy ? "删除中..." : "删除"}
+                      </button>
                     </div>
                   </div>
                 ) : (
@@ -544,7 +562,8 @@ export default function ActionItemSection({ workItemId, workLogId, projectId }: 
                         </div>
                         {item.doneNote && (
                           <div style={{ marginTop: 8, fontSize: 12, color: "var(--text-secondary)", lineHeight: 1.55, overflowWrap: "anywhere" }}>
-                            <strong style={{ color: "var(--text-primary)" }}>完成记录：</strong>{item.doneNote}
+                            <strong style={{ color: "var(--text-primary)" }}>完成记录：</strong>
+                            {item.doneNote}
                           </div>
                         )}
                       </div>

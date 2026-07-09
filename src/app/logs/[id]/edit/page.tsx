@@ -112,7 +112,7 @@ export default function EditLogPage() {
   }
 
   return (
-    <div className="page-shell command-form-page log-entry-page">
+    <div className="page-shell command-form-page log-entry-page log-edit-evidence-page">
       <header className="command-form-header">
         <Link href={`/logs/${id}`} className="detail-back-link">
           ← 返回日志详情
@@ -120,21 +120,54 @@ export default function EditLogPage() {
         <div>
           <span className="section-eyebrow">COMMAND FORM / LOG</span>
           <h1>编辑日志</h1>
-          <p>日志用于记录已经发生的关键事实、会议结论、风险暴露、阻塞原因、决策和可汇报素材。</p>
+          <p>日志是事实证据：记录发生了什么、形成了什么结论，以及后续汇报和追溯需要依赖的上下文。</p>
         </div>
       </header>
 
       <form onSubmit={handleSubmit}>
         <div className="card form-card command-form-card log-entry-card log-command-form-card">
-          <div className="command-form-stack">
-            <section className="command-form-section log-form-section-context">
-              <div className="command-form-section-header">
-                <h2>记录上下文</h2>
-                <p>工作日期和关联事项。</p>
-              </div>
+          <div className="log-edit-layout">
+            <main className="log-edit-primary">
+              <section className="command-form-section log-form-section-content">
+                <div className="command-form-section-header">
+                  <h2>事实内容</h2>
+                  <p>标题用一句话说明发生了什么；正文记录事实、影响、结论和待跟进点，具体动作请沉淀到行动项。</p>
+                </div>
 
-              <div className="field-grid-2">
-                <div className="form-field-narrow">
+                <div>
+                  <label className="form-field-label">标题 *</label>
+                  <input
+                    type="text"
+                    value={form.title}
+                    onChange={(e) => setForm({ ...form, title: e.target.value })}
+                    placeholder="一句话说明发生了什么"
+                    required
+                    className="form-field-control"
+                  />
+                </div>
+
+                <div>
+                  <label className="form-field-label">内容 *</label>
+                  <textarea
+                    value={form.content}
+                    onChange={(e) => setForm({ ...form, content: e.target.value })}
+                    placeholder="记录事实、影响、结论、待跟进点；具体动作请沉淀到行动项。"
+                    rows={12}
+                    required
+                    className="input log-content-input"
+                  />
+                </div>
+              </section>
+            </main>
+
+            <aside className="log-edit-sidebar">
+              <section className="command-form-section log-form-section-context">
+                <div className="command-form-section-header">
+                  <h2>关联上下文</h2>
+                  <p>说明这条事实属于哪一天、哪个项目或事项。</p>
+                </div>
+
+                <div>
                   <label className="form-field-label">工作日期 *</label>
                   <input
                     type="date"
@@ -144,87 +177,71 @@ export default function EditLogPage() {
                     className="input"
                   />
                 </div>
-                <div />
-              </div>
 
-              <div>
-                <label className="form-field-label">关联事项</label>
-                <select
-                  value={form.itemId}
-                  onChange={(e) => setForm({ ...form, itemId: e.target.value })}
-                  className="form-field-control"
-                >
-                  <option value="">不关联</option>
-                  {items.map((item) => (
-                    <option key={item.id} value={item.id}>
-                      {item.title}
-                    </option>
-                  ))}
-                </select>
-              </div>
-            </section>
-
-            <section className="command-form-section log-form-section-content">
-              <div className="command-form-section-header">
-                <h2>日志内容</h2>
-                <p>如果需要持续跟踪状态，请建事项；如果只是下一步谁做什么，请建行动项。</p>
-              </div>
-
-              <div>
-                <label className="form-field-label">标题 *</label>
-                <input
-                  type="text"
-                  value={form.title}
-                  onChange={(e) => setForm({ ...form, title: e.target.value })}
-                  required
-                  className="form-field-control"
-                />
-              </div>
-
-              <div>
-                <label className="form-field-label">内容 *</label>
-                <textarea
-                  value={form.content}
-                  onChange={(e) => setForm({ ...form, content: e.target.value })}
-                  rows={8}
-                  required
-                  className="input log-content-input"
-                />
-              </div>
-            </section>
-
-            <section className="command-form-section log-form-section-taxonomy">
-              <div className="command-form-section-header">
-                <h2>分类与来源</h2>
-                <p>类型、来源、模块、项目、标签与外部链接。</p>
-              </div>
-
-              <div className="field-grid-3">
                 <div>
-                  <label className="form-field-label">类型</label>
-                  <select
-                    value={form.type}
-                    onChange={(e) => setForm({ ...form, type: e.target.value })}
+                  <label className="form-field-label">关联项目</label>
+                  <input
+                    type="text"
+                    value={form.project}
+                    onChange={(e) => setForm({ ...form, project: e.target.value })}
                     className="form-field-control"
-                  >
-                    {WORK_LOG_TYPES.map((t) => (
-                      <option key={t.value} value={t.value}>{t.label}</option>
-                    ))}
-                  </select>
-                  <p className="field-help">待办请优先创建行动项；日志只记录已经发生、未来需要解释或汇报的事实。</p>
+                  />
                 </div>
+
                 <div>
-                  <label className="form-field-label">来源</label>
+                  <label className="form-field-label">关联事项</label>
                   <select
-                    value={form.source}
-                    onChange={(e) => setForm({ ...form, source: e.target.value })}
+                    value={form.itemId}
+                    onChange={(e) => setForm({ ...form, itemId: e.target.value })}
                     className="form-field-control"
                   >
-                    {SOURCES.map((s) => (
-                      <option key={s.value} value={s.value}>{s.label}</option>
+                    <option value="">不关联</option>
+                    {items.map((item) => (
+                      <option key={item.id} value={item.id}>
+                        {item.title}
+                      </option>
                     ))}
                   </select>
                 </div>
+              </section>
+
+              <section className="command-form-section log-form-section-taxonomy">
+                <div className="command-form-section-header">
+                  <h2>分类与汇报</h2>
+                  <p>类型决定日志在时间线中的语义：决策是结论，风险/阻塞需要关注，更新是过程记录，关键事实用于重要节点变化。</p>
+                </div>
+
+                <div className="field-grid-2">
+                  <div>
+                    <label className="form-field-label">类型</label>
+                    <select
+                      value={form.type}
+                      onChange={(e) => setForm({ ...form, type: e.target.value })}
+                      className="form-field-control"
+                    >
+                      {WORK_LOG_TYPES.map((type) => (
+                        <option key={type.value} value={type.value}>
+                          {type.label}
+                        </option>
+                      ))}
+                    </select>
+                  </div>
+                  <div>
+                    <label className="form-field-label">来源</label>
+                    <select
+                      value={form.source}
+                      onChange={(e) => setForm({ ...form, source: e.target.value })}
+                      className="form-field-control"
+                    >
+                      {SOURCES.map((source) => (
+                        <option key={source.value} value={source.value}>
+                          {source.label}
+                        </option>
+                      ))}
+                    </select>
+                  </div>
+                </div>
+
                 <div>
                   <label className="form-field-label">模块</label>
                   <select
@@ -234,22 +251,25 @@ export default function EditLogPage() {
                   >
                     <option value="">选择模块</option>
                     {MODULES.map((module) => (
-                      <option key={module} value={module}>{module}</option>
+                      <option key={module} value={module}>
+                        {module}
+                      </option>
                     ))}
                   </select>
                 </div>
-              </div>
 
-              <div className="field-grid-2">
-                <div>
-                  <label className="form-field-label">项目</label>
+                <label className="field-checkbox log-reportable-check">
                   <input
-                    type="text"
-                    value={form.project}
-                    onChange={(e) => setForm({ ...form, project: e.target.value })}
-                    className="form-field-control"
+                    type="checkbox"
+                    checked={form.reportable}
+                    onChange={(e) => setForm({ ...form, reportable: e.target.checked })}
                   />
-                </div>
+                  <span>
+                    <strong>可汇报</strong>
+                    <small>进入日报、周报或项目汇报素材池。</small>
+                  </span>
+                </label>
+
                 <div>
                   <label className="form-field-label">标签</label>
                   <input
@@ -260,17 +280,14 @@ export default function EditLogPage() {
                     className="form-field-control"
                   />
                 </div>
-              </div>
+              </section>
 
-              <div className="field-grid-2">
-                <label className="field-checkbox">
-                  <input
-                    type="checkbox"
-                    checked={form.reportable}
-                    onChange={(e) => setForm({ ...form, reportable: e.target.checked })}
-                  />
-                  可汇报
-                </label>
+              <section className="command-form-section log-form-section-source">
+                <div className="command-form-section-header">
+                  <h2>来源证据</h2>
+                  <p>保留外部证据入口，便于汇报追溯。当前模型仅支持来源链接。</p>
+                </div>
+
                 <div>
                   <label className="form-field-label">来源链接</label>
                   <input
@@ -281,19 +298,19 @@ export default function EditLogPage() {
                     className="form-field-control"
                   />
                 </div>
-              </div>
-            </section>
+              </section>
+            </aside>
+          </div>
 
-            <div className="command-form-actions">
-              <span className="field-note">保存后会进入日志详情页。</span>
-              <div className="command-form-actions-main">
-                <button type="button" onClick={() => router.back()} className="btn btn-secondary">
-                  取消
-                </button>
-                <button type="submit" disabled={loading} className="btn btn-primary">
-                  {loading ? "保存中..." : "保存日志"}
-                </button>
-              </div>
+          <div className="command-form-actions log-edit-actions">
+            <span className="field-note">保存后会进入日志详情页。</span>
+            <div className="command-form-actions-main">
+              <button type="button" onClick={() => router.back()} className="btn btn-secondary">
+                取消
+              </button>
+              <button type="submit" disabled={loading} className="btn btn-primary">
+                {loading ? "保存中..." : "保存日志"}
+              </button>
             </div>
           </div>
         </div>

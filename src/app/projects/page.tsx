@@ -1,7 +1,9 @@
 "use client";
 
 import { useState, useEffect, useCallback } from "react";
+import type { MouseEvent } from "react";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import Icon from "@/components/Icon";
 import PageLoadingState from "@/components/PageLoadingState";
 import {
@@ -42,6 +44,7 @@ async function readProjectsResponse(res: Response): Promise<ProjectsApiResponse>
 }
 
 export default function ProjectsPage() {
+  const router = useRouter();
   const [projects, setProjects] = useState<Project[]>([]);
   const [total, setTotal] = useState(0);
   const [loading, setLoading] = useState(true);
@@ -76,6 +79,19 @@ export default function ProjectsPage() {
     fetchProjects();
   };
 
+  const exceptionCount = projects.filter((project) => {
+    const signals = project.portfolioSignals;
+    return project.health === "red" || project.health === "yellow" || Boolean(
+      (signals?.p0p1Count || 0) + (signals?.blockedCount || 0) + (signals?.overdueCount || 0)
+    );
+  }).length;
+
+  const handleProjectCardClick = (event: MouseEvent<HTMLElement>, projectId: string) => {
+    const target = event.target as HTMLElement;
+    if (target.closest("a,button")) return;
+    router.push(`/projects/${projectId}`);
+  };
+
   return (
     <div className="command-list-page project-list-page">
       <div className="command-page-header">
@@ -83,6 +99,10 @@ export default function ProjectsPage() {
           <span className="section-eyebrow">PROJECT PORTFOLIO</span>
           <h1>项目管理</h1>
           <p>统一查看关键项目的状态、风险信号和下一步动作。</p>
+          <div className="project-portfolio-summary">
+            <span>{total} 个项目</span>
+            <span>{exceptionCount} 个需关注</span>
+          </div>
         </div>
         <div className="page-header-actions">
           <Link href="/projects/new" className="btn btn-primary">
@@ -95,7 +115,7 @@ export default function ProjectsPage() {
       <div className="card filter-panel">
         <div className="filter-panel-label">
           <Icon name="search" size={14} />
-          项目筛选
+          Portfolio 筛选
         </div>
         <div className="filter-grid">
           <input
@@ -195,8 +215,14 @@ export default function ProjectsPage() {
                 <div
                   key={project.id}
                   className="card card-hover project-card"
+                  role="link"
+                  tabIndex={0}
+                  onClick={(event) => handleProjectCardClick(event, project.id)}
+                  onKeyDown={(event) => {
+                    if (event.key === "Enter") router.push(`/projects/${project.id}`);
+                  }}
                 >
-                  <div className="project-card-header">
+                  <div className="project-card-layer project-card-layer--identity">
                     <div className="project-card-title-row">
                       <h3 className="project-card-title">
                         <Link
@@ -220,7 +246,7 @@ export default function ProjectsPage() {
                     </span>
                   </div>
 
-                  <div className="project-card-signals">
+                  <div className="project-card-layer project-card-layer--status project-card-signals">
                     <span className="entity-pill entity-pill--muted">
                       {PROJECT_STATUS_LABELS[project.status] || project.status}
                     </span>
@@ -234,14 +260,9 @@ export default function ProjectsPage() {
                     </span>
                   </div>
 
-                  {project.currentSummary && (
-                    <p className="project-card-summary">
-                      {project.currentSummary}
-                    </p>
-                  )}
-
-                  {hasVisibleSignal && (
-                    <div className="project-card-signals">
+                  <div className="project-card-layer project-card-layer--signals">
+                    {hasVisibleSignal ? (
+                    <div className="project-card-signals project-card-signal-row">
                       {riskSignals.map((signal) => {
                         const signalClassName = `project-signal-chip project-signal-chip--${signal.tone}`;
                         return signal.href ? (
@@ -273,25 +294,26 @@ export default function ProjectsPage() {
                         </span>
                       )}
                     </div>
-                  )}
-
-                  {!hasVisibleSignal && (
-                    <div className="entity-card-note">
+                    ) : (
+                    <div className="entity-card-note project-card-quiet-note">
                       暂无明显风险信号
                     </div>
-                  )}
-
-                  <div className="project-card-meta">
-                    {project.owner && <span>负责人: {project.owner}</span>}
-                    {project.pm && <span>PM: {project.pm}</span>}
-                    {project.targetDate && <span>目标: {new Date(project.targetDate).toLocaleDateString()}</span>}
+                    )}
                   </div>
 
-                  {nextNodeTitle && (
-                    <div className="entity-card-note project-card-next-node">
-                      <Icon name="flag" size={12} /> 下一个节点：{nextNodeTitle}
+                  <div className="project-card-layer project-card-layer--progress">
+                    <div className="project-card-next-lines">
+                      <span>
+                        <Icon name="flag" size={12} /> 下一关键节点
+                      </span>
+                      <strong>{nextNodeTitle || "待设置"}</strong>
                     </div>
-                  )}
+                    <div className="project-card-progress-meta">
+                      {project.targetDate && <span>目标：{new Date(project.targetDate).toLocaleDateString("zh-CN")}</span>}
+                      {project.owner && <span>负责人：{project.owner}</span>}
+                      {project.pm && <span>PM：{project.pm}</span>}
+                    </div>
+                  </div>
 
                   <div className="project-card-footer">
                     <span>

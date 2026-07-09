@@ -1,115 +1,189 @@
 "use client";
 
-import type { Project } from "@/lib/types";
+import Link from "next/link";
+import {
+  PROJECT_MILESTONE_STATUS_LABELS,
+  PROJECT_PLAN_TYPE_LABELS,
+} from "@/lib/constants";
+import type { Project, ProjectMilestone, WorkItem } from "@/lib/types";
 
 type ProjectOverviewSectionProps = {
-  project: Pick<
-    Project,
-    "owner" | "pm" | "startDate" | "targetDate" | "releaseDate" | "currentSummary" | "nextMilestone" | "nextAction"
-  >;
+  project: Project;
 };
 
+function toDate(value?: string | Date | null) {
+  if (!value) return null;
+  const date = new Date(value);
+  return Number.isFinite(date.getTime()) ? date : null;
+}
+
 function formatDate(value?: string | Date | null) {
-  if (!value) return "—";
-  return new Date(value).toLocaleDateString();
+  const date = toDate(value);
+  if (!date) return "—";
+  return date.toLocaleDateString("zh-CN");
 }
 
-function CompactTextBlock({
-  label,
-  value,
-  placeholder,
-  strong = false,
-}: {
-  label: string;
-  value: string;
-  placeholder: string;
-  strong?: boolean;
-}) {
-  const hasValue = Boolean(value.trim());
-
-  return (
-    <div
-      style={{
-        display: "grid",
-        gap: 5,
-        padding: "9px 10px",
-        borderRadius: 8,
-        background: "var(--bg-secondary)",
-        border: "1px solid var(--border-secondary)",
-        minWidth: 0,
-      }}
-    >
-      <div style={{ color: "var(--text-tertiary)", fontSize: 11, fontWeight: 700 }}>{label}</div>
-      <div
-        style={{
-          color: hasValue ? "var(--text-primary)" : "var(--text-tertiary)",
-          fontSize: strong ? 14 : 13,
-          fontWeight: hasValue && strong ? 650 : 400,
-          lineHeight: 1.55,
-          overflow: "hidden",
-          display: "-webkit-box",
-          WebkitLineClamp: label === "当前项目摘要" ? 3 : 2,
-          WebkitBoxOrient: "vertical",
-          overflowWrap: "anywhere",
-        }}
-        title={hasValue ? value : ""}
-      >
-        {hasValue ? value : placeholder}
-      </div>
-    </div>
-  );
+function getMilestoneDate(milestone?: ProjectMilestone | null) {
+  if (!milestone) return null;
+  return milestone.targetDate || milestone.plannedEndDate || milestone.plannedStartDate || null;
 }
 
-function CompactMeta({
-  label,
-  value,
-}: {
-  label: string;
-  value?: string | Date | null;
-}) {
+function getDaySignal(value?: string | Date | null) {
+  const date = toDate(value);
+  if (!date) return "日期待定";
+
+  const today = new Date();
+  today.setHours(0, 0, 0, 0);
+  date.setHours(0, 0, 0, 0);
+  const diff = Math.ceil((date.getTime() - today.getTime()) / 86400000);
+
+  if (diff < 0) return `已延期 ${Math.abs(diff)} 天`;
+  if (diff === 0) return "今天到期";
+  return `剩余 ${diff} 天`;
+}
+
+function getNextMilestone(milestones?: ProjectMilestone[]) {
+  const openMilestones = (milestones || []).filter((milestone) => (
+    milestone.status !== "done" && milestone.status !== "cancelled"
+  ));
+
+  return openMilestones.sort((a, b) => {
+    const aTime = toDate(getMilestoneDate(a))?.getTime() ?? Number.MAX_SAFE_INTEGER;
+    const bTime = toDate(getMilestoneDate(b))?.getTime() ?? Number.MAX_SAFE_INTEGER;
+    if (aTime !== bTime) return aTime - bTime;
+    return a.sortOrder - b.sortOrder;
+  })[0] || null;
+}
+
+function isOpenItem(item: WorkItem) {
+  return item.status !== "closed";
+}
+
+function isOverdue(item: WorkItem) {
+  if (!item.dueDate || !isOpenItem(item)) return false;
+  const dueDate = toDate(item.dueDate);
+  if (!dueDate) return false;
+  const today = new Date();
+  today.setHours(0, 0, 0, 0);
+  dueDate.setHours(0, 0, 0, 0);
+  return dueDate < today;
+}
+
+function MetaItem({ label, value }: { label: string; value?: string | Date | null }) {
   const formattedValue = value instanceof Date || (typeof value === "string" && /^\d{4}-/.test(value))
     ? formatDate(value)
     : value || "—";
 
   return (
-    <div style={{ minWidth: 0, padding: "7px 0" }}>
-      <div style={{ color: "var(--text-tertiary)", fontSize: 11, marginBottom: 3 }}>{label}</div>
-      <div style={{ color: formattedValue === "—" ? "var(--text-tertiary)" : "var(--text-primary)", fontSize: 13, fontWeight: formattedValue === "—" ? 400 : 650, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
-        {formattedValue}
-      </div>
+    <div className="project-overview-meta-item">
+      <span>{label}</span>
+      <strong>{formattedValue}</strong>
     </div>
   );
 }
 
+function getUrlHost(value?: string | null) {
+  if (!value) return "";
+  try {
+    return new URL(value).host;
+  } catch {
+    return value;
+  }
+}
+
 export default function ProjectOverviewSection({ project }: ProjectOverviewSectionProps) {
-  const currentSummary = project.currentSummary ?? "";
-  const nextMilestone = project.nextMilestone ?? "";
-  const nextAction = project.nextAction ?? "";
+  const items = project.items || [];
+  const openItems = items.filter(isOpenItem);
+  const logs = project.logs || [];
+  const nextMilestone = getNextMilestone(project.milestones);
+  const fallbackMilestone = project.nextMilestone?.trim();
+  const milestoneTitle = nextMilestone?.title || fallbackMilestone || "未设置下一个关键节点";
+  const milestoneDate = getMilestoneDate(nextMilestone) || project.targetDate;
+  const p0p1Count = openItems.filter((item) => item.priority === "P0" || item.priority === "P1").length;
+  const blockedCount = openItems.filter((item) => item.status === "blocked").length;
+  const redYellowCount = openItems.filter((item) => item.health === "red" || item.health === "yellow").length;
+  const overdueCount = openItems.filter(isOverdue).length;
+  const recentLogCount = logs.slice(0, 5).length;
+  const projectDescription = project.description || project.currentSummary || "";
 
   return (
     <section className="cockpit-section">
       <div className="dashboard-section-title">
         <div>
-          <span className="section-eyebrow">OVERVIEW</span>
+          <span className="section-eyebrow">PROJECT COCKPIT</span>
           <h2>项目概览</h2>
         </div>
       </div>
 
-      <div className="card entity-card entity-card--compact project-overview-card" style={{ padding: 12, display: "grid", gap: 12 }}>
-        <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(220px, 1fr))", gap: 10 }}>
-          <CompactTextBlock label="当前项目摘要" value={currentSummary} placeholder="—" strong />
-          <div style={{ display: "grid", gap: 10, minWidth: 0 }}>
-            <CompactTextBlock label="下一里程碑" value={nextMilestone} placeholder="—" />
-            <CompactTextBlock label="下一步动作" value={nextAction} placeholder="—" />
-          </div>
+      <div className="card project-overview-card project-cockpit-overview">
+        <div className="project-overview-grid">
+          <section className="project-overview-panel project-overview-panel--description">
+            <span className="project-overview-panel-label">项目说明 / 版本定位</span>
+            {projectDescription.trim() ? (
+              <p>{projectDescription}</p>
+            ) : (
+              <p className="project-overview-empty">暂无项目说明，可在编辑页补充稳定背景、版本定位或备注。</p>
+            )}
+            {project.nextAction?.trim() && (
+              <div className="project-overview-supplement">
+                <span>补充推进说明</span>
+                <strong>{project.nextAction}</strong>
+              </div>
+            )}
+            {project.sourceUrl && (
+              <div className="project-source-reference-inline">
+                <span>来源参考：</span>
+                <a href={project.sourceUrl} target="_blank" rel="noopener noreferrer" title={project.sourceUrl || undefined}>
+                  {getUrlHost(project.sourceUrl)} ↗
+                </a>
+              </div>
+            )}
+          </section>
+
+          <Link href="#project-milestones" className="project-overview-panel project-overview-panel--next">
+            <span className="project-overview-panel-label">下一个关键节点</span>
+            <strong>{milestoneTitle}</strong>
+            <div className="project-overview-next-meta">
+              <span>{formatDate(milestoneDate)}</span>
+              <span>{getDaySignal(milestoneDate)}</span>
+              <span>
+                {nextMilestone
+                  ? PROJECT_PLAN_TYPE_LABELS[nextMilestone.planType] || "节点"
+                  : "项目级锚点"}
+              </span>
+            </div>
+            {nextMilestone && (
+              <span className="project-overview-next-status">
+                {PROJECT_MILESTONE_STATUS_LABELS[nextMilestone.status] || nextMilestone.status}
+              </span>
+            )}
+          </Link>
+
+          <section className="project-overview-panel project-overview-panel--signals">
+            <span className="project-overview-panel-label">当前态势</span>
+            <div className="project-overview-signal-grid">
+              <span className={p0p1Count > 0 ? "is-warn" : ""}><strong>{p0p1Count}</strong>P0/P1</span>
+              <span className={blockedCount > 0 ? "is-danger" : ""}><strong>{blockedCount}</strong>阻塞</span>
+              <span className={overdueCount > 0 ? "is-danger" : ""}><strong>{overdueCount}</strong>逾期</span>
+              <span className={redYellowCount > 0 ? "is-warn" : ""}><strong>{redYellowCount}</strong>红黄</span>
+              <span><strong>{openItems.length}</strong>待处理</span>
+              <span><strong>{recentLogCount}</strong>最近日志</span>
+            </div>
+          </section>
         </div>
 
-        <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(120px, 1fr))", gap: 10, paddingTop: 8, borderTop: "1px solid var(--border-secondary)" }}>
-          <CompactMeta label="负责人" value={project.owner} />
-          <CompactMeta label="PM" value={project.pm} />
-          <CompactMeta label="开始日期" value={project.startDate} />
-          <CompactMeta label="目标日期" value={project.targetDate} />
-          <CompactMeta label="发布日期" value={project.releaseDate} />
+        <div className="project-overview-meta-rail">
+          <MetaItem label="负责人" value={project.owner} />
+          <MetaItem label="PM" value={project.pm} />
+          <MetaItem label="开始" value={project.startDate} />
+          <MetaItem label="目标" value={project.targetDate} />
+          <MetaItem label="发布" value={project.releaseDate} />
+          {project.tags && (
+            <div className="project-overview-meta-item project-overview-meta-item--wide">
+              <span>标签</span>
+              <strong>{project.tags}</strong>
+            </div>
+          )}
         </div>
       </div>
     </section>

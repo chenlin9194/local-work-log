@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect, useCallback, useMemo } from "react";
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import WorkItemCard from "@/components/WorkItemCard";
@@ -129,6 +129,48 @@ function buildActiveFilterLabels(filters: ItemFilters) {
   return activeLabels;
 }
 
+function toTime(value?: Date | string | null) {
+  if (!value) return 0;
+  const time = new Date(value).getTime();
+  return Number.isFinite(time) ? time : 0;
+}
+
+function isDateWithinDays(value: string | null | undefined, days: number) {
+  if (!value) return false;
+  const target = new Date(value);
+  if (!Number.isFinite(target.getTime())) return false;
+
+  const today = new Date();
+  today.setHours(0, 0, 0, 0);
+  target.setHours(0, 0, 0, 0);
+  const diffDays = Math.ceil((target.getTime() - today.getTime()) / 86400000);
+  return diffDays >= 0 && diffDays <= days;
+}
+
+function isDateDueOrPast(value: string | null | undefined) {
+  if (!value) return false;
+  const target = new Date(value);
+  if (!Number.isFinite(target.getTime())) return false;
+
+  const today = new Date();
+  today.setHours(0, 0, 0, 0);
+  target.setHours(0, 0, 0, 0);
+  return target <= today;
+}
+
+function isLowActivityItem(item: WorkItem) {
+  if (item.status === "closed") return false;
+  if (item.priority === "P0" || item.priority === "P1") return false;
+  if (item.status === "blocked") return false;
+  if (item.health === "red") return false;
+  if (item.dueDate && isDateDueOrPast(item.dueDate)) return false;
+  if (isDateWithinDays(item.dueDate, 7)) return false;
+  if (isDateDueOrPast(item.nextCheckpoint)) return false;
+
+  const thirtyDaysAgo = Date.now() - 30 * 86400000;
+  return toTime(item.updatedAt) < thirtyDaysAgo;
+}
+
 export default function ItemsPage() {
   const pathname = usePathname();
   const router = useRouter();
@@ -138,6 +180,8 @@ export default function ItemsPage() {
   const [loading, setLoading] = useState(true);
   const [urlFiltersInitialized, setUrlFiltersInitialized] = useState(false);
   const [filters, setFilters] = useState<ItemFilters>(DEFAULT_FILTERS);
+  const [showAdvancedFilters, setShowAdvancedFilters] = useState(false);
+  const [hideLowActivity, setHideLowActivity] = useState(false);
 
   const fetchItems = useCallback(async () => {
     setLoading(true);
@@ -202,6 +246,26 @@ export default function ItemsPage() {
     setPage(1);
   };
 
+  const quickViews = useMemo(
+    () => [
+      { label: "未关闭", filters: { visibility: "open" } },
+      { label: "P0 高优", filters: { visibility: "open", priority: "P0" } },
+      { label: "阻塞", filters: { visibility: "open", status: "blocked" } },
+      { label: "风险红", filters: { visibility: "open", health: "red" } },
+      { label: "逾期", filters: { visibility: "open", overdue: true } },
+      { label: "进入日报", filters: { visibility: "open", reportLevel: "daily" } },
+    ],
+    []
+  );
+
+  const isQuickViewActive = (nextFilters: Partial<ItemFilters>) => {
+    const expected = { ...DEFAULT_FILTERS, ...nextFilters };
+    return Object.keys(DEFAULT_FILTERS).every((key) => {
+      const filterKey = key as keyof ItemFilters;
+      return filters[filterKey] === expected[filterKey];
+    });
+  };
+
   const copyMarkdown = () => {
     let md = "# 工作事项列表\n\n";
     items.forEach((item) => {
@@ -217,6 +281,14 @@ export default function ItemsPage() {
   };
 
   const activeFilterLabels = buildActiveFilterLabels(filters);
+  const itemsWithActivitySignal = items.map((item) => ({
+    item,
+    lowActivity: isLowActivityItem(item),
+  }));
+  const visibleItems = hideLowActivity
+    ? itemsWithActivitySignal.filter((entry) => !entry.lowActivity)
+    : itemsWithActivitySignal;
+  const lowActivityCount = itemsWithActivitySignal.filter((entry) => entry.lowActivity).length;
 
   return (
     <div className="command-list-page item-list-page">
@@ -241,6 +313,16 @@ export default function ItemsPage() {
           <strong>先看需要处理的事项</strong>
         </div>
         <div className="item-quick-view-actions">
+          {quickViews.map((view) => (
+            <button
+              key={view.label}
+              type="button"
+              onClick={() => applyQuickView(view.filters)}
+              className={`item-quick-chip${isQuickViewActive(view.filters) ? " is-active" : ""}`}
+            >
+              {view.label}
+            </button>
+          ))}
           <button type="button" onClick={() => applyQuickView({ visibility: "open" })} className="btn btn-secondary">未关闭</button>
           <button type="button" onClick={() => applyQuickView({ visibility: "open", priority: "P0" })} className="btn btn-secondary">P0 高优</button>
           <button type="button" onClick={() => applyQuickView({ visibility: "open", status: "blocked" })} className="btn btn-secondary">阻塞</button>
@@ -252,6 +334,37 @@ export default function ItemsPage() {
 
       {/* Filters */}
       <div className="card filter-panel item-filter-panel">
+        <div className="item-filter-toolbar">
+          <div className="item-filter-search">
+            <Icon name="search" size={14} />
+            <input
+              type="text"
+              placeholder="搜索标题、说明、负责人"
+              value={filters.keyword}
+              onChange={(e) => handleFilterChange("keyword", e.target.value)}
+            />
+          </div>
+          <select
+            value={filters.visibility}
+            onChange={(e) => handleFilterChange("visibility", e.target.value)}
+          >
+            <option value="open">默认未关闭</option>
+            <option value="closed">仅已关闭</option>
+            <option value="all">全部事项</option>
+          </select>
+          <button
+            type="button"
+            className="btn btn-secondary item-filter-toggle"
+            onClick={() => setShowAdvancedFilters((prev) => !prev)}
+          >
+            {showAdvancedFilters ? "收起高级筛选" : "展开高级筛选"}
+          </button>
+          {activeFilterLabels.length > 0 && (
+            <button type="button" onClick={clearFilters} className="btn btn-ghost item-filter-clear">
+              清除筛选
+            </button>
+          )}
+        </div>
         <div className="filter-panel-label"><Icon name="search" size={14} />高级筛选</div>
         {activeFilterLabels.length > 0 && (
           <div className="filter-scope-note active-filter-summary">
@@ -260,7 +373,7 @@ export default function ItemsPage() {
             ))}
           </div>
         )}
-        <div className="filter-grid">
+        <div className={`filter-grid item-filter-advanced${showAdvancedFilters ? " is-open" : ""}`}>
           <input
             type="text"
             placeholder="关键词搜索"
@@ -361,6 +474,16 @@ export default function ItemsPage() {
       </div>
 
       {/* Results */}
+      <div className="item-low-activity-row">
+        <button
+          type="button"
+          className={`item-quick-chip${hideLowActivity ? " is-active" : ""}`}
+          onClick={() => setHideLowActivity((value) => !value)}
+          title="仅对普通、未关闭、超过 30 天无更新且无临近风险的事项生效"
+        >
+          {hideLowActivity ? "已隐藏低活跃" : "隐藏低活跃"}（{lowActivityCount}）
+        </button>
+      </div>
       <div className="command-list-count">
         共 {total} 条记录
       </div>
@@ -372,7 +495,7 @@ export default function ItemsPage() {
           description="正在读取筛选后的事项与当前状态。"
           rows={4}
         />
-      ) : items.length === 0 ? (
+      ) : visibleItems.length === 0 ? (
         <div className="card empty-state compact-list-empty">
           <div className="empty-icon"><Icon name="clipboard-list" size={25} /></div>
           <strong>当前没有匹配的工作事项</strong>
@@ -384,8 +507,8 @@ export default function ItemsPage() {
         </div>
       ) : (
         <div className="content-card-grid">
-          {items.map((item) => (
-            <WorkItemCard key={item.id} item={item} />
+          {visibleItems.map(({ item, lowActivity }) => (
+            <WorkItemCard key={item.id} item={item} lowActivity={lowActivity} />
           ))}
         </div>
       )}

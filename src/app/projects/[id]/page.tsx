@@ -14,7 +14,6 @@ import ProjectMilestoneSection from "@/components/ProjectMilestoneSection";
 import ProjectLinkSection from "@/components/ProjectLinkSection";
 import ProjectMemberSection from "@/components/ProjectMemberSection";
 import { signalToItemsHref, signalToLogsHref } from "@/lib/signalMap";
-import { SOURCE_SYSTEM_LABELS } from "@/lib/constants";
 import { getLocalDateString } from "@/lib/utils";
 import type { Project, WorkItem, WorkLog } from "@/lib/types";
 
@@ -52,10 +51,10 @@ function getItemEvidenceLabel(item: WorkItem, today: string) {
 }
 
 function getLogEvidenceRank(log: WorkLog) {
-  if (log.type === "risk" || log.type === "blocker") return 0;
-  if (log.type === "decision") return 1;
-  if (log.type === "update" || log.type === "issue") return 2;
-  if (log.reportable) return 3;
+  if (log.reportable) return 0;
+  if (log.type === "risk" || log.type === "blocker") return 1;
+  if (log.type === "decision") return 2;
+  if (log.type === "update" || log.type === "issue") return 3;
   return 4;
 }
 
@@ -64,6 +63,18 @@ function getLogEvidenceLabel(log: WorkLog) {
   if (log.type === "decision") return "关键决策";
   if (log.type === "update" || log.type === "issue") return "关键变化";
   return undefined;
+}
+
+function isSystemLog(log: WorkLog) {
+  return log.type === "update" && (
+    log.title.startsWith("事项变化：") ||
+    log.title.startsWith("浜嬮」鍙樺寲")
+  );
+}
+
+function getProjectLogRank(log: WorkLog) {
+  const systemRank = isSystemLog(log) ? 1 : 0;
+  return systemRank * 10 + getLogEvidenceRank(log);
 }
 
 const ATTENTION_CHIP_STYLES = {
@@ -95,6 +106,9 @@ export default function ProjectDetailPage() {
 
   const [project, setProject] = useState<Project | null>(null);
   const [loading, setLoading] = useState(true);
+  const [showClosedItems, setShowClosedItems] = useState(false);
+  const [showSystemLogs, setShowSystemLogs] = useState(false);
+  const [showClosedItemLogs, setShowClosedItemLogs] = useState(false);
 
   const fetchProject = useCallback(async () => {
     try {
@@ -144,6 +158,8 @@ export default function ProjectDetailPage() {
 
   const items = project.items || [];
   const openItems = items.filter((item) => item.status !== "closed");
+  const closedItems = items.filter((item) => item.status === "closed");
+  const closedItemIds = new Set(closedItems.map((item) => item.id));
   const logs = project.logs || [];
   const p0p1Count = openItems.filter((i) => i.priority === "P0" || i.priority === "P1").length;
   const blockedCount = openItems.filter((i) => i.status === "blocked").length;
@@ -161,17 +177,26 @@ export default function ProjectDetailPage() {
 
     return toTime(b.updatedAt) - toTime(a.updatedAt);
   });
+  const sortedClosedItems = [...closedItems].sort((a, b) => toTime(b.updatedAt) - toTime(a.updatedAt));
+  const visibleProjectItems = showClosedItems ? [...sortedItems, ...sortedClosedItems] : sortedItems;
   const keyLogCount = logs.filter((log) => KEY_LOG_TYPES.has(log.type)).length;
   const riskLogCount = logs.filter((log) => log.type === "risk").length;
   const reportableLogCount = logs.filter((log) => log.reportable).length;
+  const systemLogCount = logs.filter(isSystemLog).length;
+  const closedItemLogCount = logs.filter((log) => log.itemId && closedItemIds.has(log.itemId)).length;
   const sortedLogs = [...logs].sort((a, b) => {
-    const rankDiff = getLogEvidenceRank(a) - getLogEvidenceRank(b);
+    const rankDiff = getProjectLogRank(a) - getProjectLogRank(b);
     if (rankDiff !== 0) return rankDiff;
 
     const workDateDiff = b.workDate.localeCompare(a.workDate);
     if (workDateDiff !== 0) return workDateDiff;
 
     return toTime(b.createdAt) - toTime(a.createdAt);
+  });
+  const visibleProjectLogs = sortedLogs.filter((log) => {
+    if (!showSystemLogs && isSystemLog(log)) return false;
+    if (!showClosedItemLogs && log.itemId && closedItemIds.has(log.itemId) && isSystemLog(log) && !log.reportable) return false;
+    return true;
   });
 
   return (
@@ -195,11 +220,11 @@ export default function ProjectDetailPage() {
         />
       </div>
 
-      <section className="cockpit-section">
-        <div className="card project-support-summary">
+      <section className="cockpit-section project-quick-actions-section">
+        <div className="card project-support-summary project-support-summary--compact">
           <div className="project-support-summary__title">
-            <div className="project-support-summary__headline">快速操作</div>
-            <div className="project-support-summary__hint">从这里快速补充本项目的事项和日志，便于把新变化直接落到事实记录里。</div>
+            <div className="project-support-summary__headline">补充事实记录</div>
+            <div className="project-support-summary__hint">新增关联事项或日志，让项目状态由事实对象持续支撑。</div>
           </div>
           <div style={{ display: "flex", gap: 12, flexWrap: "wrap" }}>
             <Link href={`/items/new?projectId=${project.id}`} className="btn btn-primary">
@@ -220,81 +245,22 @@ export default function ProjectDetailPage() {
       <div id="project-members" style={{ scrollMarginTop: 12 }}>
         <ProjectMemberSection projectId={project.id} />
       </div>
-      <div id="project-links" style={{ scrollMarginTop: 12 }}>
+      <div id="project-resources" style={{ scrollMarginTop: 12 }}>
         <ProjectLinkSection projectId={project.id} />
-      </div>
-
-      <section className="cockpit-section" id="project-info" style={{ scrollMarginTop: 12 }}>
-        <div className="dashboard-section-title">
+        <div className="card project-resource-source">
+          <span className="section-eyebrow">REFERENCE</span>
           <div>
-            <span className="section-eyebrow">PROJECT INFO</span>
-            <h2>项目资料</h2>
+            {project.sourceSystem && <span>来源：{project.sourceSystem}</span>}
+            {project.sourceId && <span>编号：{project.sourceId}</span>}
+            {project.sourceUrl && (
+              <a href={project.sourceUrl} target="_blank" rel="noopener noreferrer">
+                打开来源链接 <Icon name="external-link" size={12} />
+              </a>
+            )}
+            {!project.sourceSystem && !project.sourceId && !project.sourceUrl && <span>暂无来源资料</span>}
           </div>
         </div>
-
-        <div className="card" style={{ padding: 20 }}>
-          <div style={{ display: "grid", gap: 16 }}>
-            <div style={{ minWidth: 0 }}>
-              <div style={{ fontSize: 12, color: "var(--text-tertiary)", marginBottom: 4 }}>项目描述</div>
-              <div style={{ fontSize: 14, color: "var(--text-primary)", lineHeight: 1.6, whiteSpace: "pre-wrap", wordBreak: "break-word" }}>
-                {project.description || "暂无项目描述"}
-              </div>
-            </div>
-
-            <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(220px, 1fr))", gap: 16 }}>
-              <div style={{ minWidth: 0 }}>
-                <div style={{ fontSize: 12, color: "var(--text-tertiary)", marginBottom: 4 }}>来源系统</div>
-                <div style={{ fontSize: 14, color: "var(--text-primary)", wordBreak: "break-word", overflowWrap: "anywhere" }}>
-                  {project.sourceSystem ? (SOURCE_SYSTEM_LABELS[project.sourceSystem] || project.sourceSystem) : "-"}
-                </div>
-              </div>
-
-              <div style={{ minWidth: 0 }}>
-                <div style={{ fontSize: 12, color: "var(--text-tertiary)", marginBottom: 4 }}>来源编号</div>
-                <div style={{ fontSize: 14, color: "var(--text-primary)", wordBreak: "break-word", overflowWrap: "anywhere" }}>
-                  {project.sourceId || "-"}
-                </div>
-              </div>
-
-              <div style={{ minWidth: 0 }}>
-                <div style={{ fontSize: 12, color: "var(--text-tertiary)", marginBottom: 4 }}>标签</div>
-                <div style={{ fontSize: 14, color: "var(--text-primary)", whiteSpace: "pre-wrap", wordBreak: "break-word" }}>
-                  {project.tags || "-"}
-                </div>
-              </div>
-            </div>
-
-            <div style={{ minWidth: 0 }}>
-              <div style={{ fontSize: 12, color: "var(--text-tertiary)", marginBottom: 4 }}>来源链接</div>
-              {project.sourceUrl ? (
-                <div style={{ display: "flex", flexDirection: "column", gap: 6 }}>
-                  <a
-                    href={project.sourceUrl}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    style={{ color: "var(--accent-blue)", textDecoration: "underline", fontSize: 14 }}
-                  >
-                    打开来源链接
-                  </a>
-                  <div
-                    style={{
-                      minWidth: 0,
-                      fontSize: 13,
-                      color: "var(--text-secondary)",
-                      wordBreak: "break-word",
-                      overflowWrap: "anywhere",
-                    }}
-                  >
-                    {project.sourceUrl}
-                  </div>
-                </div>
-              ) : (
-                <div style={{ fontSize: 14, color: "var(--text-primary)" }}>-</div>
-              )}
-            </div>
-          </div>
-        </div>
-      </section>
+      </div>
 
       <section className="cockpit-section" id="project-items" style={{ scrollMarginTop: 12 }}>
         <div className="dashboard-section-title">
@@ -306,7 +272,7 @@ export default function ProjectDetailPage() {
             查看全部 <Icon name="chevron-right" size={14} />
           </Link>
         </div>
-        {openItems.length === 0 ? (
+        {items.length === 0 ? (
           <div className="card empty-state">
             <p>暂无关联事项</p>
           </div>
@@ -357,8 +323,19 @@ export default function ProjectDetailPage() {
                 <span style={{ fontSize: 12, padding: "2px 8px", borderRadius: 999, background: "var(--bg-secondary)", color: "var(--text-secondary)" }}>红黄 {redYellowCount}</span>
               </div>
             </div>
+            {closedItems.length > 0 && (
+              <div className="project-section-controls">
+                <button
+                  type="button"
+                  className="btn btn-secondary"
+                  onClick={() => setShowClosedItems((value) => !value)}
+                >
+                  {showClosedItems ? "隐藏已关闭" : "显示已关闭"}（{closedItems.length}）
+                </button>
+              </div>
+            )}
             <div className="content-card-grid">
-              {sortedItems.slice(0, 20).map((item) => (
+              {visibleProjectItems.slice(0, 20).map((item) => (
                 <WorkItemCard key={item.id} item={item} evidenceLabel={getItemEvidenceLabel(item, today)} />
               ))}
             </div>
@@ -415,8 +392,28 @@ export default function ProjectDetailPage() {
                 <span style={{ fontSize: 12, padding: "2px 8px", borderRadius: 999, background: "var(--bg-secondary)", color: "var(--text-secondary)" }}>最近 {logs.length}</span>
               </div>
             </div>
+            <div className="project-section-controls">
+              {systemLogCount > 0 && (
+                <button
+                  type="button"
+                  className="btn btn-secondary"
+                  onClick={() => setShowSystemLogs((value) => !value)}
+                >
+                  {showSystemLogs ? "隐藏系统动态" : "显示系统动态"}（{systemLogCount}）
+                </button>
+              )}
+              {closedItemLogCount > 0 && (
+                <button
+                  type="button"
+                  className="btn btn-secondary"
+                  onClick={() => setShowClosedItemLogs((value) => !value)}
+                >
+                  {showClosedItemLogs ? "收起已关闭事项日志" : "显示已关闭事项日志"}（{closedItemLogCount}）
+                </button>
+              )}
+            </div>
             <div className="content-card-grid">
-              {sortedLogs.slice(0, 20).map((log) => (
+              {visibleProjectLogs.slice(0, 20).map((log) => (
                 <WorkLogCard key={log.id} log={log} evidenceLabel={getLogEvidenceLabel(log)} />
               ))}
             </div>

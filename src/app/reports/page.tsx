@@ -1,183 +1,281 @@
 import Link from "next/link";
 import Icon from "@/components/Icon";
+import CopyButton from "@/components/CopyButton";
+import { prisma } from "@/lib/prisma";
+import { generateTodayMarkdown } from "@/lib/export";
+import { getLocalDateString, getTodayRange } from "@/lib/utils";
 
 export const dynamic = "force-dynamic";
 
-const reportEntrances = [
-  {
-    href: "/export/today",
-    icon: "calendar",
-    title: "今日日报事实包",
-    subtitle: "导出今天的日志、事项、风险、决策事实，适合直接复制给外部工具继续整理。",
-  },
-  {
-    href: "/export/range",
-    icon: "download",
-    title: "区间 / 周报事实包",
-    subtitle: "按时间范围导出工作记录，适合周报、阶段汇总和回顾场景。",
-  },
-  {
-    href: "/projects",
-    icon: "clipboard-list",
-    title: "项目快照事实包",
-    subtitle: "先进入项目列表，再打开具体项目的快照页查看项目状态、风险和里程碑。",
-  },
-  {
-    href: "/stats",
-    icon: "chart",
-    title: "统计概览",
-    subtitle: "查看事项和日志的整体统计，快速判断当前交付健康度。",
-  },
+const secondaryLinks = [
+  { href: "/export/today", label: "今日日报事实包", icon: "calendar" },
+  { href: "/export/range", label: "区间 / 周报事实包", icon: "download" },
+  { href: "/projects", label: "项目快照事实包", icon: "folder" },
+  { href: "/stats", label: "统计概览", icon: "activity" },
 ] as const;
 
-const quickLinks = [
-  {
-    href: "/today",
-    label: "今日视图",
-    icon: "calendar",
-    note: "快速查看今天的工作台。",
-  },
-  {
-    href: "/logs",
-    label: "日志事实",
-    icon: "file-text",
-    note: "回看可支撑汇报的原始日志。",
-  },
-  {
-    href: "/items",
-    label: "事项信号",
-    icon: "clipboard-list",
-    note: "确认风险、阻塞和下一步行动。",
-  },
-] as const;
+function isSystemLogTitle(title: string) {
+  return title.startsWith("事项变化：") || title.startsWith("浜嬮」鍙樺寲");
+}
 
-const qualityChecks = [
-  { label: "事实规模", note: "日志、事项、关闭记录是否足够支撑日报。", icon: "file-text" },
-  { label: "风险保留", note: "P0/P1、逾期、风险和阻塞不能被压缩丢失。", icon: "alert-triangle" },
-  { label: "待确认项", note: "缺责任人、下一步、项目/模块时先回补事实。", icon: "flag" },
-  { label: "边界约束", note: "外部工具只整理表达，不补写事实或生成新结论。", icon: "shield-off" },
-];
+export default async function ReportsPage() {
+  const today = getLocalDateString();
+  const { start: todayStart, end: todayEnd } = getTodayRange();
 
-export default function ReportsPage() {
+  const [
+    workLogs,
+    closedItems,
+    updatedItems,
+    openHighPriorityItems,
+    dueTodayItems,
+    overdueItems,
+    riskAndBlockerLogs,
+    decisionLogs,
+    reportableLogs,
+    activeItemsForChecks,
+    riskProjects,
+  ] = await Promise.all([
+    prisma.workLog.findMany({
+      where: { workDate: today },
+      include: { item: { select: { id: true, title: true } } },
+      orderBy: { createdAt: "desc" },
+    }),
+    prisma.workItem.findMany({
+      where: { closedAt: { gte: todayStart, lt: todayEnd } },
+      orderBy: { closedAt: "desc" },
+    }),
+    prisma.workItem.findMany({
+      where: { updatedAt: { gte: todayStart, lt: todayEnd } },
+      orderBy: { updatedAt: "desc" },
+    }),
+    prisma.workItem.findMany({
+      where: { priority: { in: ["P0", "P1"] }, status: { not: "closed" } },
+      orderBy: [{ priority: "asc" }, { updatedAt: "desc" }],
+    }),
+    prisma.workItem.findMany({
+      where: { dueDate: today, status: { not: "closed" } },
+      orderBy: [{ priority: "asc" }, { updatedAt: "desc" }],
+    }),
+    prisma.workItem.findMany({
+      where: { dueDate: { lt: today }, status: { not: "closed" } },
+      orderBy: [{ dueDate: "asc" }, { priority: "asc" }],
+    }),
+    prisma.workLog.findMany({
+      where: { workDate: today, type: { in: ["risk", "blocker"] } },
+      include: { item: { select: { id: true, title: true } } },
+      orderBy: { createdAt: "desc" },
+    }),
+    prisma.workLog.findMany({
+      where: { workDate: today, type: "decision" },
+      include: { item: { select: { id: true, title: true } } },
+      orderBy: { createdAt: "desc" },
+    }),
+    prisma.workLog.findMany({
+      where: {
+        workDate: today,
+        OR: [
+          { reportable: true },
+          { type: { in: ["risk", "blocker", "decision", "issue"] } },
+        ],
+      },
+      include: { item: { select: { id: true, title: true } } },
+      orderBy: [{ reportable: "desc" }, { createdAt: "desc" }],
+      take: 10,
+    }),
+    prisma.workItem.findMany({
+      where: {
+        status: { not: "closed" },
+        OR: [
+          { priority: { in: ["P0", "P1"] } },
+          { status: "blocked" },
+          { health: "red" },
+          { dueDate: { lte: today } },
+        ],
+      },
+      include: {
+        logs: {
+          where: { workDate: today },
+          select: { id: true, type: true, title: true },
+        },
+      },
+      orderBy: [{ priority: "asc" }, { updatedAt: "desc" }],
+      take: 40,
+    }),
+    prisma.project.findMany({
+      where: {
+        items: {
+          some: {
+            status: { not: "closed" },
+            OR: [
+              { priority: { in: ["P0", "P1"] } },
+              { status: "blocked" },
+              { health: { in: ["red", "yellow"] } },
+              { dueDate: { lt: today } },
+            ],
+          },
+        },
+      },
+      include: {
+        items: {
+          where: {
+            status: { not: "closed" },
+            OR: [
+              { priority: { in: ["P0", "P1"] } },
+              { status: "blocked" },
+              { health: { in: ["red", "yellow"] } },
+              { dueDate: { lt: today } },
+            ],
+          },
+          orderBy: [{ priority: "asc" }, { updatedAt: "desc" }],
+          take: 5,
+        },
+      },
+      take: 6,
+    }),
+  ]);
+
+  const markdown = generateTodayMarkdown({
+    today,
+    workLogs,
+    closedItems,
+    updatedItems,
+    openHighPriorityItems,
+    dueTodayItems,
+    overdueItems,
+    riskAndBlockerLogs,
+    decisionLogs,
+  });
+
+  const missingOwner = activeItemsForChecks.filter((item) => !item.owner?.trim());
+  const missingNextAction = activeItemsForChecks.filter((item) => !item.nextAction?.trim());
+  const missingProject = activeItemsForChecks.filter((item) => !item.projectId && !item.project?.trim());
+  const p1WithoutTodayLog = activeItemsForChecks.filter((item) => item.priority === "P1" && item.logs.length === 0);
+  const blockedWithoutRiskLog = activeItemsForChecks.filter((item) => (
+    item.status === "blocked" &&
+    !item.logs.some((log) => log.type === "risk" || log.type === "blocker")
+  ));
+  const qualityChecks = [
+    { label: "缺少责任人", count: missingOwner.length, href: "/items?visibility=open", tone: missingOwner.length ? "warning" : "neutral" },
+    { label: "缺少下一步", count: missingNextAction.length, href: "/items?visibility=open", tone: missingNextAction.length ? "warning" : "neutral" },
+    { label: "缺少项目归属", count: missingProject.length, href: "/items?visibility=open", tone: missingProject.length ? "warning" : "neutral" },
+    { label: "P1 今日无日志", count: p1WithoutTodayLog.length, href: "/items?visibility=open&priority=P1", tone: p1WithoutTodayLog.length ? "warning" : "neutral" },
+    { label: "阻塞缺少风险说明", count: blockedWithoutRiskLog.length, href: "/items?visibility=open&status=blocked", tone: blockedWithoutRiskLog.length ? "warning" : "neutral" },
+  ];
+  const reportableManualLogs = reportableLogs.filter((log) => !isSystemLogTitle(log.title));
+
   return (
-    <div className="page-shell auxiliary-page reports-page">
+    <div className="page-shell auxiliary-page reports-page report-workbench-page">
       <header className="command-page-header reports-header">
         <div>
           <span className="section-eyebrow">FACT PACKAGE HUB</span>
           <h1>汇报入口</h1>
-          <p>
-            这里是 WorkHub 的事实包控制台。先选择事实入口，再做质量检查，最后复制给外部工具整理表达。
-          </p>
+          <p>先检查今天有哪些可汇报事实和事实缺口，再复制 Markdown 给外部工具整理表达。WorkHub 只输出事实包，不自动生成管理结论。</p>
         </div>
         <div className="page-header-actions">
           <Link href="/export/today" className="btn btn-primary">
             <Icon name="calendar" size={15} />
             今日日报事实包
           </Link>
-          <Link href="/projects" className="btn btn-secondary">
-            <Icon name="folder" size={15} />
-            项目快照事实包
+          <Link href="/stats" className="btn btn-secondary">
+            <Icon name="activity" size={15} />
+            交付健康监控
           </Link>
         </div>
       </header>
 
-      <section className="card cockpit-card reports-console-card">
-        <div className="cockpit-card-head">
-          <div>
-            <span className="section-eyebrow">REPORT CONTROL</span>
-            <h2>事实包控制台</h2>
-          </div>
-          <span className="section-live"><i />边界已锁定</span>
-        </div>
-        <div className="reports-console-grid">
-          {qualityChecks.map((check) => (
-            <div key={check.label} className="reports-quality-item">
-              <span><Icon name={check.icon} size={16} /></span>
-              <div>
-                <strong>{check.label}</strong>
-                <p>{check.note}</p>
-              </div>
+      <section className="report-workbench-grid">
+        <div className="card report-facts-panel">
+          <div className="dashboard-section-title">
+            <div>
+              <span className="section-eyebrow">TODAY FACTS</span>
+              <h2>今日可汇报事实</h2>
             </div>
-          ))}
-        </div>
-      </section>
-
-      <section className="reports-section">
-        <div className="dashboard-section-title">
-          <div>
-            <span className="section-eyebrow">ENTRANCES</span>
-            <h2>汇报入口卡片</h2>
-          </div>
-        </div>
-
-        <div className="content-card-grid">
-          {reportEntrances.map((entry) => (
-            <Link
-              key={entry.href}
-              href={entry.href}
-              className="card card-hover report-entry-card"
-            >
-              <div className="report-entry-main">
-                <span className="report-entry-icon">
-                  <Icon name={entry.icon} size={18} />
-                </span>
-                <div className="report-entry-copy">
-                  <h3>{entry.title}</h3>
-                  <p>{entry.subtitle}</p>
-                </div>
-              </div>
-
-              <div className="report-entry-action">
-                <span className="btn btn-secondary report-entry-button">
-                  <Icon name="chevron-right" size={14} />
-                  打开入口
-                </span>
-              </div>
+            <Link href="/logs?reportable=true" className="section-link">
+              全部事实 <Icon name="chevron-right" size={14} />
             </Link>
-          ))}
-        </div>
-      </section>
-
-      <section className="reports-section reports-section-compact">
-        <div className="dashboard-section-title">
-          <div>
-            <span className="section-eyebrow">RECENT CONTEXT</span>
-            <h2>回补入口</h2>
           </div>
+          {reportableManualLogs.length === 0 ? (
+            <div className="report-quiet-empty">今日暂无人工可汇报事实，建议先回到日志补齐关键事实。</div>
+          ) : (
+            <div className="report-fact-list">
+              {reportableManualLogs.slice(0, 6).map((log) => (
+                <Link key={log.id} href={`/logs/${log.id}`} className="report-fact-row">
+                  <span className={`report-fact-type report-fact-type--${log.type}`}>{log.type}</span>
+                  <strong>{log.title}</strong>
+                  <small>{log.project || log.item?.title || "未关联上下文"}</small>
+                </Link>
+              ))}
+            </div>
+          )}
         </div>
 
-        <div className="card reports-shortcuts-card reports-context-card">
-          <div className="reports-shortcuts-row">
-            {quickLinks.map((link) => (
-              <Link key={link.href} href={link.href} className="btn btn-secondary">
-                <Icon name={link.icon} size={14} />
-                {link.label}
+        <div className="card report-quality-panel">
+          <div className="dashboard-section-title">
+            <div>
+              <span className="section-eyebrow">QUALITY CHECK</span>
+              <h2>事实质量检查</h2>
+            </div>
+          </div>
+          <div className="report-quality-list">
+            {qualityChecks.map((check) => (
+              <Link key={check.label} href={check.href} className={`report-quality-row is-${check.tone}`}>
+                <span>{check.label}</span>
+                <strong>{check.count}</strong>
               </Link>
             ))}
           </div>
-          <p className="reports-shortcuts-note">
-            事实缺口优先回到今日视图、日志或事项补齐，再回到这里导出。
-          </p>
         </div>
       </section>
 
-      <section className="reports-section">
+      <section className="card report-draft-panel">
+        <div className="export-preview-bar report-draft-bar">
+          <span>daily-facts.md</span>
+          <span>MARKDOWN</span>
+          <CopyButton
+            text={markdown}
+            label="复制今日事实包"
+            successLabel="已复制，可粘贴到外部工具"
+            variant="primary"
+          />
+        </div>
+        <pre>{markdown}</pre>
+      </section>
+
+      <section className="card report-risk-panel">
         <div className="dashboard-section-title">
           <div>
-            <span className="section-eyebrow">BOUNDARY</span>
-            <h2>边界提示</h2>
+            <span className="section-eyebrow">PROJECT RISK</span>
+            <h2>项目风险摘要</h2>
           </div>
         </div>
-
-        <div className="card reports-boundary-card">
-          <p className="reports-boundary-title">
-            WorkHub 只提供事实包入口，不在这里生成管理结论。
-          </p>
-          <p className="reports-boundary-copy">
-            复制后的 Markdown 可以交给外部工具继续整理成汇报，但外部工具不能补写事实。先看质量检查，再人工确认缺口，避免把不完整事实直接加工成结论。
-          </p>
-        </div>
+        {riskProjects.length === 0 ? (
+          <div className="report-quiet-empty">当前没有需要在汇报入口突出展示的项目风险。</div>
+        ) : (
+          <div className="report-project-risk-list">
+            {riskProjects.map((project) => (
+              <Link key={project.id} href={`/projects/${project.id}`} className="report-project-risk-row">
+                <strong>{project.name}</strong>
+                <span>{project.items.length} 个未关闭风险信号</span>
+                <small>{project.items.slice(0, 2).map((item) => item.title).join(" / ")}</small>
+              </Link>
+            ))}
+          </div>
+        )}
       </section>
+
+      <section className="report-secondary-links">
+        {secondaryLinks.map((link) => (
+          <Link key={link.href} href={link.href} className="btn btn-secondary">
+            <Icon name={link.icon} size={14} />
+            {link.label}
+          </Link>
+        ))}
+      </section>
+
+      <div className="export-rule-note report-boundary-note">
+        <strong>边界：</strong>
+        <span>这里维护事实质量和事实包交付，不补写事实、不推断结论、不替代外部汇报表达。</span>
+      </div>
     </div>
   );
 }

@@ -1,7 +1,10 @@
 "use client";
 
 import { useState, useEffect } from "react";
+import Link from "next/link";
 import Icon from "@/components/Icon";
+import { buildItemsLink, buildLogsLink } from "@/lib/filterLinks";
+import { getLocalDateString } from "@/lib/utils";
 
 interface Stats {
   items: {
@@ -16,6 +19,40 @@ interface Stats {
     todayDue: number;
   };
   logs: { total: number; today: number };
+}
+
+type Metric = {
+  label: string;
+  value: string | number;
+  meta: string;
+  icon: string;
+  tone: string;
+  href?: string;
+};
+
+function MetricCard({ metric }: { metric: Metric }) {
+  const content = (
+    <>
+      <div className="stat-topline">
+        <span className="stat-icon">
+          <Icon name={metric.icon} size={15} />
+        </span>
+        <span className="stat-meta">{metric.meta}</span>
+      </div>
+      <strong className="stat-value">{metric.value}</strong>
+      <span className="stat-label">{metric.label}</span>
+    </>
+  );
+
+  if (metric.href) {
+    return (
+      <Link href={metric.href} className={`stat-card metric-${metric.tone} stats-kpi-link`}>
+        {content}
+      </Link>
+    );
+  }
+
+  return <div className={`stat-card metric-${metric.tone} stats-kpi-static`}>{content}</div>;
 }
 
 export default function StatsPage() {
@@ -57,9 +94,28 @@ export default function StatsPage() {
     );
   }
 
+  const today = getLocalDateString();
   const itemTotal = Math.max(stats.items.total, 1);
   const completionRate = Math.round((stats.items.closed / itemTotal) * 100);
   const activeItems = stats.items.open + stats.items.following + stats.items.blocked;
+  const highPriorityCount = stats.items.p0 + stats.items.p1;
+  const todayLogContribution = stats.logs.total > 0 ? Math.round((stats.logs.today / stats.logs.total) * 100) : 0;
+
+  const situationMetrics: Metric[] = [
+    { label: "闭环率", value: `${completionRate}%`, meta: "CLOSED", icon: "check-circle", tone: "neutral" },
+    { label: "活跃事项", value: activeItems, meta: "ACTIVE", icon: "activity", tone: activeItems > 0 ? "blue" : "neutral", href: buildItemsLink({ visibility: "open" }) },
+    { label: "P0/P1", value: highPriorityCount, meta: "HIGH", icon: "zap", tone: highPriorityCount > 0 ? "warning" : "neutral", href: buildItemsLink({ visibility: "open", priority: "P0,P1" }) },
+    { label: "逾期", value: stats.items.overdue, meta: "OVERDUE", icon: "clock", tone: stats.items.overdue > 0 ? "danger" : "neutral", href: buildItemsLink({ visibility: "open", overdue: true }) },
+    { label: "今日日志", value: stats.logs.today, meta: "LOGS", icon: "file-text", tone: "slate", href: buildLogsLink({ startDate: today, endDate: today, view: "" }) },
+  ];
+
+  const riskSignals = [
+    { label: "P0 紧急", value: stats.items.p0, note: stats.items.p0 > 0 ? "需要立即处理" : "当前无紧急项", icon: "zap", tone: stats.items.p0 > 0 ? "danger" : "neutral", href: buildItemsLink({ visibility: "open", priority: "P0" }) },
+    { label: "P1 高优", value: stats.items.p1, note: stats.items.p1 > 0 ? "需要持续跟进" : "当前无高优项", icon: "alert-triangle", tone: stats.items.p1 > 0 ? "warning" : "neutral", href: buildItemsLink({ visibility: "open", priority: "P1" }) },
+    { label: "阻塞", value: stats.items.blocked, note: stats.items.blocked > 0 ? "需要解除依赖" : "当前无阻塞", icon: "shield-off", tone: stats.items.blocked > 0 ? "danger" : "neutral", href: buildItemsLink({ visibility: "open", status: "blocked" }) },
+    { label: "逾期", value: stats.items.overdue, note: stats.items.overdue > 0 ? "需要推进闭环" : "当前节奏正常", icon: "clock", tone: stats.items.overdue > 0 ? "warning" : "neutral", href: buildItemsLink({ visibility: "open", overdue: true }) },
+  ];
+
   const itemDistribution = [
     { label: "待处理", value: stats.items.open, tone: "blue" },
     { label: "跟进中", value: stats.items.following, tone: "cyan" },
@@ -67,27 +123,13 @@ export default function StatsPage() {
     { label: "已关闭", value: stats.items.closed, tone: "success" },
   ];
 
-  const healthSignals = [
-    { label: "P0 紧急", value: stats.items.p0, note: stats.items.p0 > 0 ? "需要立即处理" : "当前无紧急项", icon: "zap", tone: stats.items.p0 > 0 ? "danger" : "success" },
-    { label: "逾期事项", value: stats.items.overdue, note: stats.items.overdue > 0 ? "需要推进闭环" : "交付节奏正常", icon: "clock", tone: stats.items.overdue > 0 ? "warning" : "success" },
-    { label: "阻塞事项", value: stats.items.blocked, note: stats.items.blocked > 0 ? "需要解除依赖" : "当前无阻塞", icon: "shield-off", tone: stats.items.blocked > 0 ? "danger" : "success" },
-    { label: "今日到期", value: stats.items.todayDue, note: "关注今日交付窗口", icon: "calendar", tone: "purple" },
-  ];
-  const situationMetrics = [
-    { label: "闭环率", value: `${completionRate}%`, meta: "CLOSED", icon: "check-circle", tone: completionRate >= 60 ? "success" : "warning" },
-    { label: "活跃事项", value: activeItems, meta: "ACTIVE", icon: "activity", tone: activeItems > 0 ? "blue" : "success" },
-    { label: "P0/P1", value: stats.items.p0 + stats.items.p1, meta: "HIGH", icon: "zap", tone: stats.items.p0 + stats.items.p1 > 0 ? "warning" : "success" },
-    { label: "逾期", value: stats.items.overdue, meta: "OVERDUE", icon: "clock", tone: stats.items.overdue > 0 ? "danger" : "success" },
-    { label: "今日日志", value: stats.logs.today, meta: "LOGS", icon: "file-text", tone: "purple" },
-  ];
-
   return (
-    <div className="page-shell auxiliary-page stats-page stats-cockpit-page">
+    <div className="page-shell auxiliary-page stats-page stats-cockpit-page delivery-health-page">
       <header className="command-page-header">
         <div>
           <span className="section-eyebrow">DELIVERY HEALTH MONITOR</span>
           <h1>交付健康监控</h1>
-          <p>用事项风险、闭环状态与日志活跃度观察当前交付节奏。</p>
+          <p>用于观察交付健康水位、风险分布和日志活跃度。这里辅助判断状态，不直接生成管理结论。</p>
         </div>
         <span className="monitor-status"><i />MONITORING</span>
       </header>
@@ -95,28 +137,21 @@ export default function StatsPage() {
       <section className="card cockpit-card stats-situation-card">
         <div className="cockpit-card-head">
           <div>
-            <span className="section-eyebrow">SITUATION</span>
-            <h2>交付态势</h2>
+            <span className="section-eyebrow">01 / HEALTH WATERLINE</span>
+            <h2>整体健康水位</h2>
           </div>
-          <span className="section-count">保留当前统计口径</span>
+          <span className="section-count">指标可辅助判断，不自动输出结论</span>
         </div>
         <div className="cockpit-metrics stats-situation-grid">
           {situationMetrics.map((metric) => (
-            <div key={metric.label} className={`stat-card metric-${metric.tone}`}>
-              <div className="stat-topline">
-                <span className="stat-icon"><Icon name={metric.icon} size={15} /></span>
-                <span className="stat-meta">{metric.meta}</span>
-              </div>
-              <strong className="stat-value">{metric.value}</strong>
-              <span className="stat-label">{metric.label}</span>
-            </div>
+            <MetricCard key={metric.label} metric={metric} />
           ))}
         </div>
       </section>
 
       <section className="monitor-section">
         <div className="monitor-section-heading">
-          <div><span>01</span><h2>交付健康度</h2></div>
+          <div><span>02</span><h2>交付健康度</h2></div>
           <small>DELIVERY HEALTH</small>
         </div>
         <div className="health-layout">
@@ -127,15 +162,15 @@ export default function StatsPage() {
             <div className="completion-copy">
               <span>Overall Delivery</span>
               <strong>{stats.items.closed} / {stats.items.total} 已关闭</strong>
-              <p>当前仍有 {activeItems} 个活跃事项需要持续推进。</p>
+              <p>当前仍有 {activeItems} 个事项需要持续跟进。闭环率没有固定阈值，因此保持中性表达。</p>
             </div>
           </div>
-          <div className="health-signal-grid">
-            {healthSignals.map((signal) => (
-              <div key={signal.label} className={`card health-signal signal-${signal.tone}`}>
+          <div className="health-signal-grid risk-signal-grid">
+            {riskSignals.map((signal) => (
+              <Link key={signal.label} href={signal.href} className={`card health-signal signal-${signal.tone}`}>
                 <span className="health-signal-icon"><Icon name={signal.icon} size={17} /></span>
                 <div><small>{signal.label}</small><strong>{signal.value}</strong><p>{signal.note}</p></div>
-              </div>
+              </Link>
             ))}
           </div>
         </div>
@@ -143,7 +178,7 @@ export default function StatsPage() {
 
       <section className="monitor-section">
         <div className="monitor-section-heading">
-          <div><span>02</span><h2>事项分布</h2></div>
+          <div><span>03</span><h2>事项分布</h2></div>
           <small>WORK ITEM DISTRIBUTION</small>
         </div>
         <div className="stats-two-column">
@@ -165,24 +200,30 @@ export default function StatsPage() {
           <div className="card priority-monitor">
             <div className="priority-monitor-heading"><Icon name="alert-triangle" size={17} /><span>优先级雷达</span></div>
             <div className="priority-monitor-grid">
-              <div className="priority-readout critical"><small>P0 / CRITICAL</small><strong>{stats.items.p0}</strong></div>
-              <div className="priority-readout high"><small>P1 / HIGH</small><strong>{stats.items.p1}</strong></div>
+              <Link href={buildItemsLink({ visibility: "open", priority: "P0" })} className="priority-readout critical"><small>P0 / CRITICAL</small><strong>{stats.items.p0}</strong></Link>
+              <Link href={buildItemsLink({ visibility: "open", priority: "P1" })} className="priority-readout high"><small>P1 / HIGH</small><strong>{stats.items.p1}</strong></Link>
             </div>
-            <div className="priority-note"><span>未关闭高优事项</span><strong>{stats.items.p0 + stats.items.p1}</strong></div>
+            <div className="priority-note"><span>未关闭高优事项</span><strong>{highPriorityCount}</strong></div>
           </div>
         </div>
       </section>
 
       <section className="monitor-section">
         <div className="monitor-section-heading">
-          <div><span>03</span><h2>日志活跃度</h2></div>
+          <div><span>04</span><h2>日志活跃</h2></div>
           <small>LOG ACTIVITY</small>
         </div>
         <div className="card log-activity-panel">
-          <div className="log-activity-primary"><span className="health-signal-icon"><Icon name="activity" size={19} /></span><div><small>TODAY CAPTURED</small><strong>{stats.logs.today}</strong><p>条今日日志</p></div></div>
+          <Link href={buildLogsLink({ startDate: today, endDate: today, view: "" })} className="log-activity-primary">
+            <span className="health-signal-icon"><Icon name="activity" size={19} /></span>
+            <div><small>TODAY CAPTURED</small><strong>{stats.logs.today}</strong><p>条今日日志</p></div>
+          </Link>
           <div className="log-activity-divider" />
           <div className="log-activity-total"><small>累计事实记录</small><strong>{stats.logs.total}</strong></div>
-          <div className="log-activity-track"><div><span>今日记录贡献</span><strong>{stats.logs.total > 0 ? Math.round((stats.logs.today / stats.logs.total) * 100) : 0}%</strong></div><div className="progress-track"><i style={{ width: `${stats.logs.total > 0 ? Math.min(100, Math.round((stats.logs.today / stats.logs.total) * 100)) : 0}%` }} /></div></div>
+          <div className="log-activity-track">
+            <div><span>今日记录贡献</span><strong>{todayLogContribution}%</strong></div>
+            <div className="progress-track"><i style={{ width: `${Math.min(100, todayLogContribution)}%` }} /></div>
+          </div>
         </div>
       </section>
     </div>
