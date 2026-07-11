@@ -942,12 +942,8 @@ function getCompactScheduleSortDate(milestone: ProjectMilestone) {
   return getDateKey(getMilestonePlannedEnd(milestone));
 }
 
-function sortCompactStageMilestones(milestones: ProjectMilestone[], nextMilestoneId?: string | null) {
+function sortCompactStageMilestones(milestones: ProjectMilestone[]) {
   return [...milestones].sort((a, b) => {
-    const aNext = a.id === nextMilestoneId;
-    const bNext = b.id === nextMilestoneId;
-    if (aNext !== bNext) return aNext ? -1 : 1;
-
     const aDate = getCompactScheduleSortDate(a);
     const bDate = getCompactScheduleSortDate(b);
     if (aDate && bDate && aDate !== bDate) return aDate.localeCompare(bDate);
@@ -1075,7 +1071,7 @@ function CompactPlanMatrix({
   };
 
   const renderStageColumn = (group: StageGroup, muted = false) => {
-    const orderedMilestones = sortCompactStageMilestones(group.milestones, nextMilestoneId);
+    const orderedMilestones = sortCompactStageMilestones(group.milestones);
     const expandedStage = expandedStageKeys.has(group.key);
     const limited = !showAllMatched && !expandedStage && orderedMilestones.length > COMPACT_STAGE_LIMIT;
     const selectedInStage = selectedMilestoneId
