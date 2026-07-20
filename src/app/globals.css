@@ -7893,9 +7893,9 @@ body,
 }
 
 .today-cockpit-page .today-action-item {
-  display: flex !important;
+  display: grid !important;
+  grid-template-columns: minmax(0, 1fr) auto;
   align-items: flex-start !important;
-  justify-content: space-between !important;
   gap: 12px !important;
   padding: 11px 12px !important;
   border: 1px solid var(--border-primary) !important;
@@ -12337,13 +12337,54 @@ html body .dashboard-shell .cockpit-metrics .stat-card-warning:not(.stat-card-em
 }
 
 .report-quality-row {
-  grid-template-columns: minmax(0, 1fr) auto;
-  align-items: center;
+  grid-template-columns: minmax(0, 1fr);
+  align-items: stretch;
 }
 
-.report-quality-row strong {
-  font-size: 20px;
+.report-quality-row-head,
+.report-quality-item-link {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+}
+
+.report-quality-row-head > span {
   color: var(--text-primary);
+  font-size: 13px;
+  font-weight: 720;
+}
+
+.report-quality-item-list {
+  display: grid;
+  gap: 5px;
+  padding-top: 5px;
+}
+
+.report-quality-item-link,
+.report-quality-more {
+  min-width: 0;
+  color: var(--text-secondary);
+  font-size: 12px;
+  text-decoration: none;
+}
+
+.report-quality-item-link > span {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.report-quality-item-link small {
+  display: inline-flex;
+  align-items: center;
+  gap: 2px;
+  flex: 0 0 auto;
+  color: var(--accent-blue);
+}
+
+.report-quality-more {
+  color: var(--accent-blue);
 }
 
 .report-quality-row.is-warning {

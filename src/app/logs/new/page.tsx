@@ -29,6 +29,9 @@ function NewLogForm() {
   const searchParams = useSearchParams();
   const initialItemId = searchParams.get("itemId") || "";
   const initialProjectId = searchParams.get("projectId") || "";
+  const requestedType = searchParams.get("type") || "";
+  const initialType = WORK_LOG_TYPES.some((option) => option.value === requestedType) ? requestedType : "note";
+  const initialReportable = searchParams.get("reportable") === "true";
 
   const [loading, setLoading] = useState(false);
   const submittingRef = useRef(false);
@@ -41,13 +44,13 @@ function NewLogForm() {
     workDate: getLocalDateString(),
     title: "",
     content: "",
-    type: "note",
+    type: initialType,
     source: "manual",
     project: "",
     projectId: initialProjectId,
     module: "",
     tags: "",
-    reportable: false,
+    reportable: initialReportable,
     sourceUrl: "",
     relationMode: initialItemId ? ("existing" as RelationMode) : ("none" as RelationMode),
     itemId: initialItemId,
@@ -151,47 +154,6 @@ function NewLogForm() {
     }
   };
 
-  const createActionItems = async (workLogId: string, workItemId?: string | null) => {
-    const activeDrafts = actionItemsEnabled
-      ? actionItemDrafts.filter((draft) => draft.title.trim())
-      : [];
-
-    if (activeDrafts.length === 0) {
-      return;
-    }
-
-    const results = await Promise.allSettled(
-      activeDrafts.map((draft, index) =>
-        fetch("/api/action-items", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({
-            title: draft.title.trim(),
-            status: draft.status,
-            owner: draft.owner,
-            dueDate: draft.dueDate,
-            workLogId,
-            workItemId: workItemId || undefined,
-            projectId: form.projectId || undefined,
-            sortOrder: index,
-          }),
-        }).then(async (res) => {
-          if (!res.ok) {
-            const errorBody = await res.json().catch(() => null);
-            throw new Error(errorBody?.error || "创建 Action Item 失败");
-          }
-
-          return res.json();
-        })
-      )
-    );
-
-    const failures = results.filter((result) => result.status === "rejected");
-    if (failures.length > 0) {
-      alert(`记录已保存，但有 ${failures.length} 条 Action Item 创建失败`);
-    }
-  };
-
   const handleItemChange = (itemId: string) => {
     const selectedItem = items.find((item) => item.id === itemId);
 
@@ -214,14 +176,6 @@ function NewLogForm() {
     });
   };
 
-  const removeCreatedItem = async (itemId: string) => {
-    try {
-      await fetch(`/api/items/${itemId}`, { method: "DELETE" });
-    } catch (error) {
-      console.error("Error rolling back created item:", error);
-    }
-  };
-
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (submittingRef.current) return;
@@ -234,6 +188,10 @@ function NewLogForm() {
       alert("请选择要关联的已有事项");
       return;
     }
+    if (form.relationMode === "none") {
+      alert("请选择已有事项或新建事项，确保日志形成可追溯闭环");
+      return;
+    }
 
     submittingRef.current = true;
     if (submitButtonRef.current) {
@@ -241,17 +199,20 @@ function NewLogForm() {
       submitButtonRef.current.textContent = "创建中...";
     }
     setLoading(true);
-    let createdItemId: string | null = null;
-    let shouldRestoreSubmit = true;
-
     try {
-      let itemIdToLink: string | null = null;
-
-      if (form.relationMode === "new") {
-        const itemRes = await fetch("/api/items", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({
+      const actionItems = actionItemsEnabled
+        ? actionItemDrafts
+            .filter((draft) => draft.title.trim())
+            .map((draft, index) => ({
+              title: draft.title.trim(),
+              status: draft.status,
+              owner: draft.owner,
+              dueDate: draft.dueDate,
+              sortOrder: index,
+            }))
+        : [];
+      const newItem = form.relationMode === "new"
+        ? {
             title: form.title.trim(),
             project: form.project,
             projectId: form.projectId || undefined,
@@ -263,29 +224,9 @@ function NewLogForm() {
             owner: form.newOwner,
             dueDate: form.newDueDate,
             nextAction: form.newNextAction,
-          }),
-        });
-
-        if (!itemRes.ok) {
-          const error = await itemRes.json();
-          alert(error.error || "保存失败，请重试");
-          submittingRef.current = false;
-          if (submitButtonRef.current) {
-            submitButtonRef.current.disabled = false;
-            submitButtonRef.current.textContent = submitLabel;
           }
-          setLoading(false);
-          return;
-        }
-
-        const item = await itemRes.json();
-        createdItemId = item.id;
-        itemIdToLink = item.id;
-      } else if (form.relationMode === "existing") {
-        itemIdToLink = form.itemId || null;
-      }
-
-      const logRes = await fetch("/api/logs", {
+        : undefined;
+      const logRes = await fetch("/api/logs/with-context", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
@@ -300,20 +241,16 @@ function NewLogForm() {
           tags: form.tags,
           reportable: form.reportable,
           sourceUrl: form.sourceUrl,
-          itemId: itemIdToLink,
+          itemId: form.relationMode === "existing" ? form.itemId : undefined,
+          newItem,
+          actionItems,
         }),
       });
 
       if (logRes.ok) {
-        const log = await logRes.json();
-        await createActionItems(log.id, itemIdToLink);
-        shouldRestoreSubmit = false;
+        const { log } = await logRes.json();
         window.location.assign(`/logs/${log.id}`);
         return;
-      }
-
-      if (createdItemId) {
-        await removeCreatedItem(createdItemId);
       }
 
       const error = await logRes.json();
@@ -325,9 +262,6 @@ function NewLogForm() {
       }
     } catch (error) {
       console.error("Error creating log:", error);
-      if (createdItemId) {
-        await removeCreatedItem(createdItemId);
-      }
       alert("保存失败，请重试");
       submittingRef.current = false;
       if (submitButtonRef.current) {
@@ -336,13 +270,11 @@ function NewLogForm() {
       }
       setLoading(false);
     } finally {
-      if (shouldRestoreSubmit) {
-        setLoading(false);
-      }
+      setLoading(false);
     }
   };
 
-  const submitLabel = form.relationMode === "new" ? "先创建事项并保存日志" : "创建日志";
+  const submitLabel = form.relationMode === "new" ? "创建事项、日志和行动项" : "创建日志和行动项";
 
   return (
     <div className="page-shell command-form-page log-entry-page">

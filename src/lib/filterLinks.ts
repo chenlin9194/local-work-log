@@ -12,6 +12,7 @@ type ItemQuery = {
   sourceSystem?: string;
   keyword?: string;
   overdue?: boolean;
+  quality?: string;
 };
 
 type LogQuery = {
@@ -75,6 +76,7 @@ export function buildItemsQueryString(filters: ItemQuery, pagination?: Paginatio
   appendString(params, "sourceSystem", filters.sourceSystem);
   appendString(params, "keyword", filters.keyword);
   appendBoolean(params, "overdue", filters.overdue);
+  appendString(params, "quality", filters.quality);
   appendPagination(params, pagination);
 
   return params.toString();

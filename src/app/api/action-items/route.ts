@@ -3,6 +3,7 @@ import { prisma } from "@/lib/prisma";
 import { toNullableString } from "@/lib/utils";
 import { revalidateWorkHubPaths } from "@/lib/revalidate";
 import { ACTION_ITEM_STATUS_VALUES, optionalYmdDate, requireText } from "@/lib/inputValidation";
+import { resolveActionItemDoneNote } from "@/lib/actionItemCompletion";
 
 const VALID_STATUSES = ACTION_ITEM_STATUS_VALUES;
 
@@ -91,6 +92,11 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: dueDateResult.error }, { status: 400 });
     }
 
+    const doneNoteResult = resolveActionItemDoneNote(statusResult.status, body.doneNote);
+    if (doneNoteResult.error) {
+      return NextResponse.json({ error: doneNoteResult.error }, { status: 400 });
+    }
+
     if (!workItemId && !workLogId) {
       return NextResponse.json({ error: "Action Item 需要关联事项或日志" }, { status: 400 });
     }
@@ -141,7 +147,7 @@ export async function POST(request: NextRequest) {
         workLogId,
         projectId: resolvedProjectId,
         doneAt,
-        doneNote: toNullableString(body.doneNote),
+        doneNote: doneNoteResult.value,
       },
     });
 

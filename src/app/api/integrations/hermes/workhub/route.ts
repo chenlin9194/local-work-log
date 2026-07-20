@@ -4,14 +4,15 @@ import { prisma } from "@/lib/prisma";
 import { revalidateWorkHubPaths } from "@/lib/revalidate";
 import { updateWorkItemWithChangeLog } from "@/lib/workItemChangeLog";
 import {
-  ACTION_ITEM_STATUS_VALUES,
-  enumOrDefault,
+  createWorkItemWithActions,
+  createWorkLogWithContext,
+  isCompositeInputError,
+} from "@/lib/recordingTransaction";
+import {
   HEALTH_VALUES,
-  LOG_SOURCE_VALUES,
   PRIORITY_VALUES,
   REPORT_LEVEL_VALUES,
   WORK_ITEM_TYPE_VALUES,
-  WORK_LOG_TYPE_VALUES,
 } from "@/lib/inputValidation";
 import {
   PROJECT_MILESTONE_STAGE_VALUES,
@@ -80,14 +81,6 @@ type ProjectResolution =
   | { needsConfirmation: boolean; message: string; candidates: ProjectCandidate[] }
   | { error: string; status: number }
   | { none: true };
-
-type NormalizedActionInput = {
-  title: string;
-  owner: string | null;
-  dueDate: string | null;
-  status: string;
-  sortOrder: number;
-};
 
 function jsonOk(data: Record<string, unknown>, status = 200) {
   return NextResponse.json({ ok: true, ...data }, { status });
@@ -543,103 +536,28 @@ async function handleCreateProjectMember(input: Record<string, unknown>) {
   return jsonOk({ project: resolved.project, member }, 201);
 }
 
-function normalizeActionInputs(value: unknown): NormalizedActionInput[] {
-  if (!Array.isArray(value)) return [];
-  const normalized: NormalizedActionInput[] = [];
-
-  value.forEach((item, index) => {
-    if (typeof item === "string") {
-      const title = item.trim();
-      if (title) {
-        normalized.push({ title, owner: null, dueDate: null, status: "pending", sortOrder: index });
-      }
-      return;
-    }
-
-    if (!item || typeof item !== "object") return;
-    const record = item as Record<string, unknown>;
-    const title = trimString(record.title);
-    if (!title) return;
-
-    normalized.push({
-      title,
-      owner: optionalString(record.owner),
-      dueDate: normalizeYmd(record.dueDate, "actionItems.dueDate"),
-      status: trimString(record.status) || "pending",
-      sortOrder: "sortOrder" in record ? parseSortOrder(record.sortOrder) : index,
-    });
-  });
-
-  return normalized;
-}
-
 async function handleCreateWorkItemWithActions(input: Record<string, unknown>) {
   const resolved = await resolveProject(input);
   if ("needsConfirmation" in resolved) return jsonOk({ needsConfirmation: true, ...resolved });
   if ("error" in resolved) return jsonError(resolved.error || "Project lookup failed", resolved.status || 400);
   if (!("project" in resolved)) return jsonError("Project lookup failed");
 
-  const title = trimString(input.title);
-  if (!title) return jsonError("item title is required");
-
-  const dueDate = normalizeYmd(input.dueDate, "dueDate");
-  const nextCheckpoint = normalizeYmd(input.nextCheckpoint, "nextCheckpoint");
-  const actionInputs = normalizeActionInputs(input.actionItems || input.actions || input.todos);
-  const typeResult = enumOrDefault(input.type, WORK_ITEM_TYPE_VALUES, "type", "action");
-  const priorityResult = enumOrDefault(input.priority, PRIORITY_VALUES, "priority", "P2");
-  const statusResult = enumOrDefault(input.status, new Set(["open", "following", "blocked", "closed"]), "status", "open");
-  const healthResult = enumOrDefault(input.health, HEALTH_VALUES, "health", "unknown");
-  const reportLevelResult = enumOrDefault(input.reportLevel, REPORT_LEVEL_VALUES, "reportLevel", "none");
-  const actionError = actionInputs.find((action) => !ACTION_ITEM_STATUS_VALUES.has(action.status));
-  const validationError = [typeResult, priorityResult, statusResult, healthResult, reportLevelResult]
-    .find((result) => result.error)?.error;
-  if (validationError) return jsonError(validationError);
-  if (actionError) return jsonError("actionItems.status is invalid");
-
-  const item = await prisma.workItem.create({
-    data: {
-      title,
-      description: optionalString(input.description),
-      project: resolved.project.name,
+  try {
+    const { item, actionItems } = await createWorkItemWithActions({
+      ...input,
       projectId: resolved.project.id,
-      module: optionalString(input.module),
-      type: typeResult.value,
-      priority: priorityResult.value,
-      status: statusResult.value,
-      owner: optionalString(input.owner),
-      dueDate,
-      nextAction: optionalString(input.nextAction),
-      trackingReason: optionalString(input.trackingReason),
+      project: resolved.project.name,
       sourceSystem: optionalString(input.sourceSystem) || "feishu-hermes",
-      sourceId: optionalString(input.sourceId),
-      sourceUrl: optionalString(input.sourceUrl),
-      health: healthResult.value,
-      currentSummary: optionalString(input.currentSummary),
-      nextCheckpoint,
-      reportLevel: reportLevelResult.value,
-      tags: optionalString(input.tags),
-    },
-  });
+      actionItems: input.actionItems ?? input.actions ?? input.todos,
+    });
 
-  const actionItems = await Promise.all(
-    actionInputs.map((action) =>
-      prisma.actionItem.create({
-        data: {
-          title: action.title,
-          status: action.status || "pending",
-          owner: action.owner,
-          dueDate: action.dueDate,
-          sortOrder: action.sortOrder,
-          workItemId: item.id,
-          projectId: resolved.project.id,
-        },
-      })
-    )
-  );
+    revalidateWorkHubPaths({ itemId: item.id, projectId: resolved.project.id });
 
-  revalidateWorkHubPaths({ itemId: item.id, projectId: resolved.project.id });
-
-  return jsonOk({ project: resolved.project, item, actionItems }, 201);
+    return jsonOk({ project: resolved.project, item, actionItems }, 201);
+  } catch (error) {
+    if (isCompositeInputError(error)) return jsonError(error.message);
+    throw error;
+  }
 }
 
 async function handleCreateProjectLog(input: Record<string, unknown>) {
@@ -648,57 +566,26 @@ async function handleCreateProjectLog(input: Record<string, unknown>) {
   if ("error" in resolved) return jsonError(resolved.error || "Project lookup failed", resolved.status || 400);
   if (!("project" in resolved)) return jsonError("Project lookup failed");
 
-  const title = trimString(input.title);
-  const content = trimString(input.content);
-  if (!title || !content) return jsonError("log title and content are required");
+  try {
+    const type = trimString(input.type) || "note";
+    const { log, actionItems } = await createWorkLogWithContext(
+      {
+        ...input,
+        projectId: resolved.project.id,
+        project: resolved.project.name,
+        reportable: input.reportable === undefined ? REPORTABLE_LOG_TYPES.has(type) : input.reportable,
+        actionItems: input.actionItems ?? input.actions ?? input.followups,
+      },
+      { defaultSource: "feishu" }
+    );
 
-  const type = trimString(input.type) || "note";
-  if (!WORK_LOG_TYPE_VALUES.has(type)) return jsonError("type is invalid");
-  const source = trimString(input.source) || "feishu";
-  if (!LOG_SOURCE_VALUES.has(source)) return jsonError("source is invalid");
-  const reportable = optionalBoolean(input.reportable, REPORTABLE_LOG_TYPES.has(type));
-  const actionInputs = normalizeActionInputs(input.actionItems || input.actions || input.followups);
-  if (actionInputs.some((action) => !ACTION_ITEM_STATUS_VALUES.has(action.status))) {
-    return jsonError("actionItems.status is invalid");
+    revalidateWorkHubPaths({ logId: log.id, itemId: log.itemId || undefined, projectId: resolved.project.id });
+
+    return jsonOk({ project: resolved.project, log, actionItems }, 201);
+  } catch (error) {
+    if (isCompositeInputError(error)) return jsonError(error.message);
+    throw error;
   }
-  const itemId = optionalString(input.itemId);
-
-  const log = await prisma.workLog.create({
-    data: {
-      workDate: normalizeYmd(input.workDate, "workDate") || getLocalDateString(),
-      title,
-      content,
-      type,
-      source,
-      project: resolved.project.name,
-      projectId: resolved.project.id,
-      module: optionalString(input.module),
-      tags: optionalString(input.tags),
-      itemId,
-      reportable,
-      sourceUrl: optionalString(input.sourceUrl),
-    },
-  });
-
-  const actionItems = await Promise.all(
-    actionInputs.map((action) =>
-      prisma.actionItem.create({
-        data: {
-          title: action.title,
-          status: action.status || "pending",
-          owner: action.owner,
-          dueDate: action.dueDate,
-          sortOrder: action.sortOrder,
-          workLogId: log.id,
-          projectId: resolved.project.id,
-        },
-      })
-    )
-  );
-
-  revalidateWorkHubPaths({ logId: log.id, itemId: itemId || undefined, projectId: resolved.project.id });
-
-  return jsonOk({ project: resolved.project, log, actionItems }, 201);
 }
 
 function hasProjectLookup(input: Record<string, unknown>) {

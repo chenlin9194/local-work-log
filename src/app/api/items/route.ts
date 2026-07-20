@@ -16,6 +16,7 @@ import {
   STATUS_VALUES,
   WORK_ITEM_TYPE_VALUES,
 } from "@/lib/inputValidation";
+import { buildReportQualityWhere, isReportQuality } from "@/lib/reportReadiness";
 
 export async function GET(request: NextRequest) {
   try {
@@ -33,12 +34,15 @@ export async function GET(request: NextRequest) {
     const sourceSystem = searchParams.get("sourceSystem");
     const keyword = searchParams.get("keyword");
     const overdue = searchParams.get("overdue");
+    const quality = searchParams.get("quality");
     const page = normalizePage(searchParams.get("page"));
     const pageSize = normalizePage(searchParams.get("pageSize"), 20, 100);
 
     const where: Record<string, unknown> = {};
     // AND clauses accumulated across multiple optional filters
     const andClauses: Record<string, unknown>[] = [];
+
+    if (quality && !isReportQuality(quality)) return NextResponse.json({ error: "Invalid quality filter" }, { status: 400 });
 
     if (projectId) {
       where.projectId = projectId;
@@ -73,6 +77,10 @@ export async function GET(request: NextRequest) {
       const today = getLocalDateString();
       where.dueDate = { lt: today };
       andClauses.push({ status: { not: "closed" } });
+    }
+    if (quality) {
+      if (!isReportQuality(quality)) return NextResponse.json({ error: "Invalid quality filter" }, { status: 400 });
+      andClauses.push(buildReportQualityWhere(quality, getLocalDateString()));
     }
     if (status) {
       // Explicit status takes precedence over visibility.

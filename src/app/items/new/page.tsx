@@ -90,46 +90,6 @@ function NewItemForm() {
     }
   };
 
-  const createActionItems = async (parentItemId: string) => {
-    const activeDrafts = actionItemsEnabled
-      ? actionItemDrafts.filter((draft) => draft.title.trim())
-      : [];
-
-    if (activeDrafts.length === 0) {
-      return;
-    }
-
-    const results = await Promise.allSettled(
-      activeDrafts.map((draft, index) =>
-        fetch("/api/action-items", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({
-            title: draft.title.trim(),
-            status: draft.status,
-            owner: draft.owner,
-            dueDate: draft.dueDate,
-            workItemId: parentItemId,
-            projectId: form.projectId || undefined,
-            sortOrder: index,
-          }),
-        }).then(async (res) => {
-          if (!res.ok) {
-            const errorBody = await res.json().catch(() => null);
-            throw new Error(errorBody?.error || "创建 Action Item 失败");
-          }
-
-          return res.json();
-        })
-      )
-    );
-
-    const failures = results.filter((result) => result.status === "rejected");
-    if (failures.length > 0) {
-      alert(`记录已保存，但有 ${failures.length} 条 Action Item 创建失败`);
-    }
-  };
-
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (submittingRef.current) return;
@@ -145,15 +105,25 @@ function NewItemForm() {
     }
     setLoading(true);
     try {
-      const res = await fetch("/api/items", {
+      const actionItems = actionItemsEnabled
+        ? actionItemDrafts
+            .filter((draft) => draft.title.trim())
+            .map((draft, index) => ({
+              title: draft.title.trim(),
+              status: draft.status,
+              owner: draft.owner,
+              dueDate: draft.dueDate,
+              sortOrder: index,
+            }))
+        : [];
+      const res = await fetch("/api/items/with-actions", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(form),
+        body: JSON.stringify({ ...form, actionItems }),
       });
 
       if (res.ok) {
-        const item = await res.json();
-        await createActionItems(item.id);
+        const { item } = await res.json();
         window.location.assign(`/items/${item.id}`);
         return;
       }
@@ -506,4 +476,3 @@ export default function NewItemPage() {
     </Suspense>
   );
 }
-

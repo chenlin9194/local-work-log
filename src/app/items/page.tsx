@@ -22,6 +22,7 @@ import {
   SOURCE_SYSTEM_LABELS,
 } from "@/lib/constants";
 import { buildItemsQueryString } from "@/lib/filterLinks";
+import { REPORT_QUALITY_LABELS, isReportQuality } from "@/lib/reportReadiness";
 
 type ItemFilters = {
   projectId: string;
@@ -37,6 +38,7 @@ type ItemFilters = {
   sourceSystem: string;
   keyword: string;
   overdue: boolean;
+  quality: string;
 };
 
 interface WorkItem {
@@ -78,6 +80,7 @@ const DEFAULT_FILTERS: ItemFilters = {
   sourceSystem: "",
   keyword: "",
   overdue: false,
+  quality: "",
 };
 
 function readItemFilters(searchParams: URLSearchParams): ItemFilters {
@@ -95,6 +98,7 @@ function readItemFilters(searchParams: URLSearchParams): ItemFilters {
     sourceSystem: searchParams.get("sourceSystem") || "",
     keyword: searchParams.get("keyword") || "",
     overdue: searchParams.get("overdue") === "true",
+    quality: searchParams.get("quality") || "",
   };
 }
 
@@ -125,6 +129,7 @@ function buildActiveFilterLabels(filters: ItemFilters) {
   if (filters.module) activeLabels.push(`模块：${filters.module}`);
   if (filters.owner) activeLabels.push(`责任人：${filters.owner}`);
   if (filters.overdue) activeLabels.push("仅显示逾期");
+  if (isReportQuality(filters.quality)) activeLabels.push(`汇报缺口：${REPORT_QUALITY_LABELS[filters.quality]}`);
 
   return activeLabels;
 }
@@ -467,6 +472,11 @@ export default function ItemsPage() {
             />
             仅显示逾期
           </label>
+          {filters.quality && (
+            <div className="field-help" style={{ alignSelf: "center" }}>
+              当前为汇报入口的质量筛选，可清除后切换其他条件。
+            </div>
+          )}
           <button onClick={clearFilters} className="btn btn-ghost">
             清除筛选
           </button>

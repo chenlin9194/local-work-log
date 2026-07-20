@@ -4,6 +4,13 @@ import CopyButton from "@/components/CopyButton";
 import { prisma } from "@/lib/prisma";
 import { generateTodayMarkdown } from "@/lib/export";
 import { getLocalDateString, getTodayRange } from "@/lib/utils";
+import {
+  getReportQualityItems,
+  REPORT_QUALITY_LABELS,
+  REPORT_QUALITY_VALUES,
+  type ReportQuality,
+  type ReportReadinessItem,
+} from "@/lib/reportReadiness";
 
 export const dynamic = "force-dynamic";
 
@@ -16,6 +23,20 @@ const secondaryLinks = [
 
 function isSystemLogTitle(title: string) {
   return title.startsWith("事项变化：") || title.startsWith("浜嬮」鍙樺寲");
+}
+
+function qualityActionHref(quality: ReportQuality, item: ReportReadinessItem) {
+  if (quality === "p0p1_without_today_log") return `/logs/new?itemId=${encodeURIComponent(item.id)}`;
+  if (quality === "blocked_without_risk_log") {
+    return `/logs/new?itemId=${encodeURIComponent(item.id)}&type=blocker&reportable=true`;
+  }
+  return `/items/${item.id}/edit`;
+}
+
+function qualityActionLabel(quality: ReportQuality) {
+  return quality === "missing_owner" || quality === "missing_next_action" || quality === "missing_project"
+    ? "补充事项"
+    : "记录进展";
 }
 
 export default async function ReportsPage() {
@@ -94,12 +115,10 @@ export default async function ReportsPage() {
       },
       include: {
         logs: {
-          where: { workDate: today },
-          select: { id: true, type: true, title: true },
+          select: { workDate: true, type: true },
         },
       },
       orderBy: [{ priority: "asc" }, { updatedAt: "desc" }],
-      take: 40,
     }),
     prisma.project.findMany({
       where: {
@@ -146,23 +165,14 @@ export default async function ReportsPage() {
     decisionLogs,
   });
 
-  const missingOwner = activeItemsForChecks.filter((item) => !item.owner?.trim());
-  const missingNextAction = activeItemsForChecks.filter((item) => !item.nextAction?.trim());
-  const missingProject = activeItemsForChecks.filter((item) => !item.projectId && !item.project?.trim());
-  const highPriorityWithoutTodayLog = activeItemsForChecks.filter(
-    (item) => (item.priority === "P0" || item.priority === "P1") && item.logs.length === 0
-  );
-  const blockedWithoutRiskLog = activeItemsForChecks.filter((item) => (
-    item.status === "blocked" &&
-    !item.logs.some((log) => log.type === "risk" || log.type === "blocker")
-  ));
-  const qualityChecks = [
-    { label: "缺少责任人", count: missingOwner.length, href: "/items?visibility=open", tone: missingOwner.length ? "warning" : "neutral" },
-    { label: "缺少下一步", count: missingNextAction.length, href: "/items?visibility=open", tone: missingNextAction.length ? "warning" : "neutral" },
-    { label: "缺少项目归属", count: missingProject.length, href: "/items?visibility=open", tone: missingProject.length ? "warning" : "neutral" },
-    { label: "P0/P1 当日无日志", count: highPriorityWithoutTodayLog.length, href: "/items?visibility=open&priority=P0,P1", tone: highPriorityWithoutTodayLog.length ? "warning" : "neutral" },
-    { label: "阻塞缺少风险说明", count: blockedWithoutRiskLog.length, href: "/items?visibility=open&status=blocked", tone: blockedWithoutRiskLog.length ? "warning" : "neutral" },
-  ];
+  const qualityItems = getReportQualityItems(activeItemsForChecks, today);
+  const qualityChecks = REPORT_QUALITY_VALUES.map((quality) => ({
+    quality,
+    label: REPORT_QUALITY_LABELS[quality],
+    items: qualityItems[quality],
+    href: `/items?quality=${quality}`,
+  }));
+  const hasReadinessAlerts = qualityChecks.some((check) => check.items.length > 0);
   const reportableManualLogs = reportableLogs.filter((log) => !isSystemLogTitle(log.title));
 
   return (
@@ -220,10 +230,27 @@ export default async function ReportsPage() {
           </div>
           <div className="report-quality-list">
             {qualityChecks.map((check) => (
-              <Link key={check.label} href={check.href} className={`report-quality-row is-${check.tone}`}>
-                <span>{check.label}</span>
-                <strong>{check.count}</strong>
-              </Link>
+              <div key={check.quality} className={`report-quality-row is-${check.items.length ? "warning" : "neutral"}`}>
+                <div className="report-quality-row-head">
+                  <span>{check.label}</span>
+                  <Link href={check.href} className="section-link">
+                    查看全部（{check.items.length}） <Icon name="chevron-right" size={13} />
+                  </Link>
+                </div>
+                {check.items.length > 0 && (
+                  <div className="report-quality-item-list">
+                    {check.items.slice(0, 3).map((item) => (
+                      <Link key={item.id} href={qualityActionHref(check.quality, item)} className="report-quality-item-link">
+                        <span>{item.title}</span>
+                        <small>{qualityActionLabel(check.quality)} <Icon name="chevron-right" size={12} /></small>
+                      </Link>
+                    ))}
+                    {check.items.length > 3 && (
+                      <Link href={check.href} className="report-quality-more">还有 {check.items.length - 3} 项待补充</Link>
+                    )}
+                  </div>
+                )}
+              </div>
             ))}
           </div>
         </div>
@@ -235,7 +262,7 @@ export default async function ReportsPage() {
           <span>MARKDOWN</span>
           <CopyButton
             text={markdown}
-            label="复制今日事实包"
+            label={hasReadinessAlerts ? "复制今日事实包（需确认）" : "复制今日事实包"}
             successLabel="已复制，可粘贴到外部工具"
             variant="primary"
           />

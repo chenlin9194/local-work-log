@@ -4,8 +4,8 @@ import Icon from "@/components/Icon";
 import WorkItemCard from "@/components/WorkItemCard";
 import WorkLogCard from "@/components/WorkLogCard";
 import { formatTodayStr, getLocalDateString, getTodayRange } from "@/lib/utils";
-import { ACTION_ITEM_STATUS_LABELS } from "@/lib/constants";
 import { signalToItemsHref, signalToLogsHref } from "@/lib/signalMap";
+import TodayActionQueue from "@/components/TodayActionQueue";
 
 export const dynamic = "force-dynamic";
 
@@ -110,49 +110,7 @@ export default async function TodayPage() {
         </div>
       </section>
 
-      <section className="card cockpit-card today-group-card today-action-items-card">
-        <div className="cockpit-card-head">
-          <div>
-            <span className="section-eyebrow">ACTION ITEMS</span>
-            <h2>今日行动项</h2>
-          </div>
-          <span className="section-count">只显示未处理行动项，已处理内容在详情页折叠。</span>
-        </div>
-        {openActionItems.length === 0 ? (
-          <div className="today-compact-empty"><span />当前没有未处理行动项。</div>
-        ) : (
-          <div className="today-action-item-list">
-            {openActionItems.map((action) => {
-              const href = action.workItemId
-                ? `/items/${action.workItemId}`
-                : action.workLogId
-                  ? `/logs/${action.workLogId}`
-                  : undefined;
-              const parentTitle = action.workItem?.title || action.workLog?.title;
-              const isOverdue = Boolean(action.dueDate && action.dueDate < today);
-              return (
-                <div key={action.id} className={`today-action-item ${isOverdue ? "today-action-item--overdue" : ""}`}>
-                  <div className="today-action-item-main">
-                    <div className="today-action-item-title">{action.title}</div>
-                    <div className="today-action-item-meta">
-                      <span>{ACTION_ITEM_STATUS_LABELS[action.status] || action.status}</span>
-                      {action.owner && <span>负责人：{action.owner}</span>}
-                      {action.dueDate && <span>{isOverdue ? "已逾期" : "截止"}：{action.dueDate}</span>}
-                      {action.project && <span>项目：{action.project.code || action.project.name}</span>}
-                      {parentTitle && <span>来源：{parentTitle}</span>}
-                    </div>
-                  </div>
-                  {href && (
-                    <Link href={href} className="section-link">
-                      处理 <Icon name="chevron-right" size={13} />
-                    </Link>
-                  )}
-                </div>
-              );
-            })}
-          </div>
-        )}
-      </section>
+      <TodayActionQueue initialItems={openActionItems} today={today} />
 
       <div className="today-sections">
         {todayGroups.map((group) => (

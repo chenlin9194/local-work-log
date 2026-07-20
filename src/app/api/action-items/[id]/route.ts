@@ -3,6 +3,7 @@ import { prisma } from "@/lib/prisma";
 import { toNullableString } from "@/lib/utils";
 import { revalidateWorkHubPaths } from "@/lib/revalidate";
 import { ACTION_ITEM_STATUS_VALUES, optionalYmdDate, requireText } from "@/lib/inputValidation";
+import { validateActionItemCompletion } from "@/lib/actionItemCompletion";
 
 const VALID_STATUSES = ACTION_ITEM_STATUS_VALUES;
 
@@ -112,8 +113,18 @@ export async function PUT(
       }
     }
 
+    const completionResult = validateActionItemCompletion(
+      currentActionItem.status,
+      nextStatus,
+      body.doneNote
+    );
+    if (completionResult.error) {
+      return NextResponse.json({ error: completionResult.error }, { status: 400 });
+    }
+
     if (nextStatus === "done") {
       data.doneAt = currentActionItem.status === "done" ? undefined : new Date();
+      if (completionResult.value) data.doneNote = completionResult.value;
     } else if (currentActionItem.status === "done" || "status" in body) {
       data.doneAt = null;
       if (!("doneNote" in body)) data.doneNote = null;
