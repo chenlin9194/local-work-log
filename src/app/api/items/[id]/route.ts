@@ -25,6 +25,7 @@ export async function GET(
     const item = await prisma.workItem.findUnique({
       where: { id },
       include: {
+        projectRef: { select: { id: true, name: true } },
         logs: {
           orderBy: { workDate: "desc" },
         },
@@ -51,7 +52,10 @@ export async function PUT(
     const body = await request.json();
 
     // Get current item
-    const currentItem = await prisma.workItem.findUnique({ where: { id } });
+    const currentItem = await prisma.workItem.findUnique({
+      where: { id },
+      include: { projectRef: { select: { id: true, name: true } } },
+    });
 
     if (!currentItem) {
       return NextResponse.json({ error: "工作事项不存在" }, { status: 404 });
@@ -63,6 +67,10 @@ export async function PUT(
 
     // Build update data - only include fields that are provided
     const data: Record<string, unknown> = {};
+
+    if (!("projectId" in body) && currentItem.projectRef) {
+      data.project = currentItem.projectRef.name;
+    }
 
     if ("title" in body) {
       const titleResult = requireText(body.title, "标题");

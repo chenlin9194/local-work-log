@@ -199,10 +199,15 @@ async function resolveExistingItem(itemId: string | null) {
   if (!itemId) return null;
   const item = await prisma.workItem.findUnique({
     where: { id: itemId },
-    select: { id: true, projectId: true, project: true },
+    select: {
+      id: true,
+      projectId: true,
+      project: true,
+      projectRef: { select: { name: true } },
+    },
   });
   if (!item) throw new CompositeInputError("事项不存在");
-  return item;
+  return { ...item, project: item.projectRef?.name || item.project };
 }
 
 async function createActionItems(

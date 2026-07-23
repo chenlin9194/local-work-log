@@ -99,6 +99,7 @@ export async function GET(request: NextRequest) {
     const [items, total] = await Promise.all([
       prisma.workItem.findMany({
         where,
+        include: { projectRef: { select: { id: true, name: true } } },
         orderBy: { updatedAt: "desc" },
         skip: (page - 1) * pageSize,
         take: pageSize,
@@ -160,10 +161,11 @@ export async function POST(request: NextRequest) {
     if (validationError) return NextResponse.json({ error: validationError }, { status: 400 });
 
     // Resolve project name from projectId if provided
+    const nextProjectId = toNullableString(projectId);
     let projectName = toNullableString(project);
-    if (projectId) {
+    if (nextProjectId) {
       const proj = await prisma.project.findUnique({
-        where: { id: projectId },
+        where: { id: nextProjectId },
         select: { name: true },
       });
       if (!proj) {
@@ -177,7 +179,7 @@ export async function POST(request: NextRequest) {
         title: titleResult.value,
         description: toNullableString(description),
         project: projectName,
-        projectId: projectId || null,
+        projectId: nextProjectId,
         module: toNullableString(mod),
         type: typeResult.value,
         priority: priorityResult.value,

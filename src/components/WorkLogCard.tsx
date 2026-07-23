@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { WORK_LOG_TYPE_LABELS, SOURCE_LABELS } from "@/lib/constants";
 import Icon from "./Icon";
+import { getProjectDisplayName } from "@/lib/projectDisplay";
 
 interface WorkLogCardProps {
   log: {
@@ -13,6 +14,7 @@ interface WorkLogCardProps {
     type: string;
     source: string;
     project?: string | null;
+    projectRef?: { name: string } | null;
     module?: string | null;
     itemId?: string | null;
     item?: { id: string; title: string } | null;
@@ -54,6 +56,7 @@ export default function WorkLogCard({ log, showLink = true, evidenceLabel }: Wor
   const isSystemUpdate = isSystemUpdateLog(log);
   const isHighValue = !isSystemUpdate && (reportable || highValueTypes.has(log.type));
   const typeClass = `log-type-${log.type}${isSystemUpdate ? " is-system-update" : ""}${isHighValue ? " is-high-value" : ""}`;
+  const projectName = getProjectDisplayName({ relationName: log.projectRef?.name, legacyName: log.project });
 
   const content = (
     <div className={`card card-hover entity-card work-log-card ${typeClass}`}>
@@ -79,7 +82,7 @@ export default function WorkLogCard({ log, showLink = true, evidenceLabel }: Wor
         </div>
       </div>
       <div className="entity-card-meta log-card-meta">
-        {log.project && <span>{log.project}</span>}
+        {projectName !== "未关联项目" && <span>{projectName}</span>}
         {log.item ? (
           <span>
             <Icon name="target" size={11} />

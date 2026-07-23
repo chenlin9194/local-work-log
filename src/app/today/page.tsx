@@ -26,14 +26,14 @@ export default async function TodayPage() {
     decisionLogs,
     openActionItems,
   ] = await Promise.all([
-    prisma.workLog.findMany({ where: { workDate: today }, orderBy: { createdAt: "desc" } }),
+    prisma.workLog.findMany({ where: { workDate: today }, include: { projectRef: { select: { id: true, name: true } } }, orderBy: { createdAt: "desc" } }),
     prisma.workItem.findMany({ where: { closedAt: { gte: todayStart, lt: todayEnd } }, orderBy: { closedAt: "desc" } }),
     prisma.workItem.findMany({ where: { updatedAt: { gte: todayStart, lt: todayEnd } }, orderBy: { updatedAt: "desc" }, take: 20 }),
     prisma.workItem.findMany({ where: { priority: { in: ["P0", "P1"] }, status: { not: "closed" } }, orderBy: { priority: "asc" } }),
     prisma.workItem.findMany({ where: { dueDate: today, status: { not: "closed" } }, orderBy: { priority: "asc" } }),
     prisma.workItem.findMany({ where: { dueDate: { lt: today }, status: { not: "closed" } }, orderBy: { dueDate: "asc" }, take: 20 }),
-    prisma.workLog.findMany({ where: { workDate: today, type: { in: ["risk", "blocker"] } }, orderBy: { createdAt: "desc" } }),
-    prisma.workLog.findMany({ where: { workDate: today, type: "decision" }, orderBy: { createdAt: "desc" } }),
+    prisma.workLog.findMany({ where: { workDate: today, type: { in: ["risk", "blocker"] } }, include: { projectRef: { select: { id: true, name: true } } }, orderBy: { createdAt: "desc" } }),
+    prisma.workLog.findMany({ where: { workDate: today, type: "decision" }, include: { projectRef: { select: { id: true, name: true } } }, orderBy: { createdAt: "desc" } }),
     prisma.actionItem.findMany({
       where: { status: { not: "done" } },
       include: {

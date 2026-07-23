@@ -100,7 +100,7 @@ export async function GET(request: NextRequest) {
     const [logs, total] = await Promise.all([
       prisma.workLog.findMany({
         where,
-        include: { item: true },
+        include: { item: true, projectRef: { select: { id: true, name: true } } },
         orderBy: { workDate: "desc" },
         skip: (page - 1) * pageSize,
         take: pageSize,
@@ -133,10 +133,11 @@ export async function POST(request: NextRequest) {
     if (!workDateResult.value) return NextResponse.json({ error: "工作日期不能为空" }, { status: 400 });
 
     // Resolve project name from projectId if provided
+    const nextProjectId = toNullableString(projectId);
     let projectName = toNullableString(project);
-    if (projectId) {
+    if (nextProjectId) {
       const proj = await prisma.project.findUnique({
-        where: { id: projectId },
+        where: { id: nextProjectId },
         select: { name: true },
       });
       if (!proj) {
@@ -153,7 +154,7 @@ export async function POST(request: NextRequest) {
         type: typeResult.value,
         source: sourceResult.value,
         project: projectName,
-        projectId: projectId || null,
+        projectId: nextProjectId,
         module: toNullableString(mod),
         tags: toNullableString(tags),
         itemId: itemId || null,

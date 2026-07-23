@@ -53,6 +53,9 @@ describe("atomic recording transactions", () => {
     expect(result.item.id).toBe("item-1");
     expect(mocks.transaction).toHaveBeenCalledTimes(1);
     expect(mocks.createItem).toHaveBeenCalledTimes(1);
+    expect(mocks.createItem).toHaveBeenCalledWith(expect.objectContaining({
+      data: expect.objectContaining({ projectId: "project-1", project: "项目 A" }),
+    }));
     expect(mocks.createAction).toHaveBeenCalledTimes(2);
     expect(mocks.createAction).toHaveBeenLastCalledWith(expect.objectContaining({
       data: expect.objectContaining({ workItemId: "item-1", projectId: "project-1", status: "done" }),
@@ -60,7 +63,12 @@ describe("atomic recording transactions", () => {
   });
 
   it("creates a context log and action items linked to its existing item and log", async () => {
-    mocks.findItem.mockResolvedValue({ id: "item-1", projectId: "project-1", project: "项目 A" });
+    mocks.findItem.mockResolvedValue({
+      id: "item-1",
+      projectId: "project-1",
+      project: "旧项目名",
+      projectRef: { name: "项目 A" },
+    });
     mocks.createLog.mockResolvedValue({ id: "log-1", itemId: "item-1", projectId: "project-1" });
     mocks.createAction.mockResolvedValue({ id: "action-1" });
 
@@ -74,6 +82,9 @@ describe("atomic recording transactions", () => {
     expect(result.log.id).toBe("log-1");
     expect(mocks.transaction).toHaveBeenCalledTimes(1);
     expect(mocks.createLog).toHaveBeenCalledTimes(1);
+    expect(mocks.createLog).toHaveBeenCalledWith(expect.objectContaining({
+      data: expect.objectContaining({ projectId: "project-1", project: "项目 A" }),
+    }));
     expect(mocks.createAction).toHaveBeenCalledWith(expect.objectContaining({
       data: expect.objectContaining({ workItemId: "item-1", workLogId: "log-1", projectId: "project-1" }),
     }));
@@ -131,6 +142,9 @@ describe("atomic recording transactions", () => {
     expect(result.item?.id).toBe("item-1");
     expect(result.log.itemId).toBe("item-1");
     expect(mocks.transaction).toHaveBeenCalledTimes(1);
+    expect(mocks.createItem).toHaveBeenCalledWith(expect.objectContaining({
+      data: expect.objectContaining({ projectId: null, project: null }),
+    }));
     expect(mocks.createAction).toHaveBeenCalledWith(expect.objectContaining({
       data: expect.objectContaining({ workItemId: "item-1", workLogId: "log-1" }),
     }));
@@ -141,6 +155,19 @@ describe("atomic recording transactions", () => {
       title: "发布跟进",
       actionItems: [{ title: "确认版本", dueDate: "2026-02-30" }],
     })).rejects.toBeInstanceOf(CompositeInputError);
+
+    expect(mocks.transaction).not.toHaveBeenCalled();
+    expect(mocks.createItem).not.toHaveBeenCalled();
+  });
+
+  it("rejects an invalid project id before starting a transaction", async () => {
+    mocks.findProject.mockResolvedValue(null);
+
+    await expect(createWorkItemWithActions({
+      title: "项目事项",
+      projectId: "missing-project",
+      project: "前端伪造名称",
+    })).rejects.toThrow("项目不存在");
 
     expect(mocks.transaction).not.toHaveBeenCalled();
     expect(mocks.createItem).not.toHaveBeenCalled();

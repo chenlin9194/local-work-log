@@ -20,6 +20,7 @@ import AutoLinkText from "@/components/AutoLinkText";
 import ActionItemSection from "@/components/ActionItemSection";
 import { itemToAddLogHref, itemToLogsHref } from "@/lib/signalMap";
 import WbsExecutionSummary from "@/components/WbsExecutionSummary";
+import { getProjectDisplayName } from "@/lib/projectDisplay";
 
 interface WorkItem {
   id: string;
@@ -27,6 +28,7 @@ interface WorkItem {
   description?: string | null;
   project?: string | null;
   projectId?: string | null;
+  projectRef?: { name: string } | null;
   module?: string | null;
   type: string;
   priority: string;
@@ -219,6 +221,7 @@ export default function ItemDetailPage() {
       ? item.logs.filter((log) => !isSystemLog(log))
       : item.logs;
   const timelineLogs = showAllLogs ? visibleLogs : visibleLogs.slice(0, 3);
+  const projectName = getProjectDisplayName({ relationName: item.projectRef?.name, legacyName: item.project });
 
   return (
     <div className="detail-page detail-page--item item-detail-command-page">
@@ -315,10 +318,10 @@ export default function ItemDetailPage() {
               <span>汇报层级</span>
               <strong>{REPORT_LEVEL_LABELS[item.reportLevel] || item.reportLevel}</strong>
             </div>
-            {item.project && (
+            {projectName !== "未关联项目" && (
               <div className="detail-meta-item">
                 <span>项目</span>
-                <strong>{item.project}</strong>
+                <strong>{projectName}</strong>
               </div>
             )}
             {item.module && (
@@ -426,7 +429,7 @@ export default function ItemDetailPage() {
               </div>
             </div>
             <div className="detail-side-panel-body item-relations-list">
-              {item.project && <span>项目：{item.project}</span>}
+              {projectName !== "未关联项目" && <span>项目：{projectName}</span>}
               {item.module && <span>模块：{item.module}</span>}
               {item.sourceSystem && <span>来源：{SOURCE_SYSTEM_LABELS[item.sourceSystem] || item.sourceSystem}{item.sourceId ? ` · ${item.sourceId}` : ""}</span>}
               {item.projectId && <Link href={`/items?project=${item.projectId}`}>查看同项目事项</Link>}
@@ -441,7 +444,7 @@ export default function ItemDetailPage() {
                   ))}
                 </div>
               )}
-              {!item.project && !item.module && !item.sourceSystem && !item.sourceUrl && <span>暂无关联信息</span>}
+              {projectName === "未关联项目" && !item.module && !item.sourceSystem && !item.sourceUrl && <span>暂无关联信息</span>}
             </div>
           </section>
         </aside>

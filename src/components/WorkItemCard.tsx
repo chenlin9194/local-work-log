@@ -7,6 +7,7 @@ import {
   WORK_ITEM_TYPE_LABELS,
 } from "@/lib/constants";
 import { isOverdue, splitCommaSeparatedText } from "@/lib/utils";
+import { getProjectDisplayName } from "@/lib/projectDisplay";
 import Icon from "./Icon";
 
 interface WorkItemCardProps {
@@ -15,6 +16,7 @@ interface WorkItemCardProps {
     title: string;
     description?: string | null;
     project?: string | null;
+    projectRef?: { name: string } | null;
     module?: string | null;
     type: string;
     priority: string;
@@ -47,6 +49,7 @@ export default function WorkItemCard({ item, evidenceLabel, lowActivity = false 
   const tags = splitCommaSeparatedText(item.tags);
   const visibleTags = tags.slice(0, 2);
   const hiddenTagCount = Math.max(tags.length - visibleTags.length, 0);
+  const projectName = getProjectDisplayName({ relationName: item.projectRef?.name, legacyName: item.project });
 
   return (
     <Link
@@ -96,7 +99,7 @@ export default function WorkItemCard({ item, evidenceLabel, lowActivity = false 
 
       <div className="entity-card-meta work-item-card-meta">
         <span>{WORK_ITEM_TYPE_LABELS[item.type] || item.type}</span>
-        {item.project && <span>{item.project}</span>}
+        {projectName !== "未关联项目" && <span>{projectName}</span>}
         {item.owner && (
           <span>
             <Icon name="user" size={11} />

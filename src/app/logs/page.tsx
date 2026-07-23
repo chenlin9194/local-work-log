@@ -9,6 +9,7 @@ import PageLoadingState from "@/components/PageLoadingState";
 import { WORK_LOG_TYPES, SOURCES, MODULES, WORK_LOG_TYPE_LABELS, SOURCE_LABELS } from "@/lib/constants";
 import { buildLogsQueryString } from "@/lib/filterLinks";
 import { getLocalDateString } from "@/lib/utils";
+import { getProjectDisplayName } from "@/lib/projectDisplay";
 
 type LogFilters = {
   startDate: string;
@@ -33,6 +34,7 @@ interface WorkLog {
   type: string;
   source: string;
   project?: string | null;
+  projectRef?: { name: string } | null;
   module?: string | null;
   itemId?: string | null;
   item?: { id: string; title: string } | null;
@@ -265,7 +267,8 @@ export default function LogsPage() {
     logs.forEach((log) => {
       md += `## ${log.title}\n`;
       md += `- **日期**: ${log.workDate} | **类型**: ${log.type} | **来源**: ${log.source}\n`;
-      if (log.project) md += `- **项目**: ${log.project}\n`;
+      const projectName = getProjectDisplayName({ relationName: log.projectRef?.name, legacyName: log.project });
+      if (projectName !== "未关联项目") md += `- **项目**: ${projectName}\n`;
       md += `\n${log.content}\n\n`;
     });
     navigator.clipboard.writeText(md);

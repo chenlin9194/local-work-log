@@ -13,6 +13,7 @@ import {
   type ReportReadinessItem,
 } from "@/lib/reportReadiness";
 import WbsReportFacts from "@/components/WbsReportFacts";
+import { getProjectDisplayName } from "@/lib/projectDisplay";
 
 export const dynamic = "force-dynamic";
 
@@ -60,7 +61,10 @@ export default async function ReportsPage() {
   ] = await Promise.all([
     prisma.workLog.findMany({
       where: { workDate: today },
-      include: { item: { select: { id: true, title: true } } },
+      include: {
+        item: { select: { id: true, title: true } },
+        projectRef: { select: { id: true, name: true } },
+      },
       orderBy: { createdAt: "desc" },
     }),
     prisma.workItem.findMany({
@@ -101,7 +105,10 @@ export default async function ReportsPage() {
           { type: { in: ["risk", "blocker", "decision", "issue"] } },
         ],
       },
-      include: { item: { select: { id: true, title: true } } },
+      include: {
+        item: { select: { id: true, title: true } },
+        projectRef: { select: { id: true, name: true } },
+      },
       orderBy: [{ reportable: "desc" }, { createdAt: "desc" }],
       take: 10,
     }),
@@ -217,7 +224,9 @@ export default async function ReportsPage() {
                 <Link key={log.id} href={`/logs/${log.id}`} className="report-fact-row">
                   <span className={`report-fact-type report-fact-type--${log.type}`}>{log.type}</span>
                   <strong>{log.title}</strong>
-                  <small>{log.project || log.item?.title || "未关联上下文"}</small>
+                  <small>{getProjectDisplayName({ relationName: log.projectRef?.name, legacyName: log.project }) !== "未关联项目"
+                    ? getProjectDisplayName({ relationName: log.projectRef?.name, legacyName: log.project })
+                    : log.item?.title || "未关联上下文"}</small>
                 </Link>
               ))}
             </div>

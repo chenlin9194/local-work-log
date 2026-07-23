@@ -23,6 +23,7 @@ import {
 } from "@/lib/constants";
 import { buildItemsQueryString } from "@/lib/filterLinks";
 import { REPORT_QUALITY_LABELS, isReportQuality } from "@/lib/reportReadiness";
+import { getProjectDisplayName } from "@/lib/projectDisplay";
 
 type ItemFilters = {
   projectId: string;
@@ -46,6 +47,7 @@ interface WorkItem {
   title: string;
   description?: string | null;
   project?: string | null;
+  projectRef?: { name: string } | null;
   module?: string | null;
   type: string;
   priority: string;
@@ -300,7 +302,8 @@ export default function ItemsPage() {
     items.forEach((item) => {
       md += `## ${item.title}\n`;
       md += `- **类型**: ${item.type} | **优先级**: ${item.priority} | **状态**: ${item.status}\n`;
-      if (item.project) md += `- **项目**: ${item.project}\n`;
+      const projectName = getProjectDisplayName({ relationName: item.projectRef?.name, legacyName: item.project });
+      if (projectName !== "未关联项目") md += `- **项目**: ${projectName}\n`;
       if (item.owner) md += `- **责任人**: ${item.owner}\n`;
       if (item.dueDate) md += `- **截止日期**: ${item.dueDate}\n`;
       md += "\n";

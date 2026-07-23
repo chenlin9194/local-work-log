@@ -56,7 +56,10 @@ async function loadFocusView(focus: FocusKey, today: string, todayStart: Date, t
       kind: "logs" as const,
       logs: await prisma.workLog.findMany({
         where: { workDate: today },
-        include: { item: { select: { id: true, title: true } } },
+        include: {
+          item: { select: { id: true, title: true } },
+          projectRef: { select: { id: true, name: true } },
+        },
         orderBy: { createdAt: "desc" },
         take: 12,
       }),
@@ -74,7 +77,12 @@ async function loadFocusView(focus: FocusKey, today: string, todayStart: Date, t
 
   return {
     kind: "items" as const,
-    items: await prisma.workItem.findMany({ where, orderBy: { updatedAt: "desc" }, take: 12 }),
+    items: await prisma.workItem.findMany({
+      where,
+      include: { projectRef: { select: { id: true, name: true } } },
+      orderBy: { updatedAt: "desc" },
+      take: 12,
+    }),
   };
 }
 

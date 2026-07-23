@@ -3,11 +3,13 @@
 import { useRouter } from "next/navigation";
 import { HEALTH_LABELS, PRIORITY_LABELS, REPORT_LEVEL_LABELS, STATUS_LABELS } from "@/lib/constants";
 import { isOverdue } from "@/lib/utils";
+import { getProjectDisplayName } from "@/lib/projectDisplay";
 
 type Item = {
   id: string;
   title: string;
   project?: string | null;
+  projectRef?: { name: string } | null;
   priority: string;
   status: string;
   owner?: string | null;
@@ -39,6 +41,7 @@ export default function ItemsTable({ items }: { items: Array<{ item: Item; lowAc
         <tbody>
           {items.map(({ item, lowActivity }) => {
             const overdue = isOverdue(item.dueDate, item.status);
+            const projectName = getProjectDisplayName({ relationName: item.projectRef?.name, legacyName: item.project });
             return (
               <tr key={item.id} onClick={() => router.push(`/items/${item.id}`)} tabIndex={0} onKeyDown={(event) => event.key === "Enter" && router.push(`/items/${item.id}`)}>
                 <td className="redesign-item-id">{item.sourceId || `WI-${item.id.slice(-6).toUpperCase()}`}</td>
@@ -46,7 +49,7 @@ export default function ItemsTable({ items }: { items: Array<{ item: Item; lowAc
                 <td><span className={`redesign-table-badge is-${item.priority.toLowerCase()}`}>{PRIORITY_LABELS[item.priority] || item.priority}</span></td>
                 <td><span className={`redesign-table-badge is-${item.status}`}>{STATUS_LABELS[item.status] || item.status}</span></td>
                 <td className="redesign-item-title">{item.title}{lowActivity && <small>低活跃</small>}</td>
-                <td><span className="redesign-item-project">{item.project || "—"}</span></td>
+                <td><span className="redesign-item-project">{projectName === "未关联项目" ? "—" : projectName}</span></td>
                 <td>{item.owner || "—"}</td>
                 <td className={overdue ? "is-overdue" : ""}>{item.dueDate || "—"}</td>
                 <td>{item.reportLevel === "none" ? "—" : REPORT_LEVEL_LABELS[item.reportLevel] || item.reportLevel}</td>

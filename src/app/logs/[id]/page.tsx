@@ -9,6 +9,7 @@ import { generateWorkLogMarkdown, splitCommaSeparatedText } from "@/lib/utils";
 import AutoLinkText from "@/components/AutoLinkText";
 import ActionItemSection from "@/components/ActionItemSection";
 import PageLoadingState from "@/components/PageLoadingState";
+import { getProjectDisplayName } from "@/lib/projectDisplay";
 
 interface WorkLog {
   id: string;
@@ -19,6 +20,7 @@ interface WorkLog {
   source: string;
   project?: string | null;
   projectId?: string | null;
+  projectRef?: { name: string } | null;
   module?: string | null;
   tags?: string | null;
   itemId?: string | null;
@@ -111,6 +113,7 @@ export default function LogDetailPage() {
   if (!log) return null;
 
   const tags = splitCommaSeparatedText(log.tags);
+  const projectName = getProjectDisplayName({ relationName: log.projectRef?.name, legacyName: log.project });
 
   return (
     <div className="detail-page detail-page--log log-detail-evidence-page">
@@ -186,7 +189,7 @@ export default function LogDetailPage() {
             <div className="log-context-list">
               <div>
                 <span>项目</span>
-                <strong>{log.project || "未关联项目"}</strong>
+                <strong>{projectName}</strong>
               </div>
               <div>
                 <span>关联事项</span>
