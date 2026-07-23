@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { resolveProjectSelection } from "@/lib/projectSelection";
+import { resolveItemProjectInheritance, resolveProjectSelection } from "@/lib/projectSelection";
 
 describe("project selection state", () => {
   const projects = [
@@ -13,5 +13,21 @@ describe("project selection state", () => {
 
   it("keeps the selected project id and canonical name together", () => {
     expect(resolveProjectSelection("project-2", projects)).toEqual({ projectId: "project-2", project: "项目 B" });
+  });
+
+  it("inherits the selected item project when no project is already selected", () => {
+    expect(resolveItemProjectInheritance({
+      currentProjectId: "",
+      selectedItemProjectId: "project-2",
+      selectedItemProjectName: "项目 B",
+    })).toEqual({ projectId: "project-2", project: "项目 B" });
+  });
+
+  it("preserves the existing project when selecting an item", () => {
+    expect(resolveItemProjectInheritance({
+      currentProjectId: "project-1",
+      selectedItemProjectId: "project-2",
+      selectedItemProjectName: "项目 B",
+    })).toEqual({});
   });
 });

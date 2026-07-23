@@ -9,7 +9,7 @@ import Icon from "@/components/Icon";
 import ActionItemDraftSection from "@/components/ActionItemDraftSection";
 import type { ActionItemDraft } from "@/lib/types";
 import { getOptionalProjectDisplayName } from "@/lib/projectDisplay";
-import { resolveProjectSelection } from "@/lib/projectSelection";
+import { resolveItemProjectInheritance, resolveProjectSelection } from "@/lib/projectSelection";
 
 type RelationMode = "none" | "existing" | "new";
 
@@ -201,14 +201,15 @@ function NewLogForm() {
     setForm((prev) => {
       const nextState = { ...prev, itemId };
 
-      if (!initialProjectId && selectedItem) {
-        if (selectedItem.projectId) {
-          nextState.projectId = selectedItem.projectId;
-        }
-        nextState.project = getOptionalProjectDisplayName({
-          relationName: selectedItem.projectRef?.name,
-          legacyName: selectedItem.project,
-        }) || "";
+      if (selectedItem) {
+        Object.assign(nextState, resolveItemProjectInheritance({
+          currentProjectId: prev.projectId,
+          selectedItemProjectId: selectedItem.projectId,
+          selectedItemProjectName: getOptionalProjectDisplayName({
+            relationName: selectedItem.projectRef?.name,
+            legacyName: selectedItem.project,
+          }),
+        }));
       }
 
       return nextState;
@@ -330,7 +331,7 @@ function NewLogForm() {
             <section className="command-form-section log-form-section-context">
               <div className="command-form-section-header">
                 <h2>记录上下文</h2>
-                <p>日期和与事项的关联方式。</p>
+                <p>日期、项目和与事项的关联方式。</p>
               </div>
 
               <div className="field-grid-2">
@@ -344,7 +345,22 @@ function NewLogForm() {
                     className="input"
                   />
                 </div>
-                <div />
+                <div>
+                  <label className="form-field-label">项目</label>
+                  <select
+                    value={form.projectId}
+                    onChange={(e) => handleProjectChange(e.target.value)}
+                    className="form-field-control"
+                  >
+                    <option value="">全部项目（可选）</option>
+                    {projects.map((project) => (
+                      <option key={project.id} value={project.id}>
+                        {project.name}
+                        {project.code ? ` (${project.code})` : ""}
+                      </option>
+                    ))}
+                  </select>
+                </div>
               </div>
 
               <fieldset className="relation-fieldset">
@@ -381,20 +397,6 @@ function NewLogForm() {
 
               {form.relationMode === "existing" && (
                 <div className="log-existing-item-picker">
-                  <label className="form-field-label">项目范围</label>
-                  <select
-                    value={form.projectId}
-                    onChange={(e) => handleProjectChange(e.target.value)}
-                    className="form-field-control"
-                  >
-                    <option value="">全部项目（可选）</option>
-                    {projects.map((project) => (
-                      <option key={project.id} value={project.id}>
-                        {project.name}
-                        {project.code ? ` (${project.code})` : ""}
-                      </option>
-                    ))}
-                  </select>
                   <label className="form-field-label">选择已有事项</label>
                   <input
                     type="search"

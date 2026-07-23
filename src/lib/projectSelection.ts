@@ -13,3 +13,20 @@ export function resolveProjectSelection(
     project: project?.name || "",
   };
 }
+
+export function resolveItemProjectInheritance({
+  currentProjectId,
+  selectedItemProjectId,
+  selectedItemProjectName,
+}: {
+  currentProjectId: string;
+  selectedItemProjectId?: string | null;
+  selectedItemProjectName?: string | null;
+}) {
+  if (currentProjectId) return {};
+
+  return {
+    projectId: selectedItemProjectId || "",
+    project: selectedItemProjectName || "",
+  };
+}
