@@ -188,10 +188,6 @@ function NewLogForm() {
       alert("请选择要关联的已有事项");
       return;
     }
-    if (form.relationMode === "none") {
-      alert("请选择已有事项或新建事项，确保日志形成可追溯闭环");
-      return;
-    }
 
     submittingRef.current = true;
     if (submitButtonRef.current) {

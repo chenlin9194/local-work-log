@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { getLocalDateString, getTodayRange } from "@/lib/utils";
 import { generateTodayMarkdown } from "@/lib/export";
+import { excludeClosedItemsFromUpdatedItems } from "@/lib/todayBuckets";
 
 export async function GET(request: NextRequest) {
   try {
@@ -13,7 +14,7 @@ export async function GET(request: NextRequest) {
     const [
       workLogs,
       closedItems,
-      updatedItems,
+      rawUpdatedItems,
       openHighPriorityItems,
       dueTodayItems,
       overdueItems,
@@ -56,6 +57,8 @@ export async function GET(request: NextRequest) {
         orderBy: { createdAt: "desc" },
       }),
     ]);
+
+    const updatedItems = excludeClosedItemsFromUpdatedItems(closedItems, rawUpdatedItems);
 
     if (format === "json") {
       return NextResponse.json({

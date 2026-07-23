@@ -1,5 +1,6 @@
 import { prisma } from "@/lib/prisma";
 import { generateRangeMarkdown } from "@/lib/export";
+import { excludeClosedItemsFromUpdatedItems } from "@/lib/todayBuckets";
 import CopyButton from "@/components/CopyButton";
 
 export const dynamic = "force-dynamic";
@@ -49,7 +50,7 @@ export default async function ExportRangePage({ searchParams }: PageProps) {
   const endDate = new Date(`${end}T00:00:00`);
   endDate.setDate(endDate.getDate() + 1);
 
-  const [workLogs, closedItems, updatedItems] = await Promise.all([
+  const [workLogs, closedItems, rawUpdatedItems] = await Promise.all([
     prisma.workLog.findMany({
       where: { workDate: { gte: start, lte: end } },
       include: { item: { select: { id: true, title: true } } },
@@ -64,6 +65,8 @@ export default async function ExportRangePage({ searchParams }: PageProps) {
       orderBy: { updatedAt: "desc" },
     }),
   ]);
+
+  const updatedItems = excludeClosedItemsFromUpdatedItems(closedItems, rawUpdatedItems);
 
   const md = generateRangeMarkdown({ start, end, workLogs, closedItems, updatedItems });
 

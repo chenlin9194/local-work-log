@@ -7,7 +7,7 @@ import {
 
 export async function POST(request: NextRequest) {
   try {
-    const result = await createWorkLogWithContext(await request.json(), { requireItemContext: true });
+    const result = await createWorkLogWithContext(await request.json());
     revalidateWorkHubPaths({
       itemId: result.item?.id || result.log.itemId || undefined,
       logId: result.log.id,

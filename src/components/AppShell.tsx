@@ -146,7 +146,7 @@ export default function AppShell({
           <form action="/items" className="cockpit-search">
             <Icon name="search" size={14} />
             <input type="hidden" name="visibility" value="open" />
-            <input name="keyword" placeholder="搜索事项、项目、日志" />
+            <input name="keyword" placeholder="搜索未关闭事项" />
           </form>
 
           <div className="cockpit-topbar-actions">

@@ -2,7 +2,6 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { useEffect, useState } from "react";
 import Icon from "./Icon";
 import { useSidebarCounts } from "./SidebarCountsContext";
 
@@ -31,17 +30,6 @@ function isActive(pathname: string, href: string, exact?: boolean) {
 export default function SidebarNavigation() {
   const pathname = usePathname();
   const counts = useSidebarCounts();
-  const [syncedTime, setSyncedTime] = useState("");
-
-  useEffect(() => {
-    setSyncedTime(
-      new Intl.DateTimeFormat("zh-CN", {
-        hour: "2-digit",
-        minute: "2-digit",
-        hour12: false,
-      }).format(new Date()),
-    );
-  }, []);
 
   return (
     <aside className="cockpit-sidebar" aria-label="主导航">
@@ -98,7 +86,7 @@ export default function SidebarNavigation() {
       </div>
 
       <div className="cockpit-sidebar-footer">
-        <i /> SQLITE · SYNCED{syncedTime && ` · ${syncedTime}`}
+        <i /> LOCAL SQLITE
       </div>
     </aside>
   );

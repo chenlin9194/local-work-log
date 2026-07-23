@@ -5,6 +5,7 @@ import WorkItemCard from "@/components/WorkItemCard";
 import WorkLogCard from "@/components/WorkLogCard";
 import { formatTodayStr, getLocalDateString, getTodayRange } from "@/lib/utils";
 import { signalToItemsHref, signalToLogsHref } from "@/lib/signalMap";
+import { excludeClosedItemsFromUpdatedItems } from "@/lib/todayBuckets";
 import TodayActionQueue from "@/components/TodayActionQueue";
 import TodayWbsQueue from "@/components/TodayWbsQueue";
 
@@ -17,7 +18,7 @@ export default async function TodayPage() {
   const [
     todayLogs,
     todayClosedItems,
-    todayUpdatedItems,
+    rawTodayUpdatedItems,
     p0p1Items,
     todayDueItems,
     overdueItems,
@@ -48,6 +49,8 @@ export default async function TodayPage() {
       take: 20,
     }),
   ]);
+
+  const todayUpdatedItems = excludeClosedItemsFromUpdatedItems(todayClosedItems, rawTodayUpdatedItems);
 
   const situation = [
     { label: "今日日志", value: todayLogs.length, icon: "file-text", tone: "blue" },

@@ -200,7 +200,7 @@ export default async function Dashboard({ searchParams }: PageProps) {
           <form action="/items" className="cockpit-search">
             <Icon name="search" size={14} />
             <input type="hidden" name="visibility" value="open" />
-            <input name="keyword" placeholder="搜索一切" />
+            <input name="keyword" placeholder="搜索未关闭事项" />
           </form>
           <div className="redesign-topbar-actions">
             <Link href="/logs/new" className="btn btn-secondary btn-sm">＋ 记录事实</Link>

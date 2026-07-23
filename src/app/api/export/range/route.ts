@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { generateRangeMarkdown } from "@/lib/export";
+import { excludeClosedItemsFromUpdatedItems } from "@/lib/todayBuckets";
 
 export async function GET(request: NextRequest) {
   try {
@@ -17,7 +18,7 @@ export async function GET(request: NextRequest) {
     const endDate = new Date(`${end}T00:00:00`);
     endDate.setDate(endDate.getDate() + 1);
 
-    const [workLogs, closedItems, updatedItems] = await Promise.all([
+    const [workLogs, closedItems, rawUpdatedItems] = await Promise.all([
       prisma.workLog.findMany({
         where: { workDate: { gte: start, lte: end } },
         include: { item: { select: { id: true, title: true } } },
@@ -32,6 +33,8 @@ export async function GET(request: NextRequest) {
         orderBy: { updatedAt: "desc" },
       }),
     ]);
+
+    const updatedItems = excludeClosedItemsFromUpdatedItems(closedItems, rawUpdatedItems);
 
     if (format === "json") {
       return NextResponse.json({

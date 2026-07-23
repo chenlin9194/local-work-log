@@ -79,6 +79,63 @@ describe("atomic recording transactions", () => {
     }));
   });
 
+  it("creates an unassociated log without an item context", async () => {
+    mocks.createLog.mockResolvedValue({ id: "log-1", itemId: null, projectId: null });
+    mocks.createAction.mockResolvedValue({ id: "action-1" });
+
+    const result = await createWorkLogWithContext({
+      title: "事实记录",
+      content: "记录一个不需要事项跟踪的事实",
+      actionItems: [{ title: "后续确认" }],
+    });
+
+    expect(result.log.itemId).toBeNull();
+    expect(mocks.createItem).not.toHaveBeenCalled();
+    expect(mocks.createAction).toHaveBeenCalledWith(expect.objectContaining({
+      data: expect.objectContaining({ workItemId: null, workLogId: "log-1", projectId: null }),
+    }));
+  });
+
+  it("inherits the selected project for an unassociated log action item", async () => {
+    mocks.findProject.mockResolvedValue({ id: "project-1", name: "项目 A" });
+    mocks.createLog.mockResolvedValue({ id: "log-1", itemId: null, projectId: "project-1" });
+    mocks.createAction.mockResolvedValue({ id: "action-1" });
+
+    const result = await createWorkLogWithContext({
+      title: "项目事实",
+      content: "记录项目级事实",
+      projectId: "project-1",
+      actionItems: [{ title: "项目后续确认" }],
+    });
+
+    expect(result.log.itemId).toBeNull();
+    expect(result.log.projectId).toBe("project-1");
+    expect(mocks.createItem).not.toHaveBeenCalled();
+    expect(mocks.createAction).toHaveBeenCalledWith(expect.objectContaining({
+      data: expect.objectContaining({ workItemId: null, workLogId: "log-1", projectId: "project-1" }),
+    }));
+  });
+
+  it("keeps new item and log creation atomic with linked action items", async () => {
+    mocks.createItem.mockResolvedValue({ id: "item-1", projectId: null });
+    mocks.createLog.mockResolvedValue({ id: "log-1", itemId: "item-1", projectId: null });
+    mocks.createAction.mockResolvedValue({ id: "action-1" });
+
+    const result = await createWorkLogWithContext({
+      title: "建立跟进事项",
+      content: "记录事实并创建后续跟进对象",
+      newItem: { title: "后续跟进", type: "action", status: "open" },
+      actionItems: [{ title: "确认负责人" }],
+    }, { requireItemContext: true });
+
+    expect(result.item?.id).toBe("item-1");
+    expect(result.log.itemId).toBe("item-1");
+    expect(mocks.transaction).toHaveBeenCalledTimes(1);
+    expect(mocks.createAction).toHaveBeenCalledWith(expect.objectContaining({
+      data: expect.objectContaining({ workItemId: "item-1", workLogId: "log-1" }),
+    }));
+  });
+
   it("rejects invalid action input before starting a transaction", async () => {
     await expect(createWorkItemWithActions({
       title: "发布跟进",

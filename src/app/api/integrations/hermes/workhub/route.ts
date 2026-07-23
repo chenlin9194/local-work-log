@@ -20,6 +20,7 @@ import {
   normalizePlanType,
 } from "@/lib/projectMilestones";
 import { getLocalDateString, getWeekRange, isValidYmdDateString, toNullableString } from "@/lib/utils";
+import { excludeClosedItemsFromUpdatedItems } from "@/lib/todayBuckets";
 
 export const dynamic = "force-dynamic";
 
@@ -1168,7 +1169,7 @@ async function handleFactPackage(input: Record<string, unknown>, fallback: "toda
     ],
   };
 
-  const [workLogs, reportableFacts, closedItems, updatedItems, activeSignals, actionItems] = await Promise.all([
+  const [workLogs, reportableFacts, closedItems, rawUpdatedItems, activeSignals, actionItems] = await Promise.all([
     prisma.workLog.findMany({
       where: { workDate: { gte: start, lte: end }, ...projectLogScope },
       include: { item: { select: { id: true, title: true, projectId: true } }, actionItems: { orderBy: [{ status: "asc" }, { sortOrder: "asc" }] } },
@@ -1214,6 +1215,8 @@ async function handleFactPackage(input: Record<string, unknown>, fallback: "toda
       take: 100,
     }),
   ]);
+
+  const updatedItems = excludeClosedItemsFromUpdatedItems(closedItems, rawUpdatedItems);
 
   return jsonOk({
     range: { start, end },

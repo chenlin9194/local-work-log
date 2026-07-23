@@ -4,6 +4,7 @@ import CopyButton from "@/components/CopyButton";
 import { prisma } from "@/lib/prisma";
 import { generateTodayMarkdown } from "@/lib/export";
 import { getLocalDateString, getTodayRange } from "@/lib/utils";
+import { excludeClosedItemsFromUpdatedItems } from "@/lib/todayBuckets";
 import {
   getReportQualityItems,
   REPORT_QUALITY_LABELS,
@@ -47,7 +48,7 @@ export default async function ReportsPage() {
   const [
     workLogs,
     closedItems,
-    updatedItems,
+    rawUpdatedItems,
     openHighPriorityItems,
     dueTodayItems,
     overdueItems,
@@ -153,6 +154,8 @@ export default async function ReportsPage() {
       take: 6,
     }),
   ]);
+
+  const updatedItems = excludeClosedItemsFromUpdatedItems(closedItems, rawUpdatedItems);
 
   const markdown = generateTodayMarkdown({
     today,

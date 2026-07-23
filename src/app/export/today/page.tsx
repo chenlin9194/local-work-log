@@ -1,6 +1,7 @@
 import { prisma } from "@/lib/prisma";
 import { getLocalDateString, formatTodayStr, getTodayRange } from "@/lib/utils";
 import { generateTodayMarkdown } from "@/lib/export";
+import { excludeClosedItemsFromUpdatedItems } from "@/lib/todayBuckets";
 import CopyButton from "@/components/CopyButton";
 import Icon from "@/components/Icon";
 
@@ -13,7 +14,7 @@ export default async function ExportTodayPage() {
   const [
     workLogs,
     closedItems,
-    updatedItems,
+    rawUpdatedItems,
     openHighPriorityItems,
     dueTodayItems,
     overdueItems,
@@ -56,6 +57,8 @@ export default async function ExportTodayPage() {
       orderBy: { createdAt: "desc" },
     }),
   ]);
+
+  const updatedItems = excludeClosedItemsFromUpdatedItems(closedItems, rawUpdatedItems);
 
   const md = generateTodayMarkdown({
     today,

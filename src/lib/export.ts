@@ -23,6 +23,7 @@ import {
   SOURCE_LABELS,
 } from "@/lib/constants";
 import { getMilestoneActualEnd, getMilestoneDateMode, getMilestonePlannedEnd } from "@/lib/projectMilestones";
+import { excludeClosedItemsFromUpdatedItems } from "@/lib/todayBuckets";
 import { formatDate, getLocalDateString } from "@/lib/utils";
 import type {
   ProjectSnapshotData,
@@ -71,6 +72,7 @@ interface ItemEntry {
   tags?: string | null;
   description?: string | null;
   closedAt?: Date | null;
+  updatedAt?: Date | null;
 }
 
 // ---------------------------------------------------------------------------
@@ -169,6 +171,10 @@ function renderTodayQualitySection(data: TodayExportData) {
 }
 
 export function generateTodayMarkdown(data: TodayExportData): string {
+  const normalizedData: TodayExportData = {
+    ...data,
+    updatedItems: excludeClosedItemsFromUpdatedItems(data.closedItems, data.updatedItems),
+  };
   const {
     today,
     workLogs,
@@ -179,7 +185,7 @@ export function generateTodayMarkdown(data: TodayExportData): string {
     overdueItems,
     riskAndBlockerLogs,
     decisionLogs,
-  } = data;
+  } = normalizedData;
 
   let md = `# 今日工作汇总 - ${today}\n\n`;
 
@@ -192,7 +198,7 @@ export function generateTodayMarkdown(data: TodayExportData): string {
   md += `- 风险、阻塞、逾期、P0/P1、今日决策需要优先保留。\n`;
   md += `- 外部工具不得新增事实、背景、原因或未记录的进展。\n\n`;
 
-  md += renderTodayQualitySection(data);
+  md += renderTodayQualitySection(normalizedData);
 
   // Overview
   md += `## 概览\n\n`;
@@ -369,7 +375,11 @@ function renderRangeQualitySection(data: RangeExportData) {
 }
 
 export function generateRangeMarkdown(data: RangeExportData): string {
-  const { start, end, workLogs, closedItems, updatedItems } = data;
+  const normalizedData: RangeExportData = {
+    ...data,
+    updatedItems: excludeClosedItemsFromUpdatedItems(data.closedItems, data.updatedItems),
+  };
+  const { start, end, workLogs, closedItems, updatedItems } = normalizedData;
 
   let md = `# 工作汇总 - ${start} 至 ${end}\n\n`;
 
@@ -382,7 +392,7 @@ export function generateRangeMarkdown(data: RangeExportData): string {
   md += `- 风险、阻塞、逾期、P0/P1、决策如在事实中出现，需要优先保留。\n`;
   md += `- 外部工具不得新增事实、背景、原因或未记录的进展。\n\n`;
 
-  md += renderRangeQualitySection(data);
+  md += renderRangeQualitySection(normalizedData);
 
   // Summary
   md += `## 概览\n\n`;
